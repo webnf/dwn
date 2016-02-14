@@ -1,0 +1,10 @@
+#!/bin/sh
+
+cd @cwd@ \
+&& exec @java@ \
+ -Ddwn.runner.dir=@out@ \
+ -cp $(if [ -n "$DEBUG_ADD_CP" ]; then
+         echo "${DEBUG_ADD_CP}:"
+       fi)@target@:@classPath@ \
+ @jvmOpts@ \
+ clojure.main -m webnf.dwn @host@ @port@
