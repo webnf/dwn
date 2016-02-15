@@ -1,8 +1,9 @@
-{ callPackage, writeScript, lib, socat, fetchurl }:
-{ dwn, nrepl }:
+{ callPackage, writeScript, lib, socat, fetchurl, dwn, cfg }:
 
 with callPackage ./util.nix {};
 
-loadComponent dwn "nrepl" "webnf.dwn.nrepl/nrepl" nrepl (with mvnDeps; [
-  (sourceDir ./nrepl-cmp) clojure toolsLogging
-] ++ sets.ssCmp ++ sets.cider )
+commandRunner dwn "nrepl" (
+  loadComponentCommand "nrepl" "webnf.dwn.nrepl/nrepl" cfg.dwn.nrepl (with mvnDeps; [
+    (sourceDir ./nrepl-cmp) clojure toolsLogging
+  ] ++ sets.ssCmp ++ sets.cider)
+)

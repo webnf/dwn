@@ -1,6 +1,6 @@
 { callPackage, runCommand, lib, fetchurl, dysnomia, jdk, jre, util, pkgs,
   version ? import ./VERSION }:
-{ cwd ? ".", host, port, jvmOpts ? [] }:
+{ cwd ? ".", host, port, jvmOpts ? [], ... }:
 with util;
 let
 

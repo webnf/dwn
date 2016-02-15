@@ -28,6 +28,7 @@ let
 
 in rec {
   util = callPackage ./util.nix {};
+  deps = callPackage ./deps.nix {};
   dwnPackage = callPackage ./dwn.nix {
     inherit jdk jre util;
   };
@@ -38,7 +39,7 @@ in rec {
   nrepl = callPackage ./nrepl.nix {} {
     dwn = {
       inherit (config.dwn) host port;
+      nrepl.port = "1337";
     };
-    nrepl.port = "1337";
   };
 }

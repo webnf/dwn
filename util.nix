@@ -1,4 +1,4 @@
-{ lib, writeScriptBin, socat, callPackage }: rec {
+{ lib, writeScriptBin, socat, callPackage, runCommand }: rec {
   mvnDeps = callPackage ./deps.nix {};
   quote = s: let qs = lib.replaceStrings ["\"" "\\"] ["\\\"" "\\\\"] "${s}";
               in if (lib.isInt s) then
@@ -8,6 +8,10 @@
               else
                 ''"${qs}"'';
   indent-quote = indent: s: "${indent}${quote s}";
+
+  deref = target: s: (
+   "local " + target + "=\"$" + "(eval echo \\\"\\$" + "{" + s + "}\\\")\""
+  );
 
   indent-list-raw = indent: lines:
     lib.concatStringsSep "\n${indent}" lines;
@@ -39,46 +43,65 @@
 
   sourceDir = p: "${p}/";
 
-  ednCommand = cmd: name: args: ''
-    [:${cmd} "${name}"
-     ${args}]
+  ednCommand = cmd: args: ''
+    [:${cmd} ${args}]
   '';
 
+  ednComponentCommand = cmd: name: args:
+    ednCommand cmd ''"${name}" ${args}'';
+
+  listClasspath = classpath:
+    "#jvm.classpath/list ${toEdnIndent '' '' classpath}";
+  fileClassPath = classpath:
+    "#jvm.classpath/file ${quote classpath}";
+
   loadComponentCommand = name: sym: config: classpath:
-    ednCommand "load-component" name ''
+    ednComponentCommand "load-component" name ''
       ${sym}
       ${toEdnIndent " " config}
-       #jvm.classpath/list ${toEdnIndent " " classpath}
+      ${classpath}
+    '';
+
+  loadPluginCommand = name: sym: config: classpath:
+    ednComponentCommand "load-plugin" name ''
+      ${sym}
+      ${toEdnIndent " " config}
+      ${classpath}
     '';
 
   startComponentCommand = name:
-    ednCommand "start-component" name "";
+    ednComponentCommand "start-component" name "";
 
   pluginCommand = name: cmd: args:
-    ednCommand "plugin-cmd" name ''
+    ednComponentCommand "plugin-cmd" name ''
       :${cmd} ${args}
     '';
 
   commandRunner = dwn: script-name: edn-cmd: writeScriptBin script-name ''
     #!/bin/sh
-    ${dwn}/bin/dwn-client <<CMDEOF
+    ${(bin dwn).client} <<CMDEOF
       ${edn-cmd}
     CMDEOF
   '';
 
-/*  commandRunner = dwn: name: cmd: args: writeScript "${name}-${cmd}" ''
-    #!/bin/sh
-    ${socat}/bin/socat -t 8 - tcp-connect:${dwn.host}:${dwn.port} <<EOF
-    [:${cmd} "${name}" ${args}]
-    EOF
+  bin = callPackage ./util-instantiated.nix { };
+
+  collectBinFolders = name: drvs: runCommand name (let
+    attrs = lib.listToAttrs (map (drv:
+      {name=drv.name;value=drv;}
+    ) drvs);
+  in (attrs // {
+    inherit name;
+    dwn_command_list = map (d: d.name) drvs;    
+  })) ''
+    mkdir -p $out/bin
+    cd $out/bin
+    for drv in $dwn_command_list; do
+      ${deref "drvPath" "$drv"}
+      for f in $drvPath/bin/*; do
+        ln -s $f "$drv-$(basename $f)"
+      done
+    done
   '';
 
-  loadComponent = dwn: name: sym: config: classpath:
-    commandRunner dwn name "load-component" ''
-      ${sym} {
-        ${indent-map "  " config}}
-        [${indent-list "  "
-           (map (p: "file:${p}")
-                classpath)}]
-    '';*/
 }

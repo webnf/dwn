@@ -14,8 +14,8 @@ let
 
   descriptors = {
     clojure = {
-      url = mvnCentral "org.clojure" "clojure" "1.8.0-RC4";
-      sha1 = "89jm62kw512dxfbhr00d7bblp4n9cy2l";
+      url = mvnCentral "org.clojure" "clojure" "1.8.0";
+      sha256 = "1a30sdpn1rr50w7qfz6pn3z5i43fjq3z9qm1aa4cd9piwhgpy6h6";
     };
     logback-classic = {
       url = logbackDep "logback-classic";
@@ -62,8 +62,8 @@ let
       sha1 = "a1a0mf0bwqm523fi9hz2b6ss9ilvxd3j";
     };
     ciderNrepl = {
-      url = clojars "cider" "cider-nrepl" "0.10.0";
-      sha1 = "b6af012661385a9f7b46f5b72c5110fd741b3296";
+      url = clojars "cider" "cider-nrepl" "0.10.2";
+      sha256 = "0a63ah3hbgvki72knffhv2qc2qwdbkyxrvdrrxl5napi74fvhs11";
     };
     refactorNrepl = {
       url = clojars "refactor-nrepl" "refactor-nrepl" "2.1.0-alpha1";
