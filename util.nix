@@ -33,6 +33,19 @@
 
   toEdn = val: toEdnIndent "" val;
 
+  pr-list-raw = lib.concatStringsSep " ";
+  pr-list = lst: pr-list-raw (map pr lst)
+  pr-map = attrs: pr-list-raw (lib.mapAttrsToList (k: v:
+    #pr symbols
+    k + " " + pr v
+  ) attrs);
+  pr = val:
+    if (! (lib.isDerivation val)) && (lib.isAttrs val) then
+      "{" + pr-map val + "}"
+    else if lib.isList val then
+      "[" + pr-list val + "]"
+    else "${quote val}";
+
   dwnComponent = id: type: constructor: classpath: ''
   {:id ${id}
    :type ${type}
