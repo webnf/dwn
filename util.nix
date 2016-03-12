@@ -1,10 +1,11 @@
 { lib, writeScriptBin, socat, callPackage, runCommand }: rec {
   mvnDeps = callPackage ./deps.nix {};
-  quote = s: let qs = lib.replaceStrings ["\"" "\\"] ["\\\"" "\\\\"] "${s}";
+  escapeQuotes = s: lib.replaceStrings ["\"" "\\"] ["\\\"" "\\\\"] "${s}";
+  quote = s: let qs = escapeQuotes s;
               in if (lib.isInt s) then
                 toString s
               else if (lib.isBool s) then
-                if s then "true" else false
+                if s then "true" else "false"
               else
                 ''"${qs}"'';
   indent-quote = indent: s: "${indent}${quote s}";
@@ -34,7 +35,7 @@
   toEdn = val: toEdnIndent "" val;
 
   pr-list-raw = lib.concatStringsSep " ";
-  pr-list = lst: pr-list-raw (map pr lst)
+  pr-list = lst: pr-list-raw (map pr lst);
   pr-map = attrs: pr-list-raw (lib.mapAttrsToList (k: v:
     #pr symbols
     k + " " + pr v
@@ -63,7 +64,7 @@
   ednComponentCommand = cmd: name: args:
     ednCommand cmd ''"${name}" ${args}'';
 
-  listClasspath = classpath:
+  listClassPath = classpath:
     "#jvm.classpath/list ${toEdnIndent '' '' classpath}";
   fileClassPath = classpath:
     "#jvm.classpath/file ${quote classpath}";
