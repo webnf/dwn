@@ -107,35 +107,38 @@
     (if (reduced? res)
       @res res)))
 
-(def current-state (volatile! ::init))
+(defn call-command! [state-agent command]
+  (with-open [os (java.io.ByteArrayOutputStream.)]
+    (await (send state-agent run-command* command os))
+    (String. (.toByteArray os) "UTF-8")))
 
-(defn- loop-step [state ^ServerSocketChannel ssc]
-  (with-open [cc (.accept ssc)
-              is (Channels/newInputStream cc)]
-    (let [state* (if-let [command (try (dwn-read is)
-                                       (catch Exception e
-                                         (log/error e "When reading command")
-                                         (with-open [os (Channels/newOutputStream cc)]
-                                           (spurt os (pr-str [:read-error (.getMessage e)])))
-                                         nil))]
-                   (run-command state command cc)
-                   state)]
-      (vreset! current-state state*))))
+(defonce current-state (agent {:accepting true :command-history []}))
 
-(defn cmd-loop [state ssc]
-  (if (:accepting state)
-    (do
-                                        ; debug
-      ;; (require 'webnf.dwn :reload-all)
-    
-      (let [state* (loop-step state ssc)]
-        (recur state* ssc)))
-    state))
+(defn read-command [^ServerSocketChannel ssc]
+  (let [cc (.accept ssc)
+        is (Channels/newInputStream cc)]
+    (when-let [command (try (dwn-read is)
+                            (catch Exception e
+                              (log/error e "When reading command")
+                              (with-open [os (Channels/newOutputStream cc)]
+                                (spurt os (pr-str [:read-error (.getMessage e)])))
+                              nil))]
+      [command cc])))
+
+(defn cmd-loop [state-agent ssc]
+  (when (:accepting @state-agent)
+    (log/debug "Waiting for command")
+    (if-let [[cmd cc] (read-command ssc)]
+      (do (log/debug "Source command" cmd)
+          (with-open [cc cc]
+            (await (send state-agent run-command cmd cc))))
+      (log/error "No command read"))
+    (recur state-agent ssc)))
 
 (defn -main [host port]
   (println "DWN called with" (mapv pr-str [host port]))
 
   (let [ssc (doto (ServerSocketChannel/open)
               (.bind (InetSocketAddress. host (Long/parseLong port))))]
-    (cmd-loop {:accepting true :command-history []} ssc)))
+    (cmd-loop current-state ssc)))
 
