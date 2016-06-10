@@ -88,24 +88,24 @@
       (update (apply cmd state os (next command))
               :command-history conj [(dissoc state :command-history) command])
       (catch Exception e
+        (log/error e "During command execution" command)
         (pprint e)
         (binding [*out* (java.io.PrintWriter. (io/writer os))]
           (prn [:exception (str (class e)) (.getMessage e) (ex-data e)])
           (println "\nBacktrace:\n")
           (pprint e))
-        (reduced state))
+        state)
       (finally
         (.flush os)))
     (do (spurt os (pr-str [:error "Not a command" command]))
-        (reduced state))))
+        state)))
 
 (defn run-command [state command output-chan]
   (let [bos (java.io.ByteArrayOutputStream.)
         res (run-command* state command bos)]
     (with-open [os (Channels/newOutputStream output-chan)]
       (.write os (.toByteArray bos)))
-    (if (reduced? res)
-      @res res)))
+    res))
 
 (defn call-command! [state-agent command]
   (with-open [os (java.io.ByteArrayOutputStream.)]
