@@ -1,2 +1,4 @@
 *~
 .lein-*
+/result
+/target
