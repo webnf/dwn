@@ -1,4 +1,5 @@
-{ callPackage, cljNsLauncher, resolveMvnDep }:
+{ callPackage, cljNsLauncher, resolveMvnDep
+, configFile ? ./config.edn }:
 
 let classpath = map resolveMvnDep [
     ["org.clojure" "clojure"]
@@ -20,5 +21,5 @@ in cljNsLauncher {
     classpath = [ (callPackage ./artefact.nix { inherit classpath; }) ] ++ classpath;
   };
   namespace = "webnf.dwn.boot";
-  suffixArgs = [ "${./config.edn}" ];
+  suffixArgs = [ "${configFile}" ];
 }
