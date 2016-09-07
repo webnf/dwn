@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Enumeration;
 
-import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CustomClassLoader extends ClassLoader {
 
@@ -35,7 +35,7 @@ public class CustomClassLoader extends ClassLoader {
 				return null;
 			}
 		} catch (IOException e) {
-			Logger.getInstance(getClass()).error("During find resource", e);
+			LoggerFactory.getLogger(getClass()).error("During find resource", e);
 			return null;
 		}
 	}

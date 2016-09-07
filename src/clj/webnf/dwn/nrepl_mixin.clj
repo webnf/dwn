@@ -8,11 +8,11 @@
               [container :refer [mixin]])))
 
 (def nrepl-cfg
-  (dwn-read
-   (io/file #_"/home/herwig/src/webnf/dwn/result"
-            (System/getProperty
-             "dwn.runner.dir")
-            "share/dwn/nrepl.edn")))
+  #_(dwn-read
+     (io/file #_"/home/herwig/src/webnf/dwn/result"
+              (System/getProperty
+               "dwn.runner.dir")
+              "share/dwn/nrepl.edn")))
 
 (defn nrepl-cmp [name classloader port start]
   (container-component

@@ -1,0 +1,24 @@
+{:webnf.dwn.catalog/containers
+ [{:id :webnf.dwn.container/cider-container
+   :classpath {org.clojure/tools.nrepl
+               {:version "0.2.12"
+                :jar-file "/nix/store/04rr91yvqaai4gbgkqqfprd2qfmivgn6-tools.nrepl-0.2.12.jar"}
+               cider/cider-nrepl
+               {:version "0.10.2"
+                :jar-file "/nix/store/94rac4ss40fw7a6dsfsfywsafqcxrzss-cider-nrepl-0.10.2.jar"}
+               refactor-nrepl/refactor-nrepl
+               {:version "2.1.0-alpha1"
+                :jar-file "/nix/store/g5lg7697gabf00wkwy2ypdng0rndlahy-refactor-nrepl-2.1.0-alpha1.jar"}
+               org.tcrawley/dynapath
+               {:version "0.2.3"
+                :jar-file "/nix/store/jarp31xy63v35z683avwf8ac76bc1pgm-dynapath-0.2.3.jar"}}
+   :components [{:id :webnf.dwn.nrepl/server
+                 :conf-options {:host {:type :webnf.dwn.type/string
+                                       :default "0.0.0.0"}
+                                :port {:type :webnf.dwn.type/integer
+                                       :default nil}
+                                :middleware {:type :webnf.dwn.nrepl.type/middleware-list
+                                             :default []}}}]}]
+ :webnf.dwn/containers
+ {:webnf.dwn.container/base-container
+  {:mixins [#webnf.dwn.nrepl/server {:port 1270}]}}}

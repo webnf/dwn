@@ -29,7 +29,7 @@ in runCommand "dwn-${version}" {
   inherit java jvmOpts cwd host port;
   inherit (pkgs) zsh socat;
   classPath = lib.concatStringsSep ":" classPath;
-  javaSources = map (src: "${./src}/${dotToSlash src}.java") javaSources;
+  javaSources = map (src: "${./src/clj}/${dotToSlash src}.java") javaSources;
   buildInputs = [ jdk ];
 } ''
   mkdir -p $out/target $out/bin $out/share/dwn
