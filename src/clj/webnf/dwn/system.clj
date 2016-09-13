@@ -1,6 +1,6 @@
 (ns webnf.dwn.system
   (:require [clojure.tools.logging :as log]
-            [com.stuartsierra.component :refer [Lifecycle stop start]]))
+            [com.stuartsierra.component :as cmp :refer [Lifecycle stop start]]))
 
 (defprotocol Updateable
   "Builds on top of components to allow them to shortcut stop-start cycles"
