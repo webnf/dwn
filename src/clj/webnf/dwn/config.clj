@@ -45,33 +45,63 @@
                    :webnf.dwn.component/config]))
 (s/def :webnf.dwn.component/factory symbol?)
 (s/def :webnf.dwn.component/config any?)
-(s/def ::container-instance (partial instance? webnf.jvm.Container))
 (s/def :webnf.dwn.component/container
   (s/or :container-ref ::qualified-keyword
-        :container-instance ::container-instance
-        :container-constructor (s/fspec :args (s/cat :catalog :webnf.dwn/containers)
-                                        :ret ::container-instance)))
+        :container-instance (partial instance? webnf.jvm.Container)
+        :container-constructor ifn?
+        #_(s/fspec :args (s/cat :catalog :webnf.dwn/containers)
+                   :ret ::container-instance)))
 
 ;; impl
 
-(defn mixin-container [stack]
-  (jvm/->Container "mixin container" nil nil nil))
+(declare resolve-container*)
+
+(defn mixin-container [[parent child]]
+  (fn [root]
+    (resolve-container* root parent)
+    (resolve-container* root child)
+    (jvm/->Container "mixin container" nil nil nil)))
 
 (def dwn-readers
   {'webnf.dwn.container/mixin mixin-container})
 
-(defn- resolve-container* [{:keys [:webnf.dwn/containers]} id]
+(defmulti instantiate* (fn [value rpath] (next rpath)))
+
+(defmethod instantiate* :default [value rpath]
+  (cond (map? value) (persistent!
+                      (reduce (fn [tm k v]
+                                (assoc! tm k (instantiate* v (cons k rpath))))
+                              (transient {}) value))))
+
+(defmethod instantiate* [:webnf.dwn/containers] [root [id]]
+  )
+
+(defn- container-name [id]
+  (or (::name (meta id))
+      (str (gensym "container-"))))
+
+(defn- instantiate-container [{:keys [:webnf.dwn/containers] :as root} id]
   (cond (keyword? id)
-        (let [{:keys [classpath security-manager thread-group]}
-              (get containers id)]
-          ;; WIP
-          )
-        (instance? webnf.dwn.Container id) id
-        (ifn? id) (id containers)))
+        (resolve-container*
+         root (vary-meta (or (get containers id)
+                             (throw (ex-info (str "No container " id) {:id id :root root})))
+                         assoc ::name (str id)))
+        (map? id)
+        (let [{:keys [classpath security-manager thread-group]} id]
+          #_(wdc/container (container-name id) (instantiate-classpath classpath)
+                           (instantiate-security)))
+        (instance? webnf.jvm.Container id) id
+        (ifn? id) (id root)))
+
+(defn- resolve-container* [root id]
+  (let [{:keys [::container-instances]} (meta root)]
+    (or (get @container-instances id)
+        (get (swap! container-instances instantiate-container root id) id))))
 
 (defn config-resolve [c]
   (if (s/valid? ::root c)
-    c
+    (with-meta c {::container-instances (atom {})
+                  ::component-instances (atom {})})
     (do
       (s/explain ::root c)
       (throw (ex-info "Invalid config" (s/explain-data ::root c))))))

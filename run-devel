@@ -1,0 +1,24 @@
+#!/bin/sh
+
+if [ -f devel.pid ]
+then
+    echo "Already running at PID `cat devel.pid`"
+    exit 1
+fi
+$(nix-build --no-out-link -E '
+((import <nixpkgs> {})
+ .callPackage ./src/nix/lib/clojure.nix {})
+.callPackage ./dwn-next.nix {
+  configFile = "./config.edn";
+}
+') &
+CHILDPID=$!
+echo "Running with PPID $$; CPID $CHILDPID"
+echo "$CHILDPID" > devel.pid
+cleanup () {
+    rm devel.pid
+    kill $CHILDPID
+}
+trap cleanup EXIT
+wait $CHILDPID
+exit $?
