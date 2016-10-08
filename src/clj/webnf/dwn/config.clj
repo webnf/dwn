@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.spec :as s]
+            [clojure.walk :as w]
             [webnf.jvm :as jvm]
             [webnf.dwn.container :as wdc]))
 
@@ -53,6 +54,44 @@
                    :ret ::container-instance)))
 
 ;; impl
+
+(defn- lazy-body [v-sym f-sym body]
+  `(~f-sym []
+    (let [cv# @~v-sym]
+      (case cv#
+        ::init (try
+                 (vreset! ~v-sym ::on-stack)
+                 (vreset! ~v-sym (do ~@body))
+                 (catch Throwable e#
+                   (vreset! ~v-sym ::error)
+                   (throw e#)))
+        ::error (throw (ex-info "No result due to previous error" {:f '~f-sym}))
+        ::on-stack (throw (ex-info "Infinite recursion" {:f '~f-sym}))
+        cv#))))
+
+(defn rewrite-symbols-to-calls [f-map body]
+  (w/postwalk (fn [data]
+                (if (contains? f-map data)
+                  (list (f-map data))
+                  data))
+              body))
+
+(defmacro llet [bindings & body]
+  (let [inits (into {} (map vec (partition 2 bindings)))
+        v-syms (into {} (map (juxt identity gensym) (keys inits)))
+        lazify (partial rewrite-symbols-to-calls (set (keys inits)))]
+    `(let [~@(mapcat
+              #(list % `(volatile! ::init))
+              (vals v-syms))]
+       (letfn [~@(for [[f-sym init] inits]
+                   (lazy-body (v-syms f-sym) f-sym (lazify [init])))]
+         ~@(lazify body)))))
+
+(comment
+  (llet [a (+ b 10)
+         b 1]
+        a)
+  )
 
 (declare resolve-container*)
 

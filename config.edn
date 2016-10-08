@@ -29,7 +29,9 @@
                 :jar-file "/nix/store/n6n8j760hvpc6sijgyhak8xsn2wxzkwl-tools.logging-0.3.1.jar"}
                org.slf4j/slf4j-api
                {:version "1.7.21"
-                :jar-file "/nix/store/lfy5id1cdd3bfw353k5188hl0v9g19sh-slf4j-api-1.7.21.jar"}]}}
+                :jar-file "/nix/store/lfy5id1cdd3bfw353k5188hl0v9g19sh-slf4j-api-1.7.21.jar"}]}
+  :webnf.dwn.nrepl/cider-mixin-container #webnf.dwn.container/mixin [:webnf.dwn/base-container
+                                                                     :webnf.dwn.nrepl/cider-container]}
  :webnf.dwn/components
  {:webnf.dwn.nrepl/server
   { ;; defaults to the id
@@ -40,5 +42,4 @@
             :middleware []
             :enable-cider true}
    ;; define the environment to run the component in
-   :container #webnf.dwn.container/mixin [:webnf.dwn/base-container
-                                          :webnf.dwn.nrepl/cider-container]}}}
+   :container :webnf.dwn.nrepl/cider-mixin-container}}}
