@@ -4,7 +4,9 @@
             [clojure.spec :as s]
             [clojure.walk :as w]
             [webnf.jvm :as jvm]
-            [webnf.dwn.container :as wdc]))
+            [webnf.dwn.container :as wdc]
+            [webnf.dwn.system :as wds]
+            [com.stuartsierra.component :as cmp]))
 
 ;; lib
 
@@ -55,65 +57,75 @@
 
 ;; impl
 
-(defn- lazy-body [v-sym f-sym body]
-  `(~f-sym []
-    (let [cv# @~v-sym]
-      (case cv#
-        ::init (try
-                 (vreset! ~v-sym ::on-stack)
-                 (vreset! ~v-sym (do ~@body))
-                 (catch Throwable e#
-                   (vreset! ~v-sym ::error)
-                   (throw e#)))
-        ::error (throw (ex-info "No result due to previous error" {:f '~f-sym}))
-        ::on-stack (throw (ex-info "Infinite recursion" {:f '~f-sym}))
-        cv#))))
-
-(defn rewrite-symbols-to-calls [f-map body]
-  (w/postwalk (fn [data]
-                (if (contains? f-map data)
-                  (list (f-map data))
-                  data))
-              body))
-
-(defmacro llet [bindings & body]
-  (let [inits (into {} (map vec (partition 2 bindings)))
-        v-syms (into {} (map (juxt identity gensym) (keys inits)))
-        lazify (partial rewrite-symbols-to-calls (set (keys inits)))]
-    `(let [~@(mapcat
-              #(list % `(volatile! ::init))
-              (vals v-syms))]
-       (letfn [~@(for [[f-sym init] inits]
-                   (lazy-body (v-syms f-sym) f-sym (lazify [init])))]
-         ~@(lazify body)))))
-
 (comment
+  (defn- lazy-body [v-sym f-sym body]
+    `(~f-sym []
+      (let [cv# @~v-sym]
+        (case cv#
+          ::init (try
+                   (vreset! ~v-sym ::on-stack)
+                   (vreset! ~v-sym (do ~@body))
+                   (catch Throwable e#
+                     (vreset! ~v-sym ::error)
+                     (throw e#)))
+          ::error (throw (ex-info "No result due to previous error" {:f '~f-sym}))
+          ::on-stack (throw (ex-info "Infinite recursion" {:f '~f-sym}))
+          cv#))))
+
+  (defn rewrite-symbols-to-calls [f-map body]
+    (w/postwalk (fn [data]
+                  (if (contains? f-map data)
+                    (list (f-map data))
+                    data))
+                body))
+
+  (defmacro llet [bindings & body]
+    (let [inits (into {} (map vec (partition 2 bindings)))
+          v-syms (into {} (map (juxt identity gensym) (keys inits)))
+          lazify (partial rewrite-symbols-to-calls (set (keys inits)))]
+      `(let [~@(mapcat
+                #(list % `(volatile! ::init))
+                (vals v-syms))]
+         (letfn [~@(for [[f-sym init] inits]
+                     (lazy-body (v-syms f-sym) f-sym (lazify [init])))]
+           ~@(lazify body)))))
   (llet [a (+ b 10)
          b 1]
         a)
   )
 
-(declare resolve-container*)
+(defn kill-container! [container]
+  (print "TBD"))
+
+(defrecord MixinContainer [parent child container]
+  cmp/Lifecycle
+  (start [this]
+    (if container
+      this
+      (assoc this :container
+             (jvm/->Container "mixin container" nil nil nil))))
+  (stop [this]
+    (if container
+      (do (kill-container! container)
+          (assoc this :container nil))
+      this))
+  wds/Updateable
+  (-get-key [this] ::mixin-container)
+  (-update-from [this {p' :parent c' :child :as prev}]
+    (if (and (identical? parent p')
+             (identical? child c'))
+      this
+      (do (cmp/stop prev)
+          (cmp/start this)))))
 
 (defn mixin-container [[parent child]]
-  (fn [root]
-    (resolve-container* root parent)
-    (resolve-container* root child)
-    (jvm/->Container "mixin container" nil nil nil)))
+  (MixinContainer. parent child nil
+                   {::cmp/dependencies {:parent parent
+                                        :child child}}
+                   nil))
 
 (def dwn-readers
   {'webnf.dwn.container/mixin mixin-container})
-
-(defmulti instantiate* (fn [value rpath] (next rpath)))
-
-(defmethod instantiate* :default [value rpath]
-  (cond (map? value) (persistent!
-                      (reduce (fn [tm k v]
-                                (assoc! tm k (instantiate* v (cons k rpath))))
-                              (transient {}) value))))
-
-(defmethod instantiate* [:webnf.dwn/containers] [root [id]]
-  )
 
 (defn- container-name [id]
   (or (::name (meta id))
@@ -132,15 +144,9 @@
         (instance? webnf.jvm.Container id) id
         (ifn? id) (id root)))
 
-(defn- resolve-container* [root id]
-  (let [{:keys [::container-instances]} (meta root)]
-    (or (get @container-instances id)
-        (get (swap! container-instances instantiate-container root id) id))))
-
 (defn config-resolve [c]
   (if (s/valid? ::root c)
-    (with-meta c {::container-instances (atom {})
-                  ::component-instances (atom {})})
+    c
     (do
       (s/explain ::root c)
       (throw (ex-info "Invalid config" (s/explain-data ::root c))))))
