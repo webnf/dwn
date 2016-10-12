@@ -11,25 +11,12 @@
   (-get-key [u] "update-from will only be called if get-key result matches")
   (-update-from [u prev] "return result as if start had been called, but allowed to reuse state from previous instance. Must do the equivalent of stop on parts of the state, that it doesn't reuse"))
 
-(defrecord UpdateWrapper []
-  cmp/Lifecycle
-  (start [{:as this :keys [::prev-inst ::this-inst]}]
-    (update-from (into this-inst (dissoc this ::prev-inst ::this-inst))
-                 prev-inst)))
-
 (defn update-from [updated previous]
   (if (= (-get-key updated)
          (-get-key previous))
     (-update-from updated previous)
     (do (stop previous)
         (start updated))))
-
-(defn- assoc-update-wrappers [system updated prev]
-  (reduce (fn [system key]
-            (assoc system key (UpdateWrapper. (meta system)
-                                              {::this-inst (get system key)
-                                               ::prev-inst (get prev key)})))
-          system updated))
 
 (defn update-system-from*
   [system prev component-keys]

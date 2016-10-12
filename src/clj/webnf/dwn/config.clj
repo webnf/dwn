@@ -1,12 +1,20 @@
 (ns webnf.dwn.config
-  (:require [clojure.java.io :as io]
+  (:require [clojure.pprint :refer [pprint]]
+            [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.spec :as s]
             [clojure.walk :as w]
             [webnf.jvm :as jvm]
             [webnf.dwn.container :as wdc]
             [webnf.dwn.system :as wds]
-            [com.stuartsierra.component :as cmp]))
+            [webnf.jvm.threading :as wjt]
+            [com.stuartsierra.component :as cmp]
+            [clojure.string :as str]))
+
+(defprotocol ContainerConfig
+  (classpath-for [cfg])
+  (security-manager-for [cfg])
+  (thread-group-for [cfg]))
 
 ;; lib
 
@@ -25,7 +33,9 @@
   (s/map-of ::qualified-keyword ::container))
 
 (s/def ::container
-  (s/keys :req-un [::classpath]))
+  (s/or
+   :base-config (s/keys :req-un [::classpath])
+   :instance #(satisfies? ContainerConfig %)))
 
 (s/def ::classpath
   (s/* (s/cat :name  ::qualified-symbol
@@ -97,13 +107,22 @@
 (defn kill-container! [container]
   (print "TBD"))
 
-(defrecord MixinContainer [parent child container]
+(defrecord MixinContainer [name parent child container]
+  ContainerConfig
+  (classpath-for [_] (concat (classpath-for parent)
+                             (classpath-for child)))
+  (security-manager-for [_]
+    (security-manager-for child))
+  (thread-group-for [_]
+    (thread-group-for child))
   cmp/Lifecycle
   (start [this]
     (if container
       this
       (assoc this :container
-             (jvm/->Container "mixin container" nil nil nil))))
+             (wdc/mixin name (map :url (classpath-for child)) parent
+                        (security-manager-for this)
+                        (thread-group-for this)))))
   (stop [this]
     (if container
       (do (kill-container! container)
@@ -118,41 +137,104 @@
       (do (cmp/stop prev)
           (cmp/start this)))))
 
-(defn mixin-container [[parent child]]
-  (MixinContainer. parent child nil
+(defn mixin-container [[parent child name]]
+  (MixinContainer. (or name (gensym "mixin-"))
+                   parent child nil
                    {::cmp/dependencies {:parent parent
                                         :child child}}
                    nil))
 
+(defrecord BaseContainer [name classpath security-manager thread-group container]
+  ContainerConfig
+  (classpath-for [_]
+    classpath)
+  (security-manager-for [_]
+    security-manager)
+  (thread-group-for [_]
+    thread-group)
+  cmp/Lifecycle
+  (start [this]
+    (if container
+      this
+      ;; FIXME instantiate security-manager and thread-group here?
+      ;; interactions with kill-container!
+      (assoc this :container
+             (wdc/container name (map :uri classpath)
+                            security-manager thread-group))))
+  (stop [this]
+    (if container
+      (do (kill-container! container)
+          (assoc this container nil))
+      this))
+  wds/Updateable
+  (-get-key [_] ::base-container)
+  (-update-from [this {cp :classpath sm :security-manager
+                       tg :thread-group :as prev}]
+    (if (and (= classpath cp)
+             (identical? thread-group tg)
+             (identical? security-manager sm))
+      this
+      (do (cmp/stop prev)
+          (cmp/start this)))))
+
+(defn base-container [{:keys [name classpath security-manager thread-group]
+                       :or {name (gensym "container-")
+                            security-manager wdc/default-security-manager}}]
+  (->BaseContainer name classpath security-manager
+                   (or thread-group
+                       (wjt/thread-group (gensym (str name "-tg-"))))))
+
 (def dwn-readers
   {'webnf.dwn.container/mixin mixin-container})
 
-(defn- container-name [id]
-  (or (::name (meta id))
-      (str (gensym "container-"))))
-
-(defn- instantiate-container [{:keys [:webnf.dwn/containers] :as root} id]
-  (cond (keyword? id)
-        (resolve-container*
-         root (vary-meta (or (get containers id)
-                             (throw (ex-info (str "No container " id) {:id id :root root})))
-                         assoc ::name (str id)))
-        (map? id)
-        (let [{:keys [classpath security-manager thread-group]} id]
-          #_(wdc/container (container-name id) (instantiate-classpath classpath)
-                           (instantiate-security)))
-        (instance? webnf.jvm.Container id) id
-        (ifn? id) (id root)))
-
 (defn config-resolve [c]
-  (if (s/valid? ::root c)
-    c
-    (do
-      (s/explain ::root c)
-      (throw (ex-info "Invalid config" (s/explain-data ::root c))))))
+  (let [res (s/conform ::root c)]
+    (if (s/invalid? res)
+      (do
+        (s/explain ::root c)
+        (throw (ex-info "Invalid config" (s/explain-data ::root c))))
+      res)))
+
+(defn dir-url [path]
+  (io/as-url (str "file:" path (when-not (str/ends-with? path "/") "/"))))
+
+(defn jar-url [path]
+  (io/as-url (str "file:" path)))
+
+(defrecord ClasspathEntry [name version urls])
+
+(defn config-classpath [cp]
+  (for [{name :name
+         [type config] :entry} cp]
+    (->ClasspathEntry
+     name (:version config)
+     (case type
+       :source-dirs (map dir-url (:source-dirs config))
+       :jar-file [(jar-url (:jar-file config))]))))
+
+(defn config-containers [containers]
+  (into {} (for [[name [type container]] containers]
+             [name (case type
+                     :base-config (base-container
+                                   (update container :classpath
+                                           config-classpath))
+                     :instance container)])))
+
+(defn config-components [components]
+  (->
+   (into {} (for [[name {:keys []}]]))
+   (cmp/using [:webnf.dwn/containers])))
+
+(defn config-root [{:keys [:webnf.dwn/containers
+                           :webnf.dwn/components]
+                    :as res}]
+  (pprint res)
+  {:webnf.dwn/containers (config-containers containers)
+   :webnf.dwn/components (config-components components)})
 
 (def config-read
   (comp
+   config-root
    config-resolve
    (partial edn/read {:readers (merge default-data-readers
                                       dwn-readers)})
