@@ -87,6 +87,15 @@ let callPackage = newScope thisns;
 
   ## Maven
 
+  resolveAllDeps = cat:
+    lib.mapAttrs (group: gcat:
+      lib.mapAttrs (name: acat:
+        lib.mapAttrs (version: desc:
+            resolveDep cat [ group name version ]
+        ) acat
+      ) gcat
+    ) cat;
+
   resolveDep = cat: art: let
     dependencies = if 4 == lib.length art then lib.elemAt art 3 else [];
     version = if 3 <= lib.length art then lib.elemAt art 2 else "DEFAULT";
@@ -130,6 +139,7 @@ let callPackage = newScope thisns;
     map resolveMvnDep classpath;
 
   mvnCatalog = import ./repository.nix;
+  mvnResolved = resolveAllDeps mvnCatalog;
 
   mavenMirrors = group: name: version: let
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];

@@ -4,8 +4,8 @@ let
         "DEFAULT" = [ "alias" version ];
       } // builtins.listToAttrs [{name=version; value=["mvn" hash];}];
     }];
-  logbackDep = id: hash: versionedDep id "1.1.3" hash;
-  slf4jDep = id: hash: versionedDep id "1.7.13" hash;
+  logbackDep = id: hash: versionedDep id "1.1.7" hash;
+  slf4jDep = id: hash: versionedDep id "1.7.21" hash;
 in {
 "org.clojure" = {
   "clojure" = {
@@ -28,15 +28,15 @@ in {
   };
 };
 "ch.qos.logback" = (
-  (logbackDep "logback-classic" "1map874h9mrv2iq8zn674sb686fdcr2p5k17ygajqr0dbn7z3hwq")
-//(logbackDep "logback-core" "052w3z1sp7m2ssrd8c644wxi8xia9crcrjmcixdk3lwm54sgvh27")
+  (logbackDep "logback-classic" "1nbp2sipswppp2013a7rmk9m8cihrf42bc28nxxwry6vcf993hx2")
+//(logbackDep "logback-core" "1ppinajcr35lca4gjy0q1vp36qmv828mg636w184iyl14vgsw055")
 );
 
 "org.slf4j" = (
-  (slf4jDep "slf4j-api" "0d8fk9jggkhvi1vgaxk0f6wa4jfzd25jp1b4q7zq9fag5q68vmi0")
-//(slf4jDep "log4j-over-slf4j" "1pwr1skmgs6vcnr7qx66w4xahyw9lg6894zic3a1xlj2h7hwsj30")
-//(slf4jDep "jcl-over-slf4j" "0ijimbf88pvrd37sm7i8i5qg25ni6wccyarpck30i12lpd9y3i3l")
-//(slf4jDep "jul-to-slf4j" "11blwm82aa2bp90q5hcfx3qfnigbq5j4h4c2k4s4lgi71n270rgw")
+  (slf4jDep "slf4j-api" "1pz7yf553zp7v1l1w3zaj6knhr2zq10yksk928axs3wbv5mynnhx")
+//(slf4jDep "log4j-over-slf4j" "1jzzibcqb9329p076y75m7vdanlvr10w5mx41kvsb5nz3yv63if8")
+//(slf4jDep "jcl-over-slf4j" "0gsypqkhkrxmjgl9j1jhx67divb7vkfg7fwvjrdncyvv6nmrssv8")
+//(slf4jDep "jul-to-slf4j" "1g78j4fb9d7fgnl6fjjgcw47xb81wwqwd03s4iw8mcssb6nnsva4")
 );
 "javax.servlet" = (
   (versionedDep "javax.servlet-api" "3.1.0" "10l47crybiq5z9qk0kdx6pzdjww9cyy47rzkak7q4khwshnnnidg")
@@ -52,10 +52,10 @@ in {
 //(versionedDep "dependency" "0.2.0" "1krbb80jqk7cgszakn3kx0gk1vlzy5a7n6kyva8r42apydjis8s1")
 );
 "refactor-nrepl" = (
-  (versionedDep "refactor-nrepl" "2.1.0-alpha1" "1p359rcjb51i3212pv4vvy659jmj0ckxjanmqzg511czwn01h57x")
+  (versionedDep "refactor-nrepl" "2.2.0" "1sd6mihm559qsx62r6jqsmnfsf33gq86vhdigazr8rjjgckxmjnv")
 );
 "cider" = (
-  (versionedDep "cider-nrepl" "0.13.0" "0icdaybyb1ln4zjxwa7g3x63d4z0p6liac5vfqwjlssg2xazg48x")
+  (versionedDep "cider-nrepl" "0.14.0" "0x8rc4wrm11fhham5833f89a428xmahxbgivglgxf45nlyx63sbq")
 );
 "org.tcrawley" = (
   (versionedDep "dynapath" "0.2.3" "1pxaxr5bghbi358l5bfirm5arn0jzhpbip9l6kgs08f84h8lvl06")
