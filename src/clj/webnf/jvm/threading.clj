@@ -6,6 +6,7 @@
   "The default UncaughtExceptionHandler, which logs exceptions to clojure.tools.logging/error"
   (reify Thread$UncaughtExceptionHandler
     (uncaughtException [_ thread throwable]
+      (.printStackTrace throwable)
       (log/error throwable "Uncaught Exception in thread" thread))))
 
 (defn thread-group
@@ -19,7 +20,11 @@
 
 (defn run-on-group
   ([group ^Callable callable context-cl]
-   (let [p (FutureTask. callable)
+   (let [p (FutureTask. #(try (callable)
+                              ;; FutureTask blocks thread's default UEH
+                              (catch Exception e
+                                (.uncaughtException group (Thread/currentThread) e)
+                                (throw e))))
          t (Thread. ^ThreadGroup group p)]
      (.setContextClassLoader t context-cl)
      (.start t)

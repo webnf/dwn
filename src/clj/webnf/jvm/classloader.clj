@@ -124,9 +124,11 @@
    (fn [cl]
      (let [read-string' (static-method cl :clojure.lang.RT/readString [String])
            eval' (static-method cl :clojure.lang.Compiler/eval [Object])]
+       (log/trace "Constructing read evaluator for cl" cl)
        (fn [form-str]
+         (log/trace "Evaluating" form-str)
          (let [res (eval' (read-string' form-str))]
-           ;; (log/debug form-str "=>" res)
+           (log/trace "=>" res)
            res))))))
 
 (defmacro with-context-classloader [cl & body]

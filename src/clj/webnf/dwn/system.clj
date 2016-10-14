@@ -14,20 +14,26 @@
 (defn update-from [updated previous]
   (if (= (-get-key updated)
          (-get-key previous))
-    (-update-from updated previous)
-    (do (stop previous)
+    (do (log/info (-get-key updated) "updating" previous "->" updated)
+        (-update-from updated previous))
+    (do (log/info previous (-get-key previous) "stop" updated (-get-key updated) "start")
+        (stop previous)
         (start updated))))
 
 (defn update-system-from*
-  [system prev component-keys]
-  (let [graph (cmp/dependency-graph system component-keys)]
+  [system prev started-keys updated-keys]
+  (let [component-keys (set/union started-keys updated-keys)
+        graph (cmp/dependency-graph system component-keys)
+        skeys (sort (dep/topo-comparator graph) component-keys)]
+    (log/info "Update order" skeys)
     (reduce (fn [system key]
               (assoc system key
                      (-> (@#'cmp/get-component system key)
                          (@#'cmp/assoc-dependencies system)
-                         (@#'cmp/try-action system key update-from [prev]))))
-            system
-            (sort (dep/topo-comparator graph) component-keys))))
+                         (cond->
+                             (contains? updated-keys key) (@#'cmp/try-action system key update-from [(get prev key)])
+                             (contains? started-keys key) (@#'cmp/try-action system key cmp/start [])))))
+            system skeys)))
 
 (defn update-system-from
   ([system prev] (update-system-from system (keys system)
@@ -38,9 +44,9 @@
          started (set/difference sk pk)
          stopped (set/difference pk sk)
          updated (set/intersection pk sk)]
-     (println "Starting" started "; Stopping" stopped "; Updating" updated)
+     (log/info "Starting" started "; Stopping" stopped "; Updating" updated)
      (cmp/stop-system prev stopped)
-     (update-system-from* system prev updated))))
+     (update-system-from* system prev started updated))))
 
 (extend-protocol Updateable
   nil
@@ -55,29 +61,3 @@
   (-get-key [o] ::system-map)
   (-update-from [o prev]
     (update-system-from o prev)))
-
-(defrecord ServiceConfig [config-root base-container component-catalog used-containers]
-  Lifecycle
-  (start [_])
-  (stop  [_])
-  Updateable
-  (-get-key [_] ::service-config)
-  (-update-from [_ prev]
-    ))
-
-(defn container-catalog [containers]
-  (into {} (for [{:keys [id classpath components] :as cnt} containers
-                 :let [container {:id id :classpath classpath}]
-                 {:keys [id start-fn] :as cmp} components]
-             [id (assoc cmp :webnf.dwn.component/container container)])))
-
-(defn service-config [{:as config-root
-                       {:as used-containers
-                        :keys [webnf.dwn.container/base-container]}
-                       :webnf.dwn/containers
-                       declared-containers :webnf.dwn.catalog/containers}]
-  (->ServiceConfig
-   (dissoc config-root :webnf.dwn/containers :webnf.dwn.catalog/containers)
-   base-container
-   (container-catalog declared-containers)
-   (dissoc used-containers :webnf.dwn.container/base-container)))

@@ -4,19 +4,24 @@
    [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [webnf.jvm :refer [eval-in-container]]
-   (webnf.dwn [util :refer [config-read]]
-              [system :refer [update-from service-config]]))
+   (webnf.dwn [config :refer [config-read]]
+              [system :refer [update-from]])
+   [com.stuartsierra.component :as cmp])
   (:import
    (sun.misc Signal SignalHandler)))
 
 (defonce system
-  (agent {}))
+  (agent (cmp/system-map)
+         :error-handler (fn [a e]
+                          (.println System/err "System error")
+                          ;; (.printStackTrace e)
+                          (log/error e "System error"))))
 
 (defn update! [cfg-file]
   (let [cfg (config-read cfg-file)]
     (log/info "Updating config\n"
               (with-out-str (pprint cfg)))
-    (send system update-from cfg)))
+    (send system #(update-from cfg %))))
 
 (defn install-handler! [signal thunk]
   #_(log/error "SIG" signal "handler not implemented")

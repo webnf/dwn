@@ -15,10 +15,12 @@
 (defrecord Nrepl [server host port middleware]
   cmp/Lifecycle
   (start [this]
+    (log/info "Starting nrepl on" host ":" port "with middleware" middleware)
     (if server
       this
       (assoc this :server (start-server host port middleware))))
   (stop [this]
+    (log/info "Stopping nrepl on" host ":" port )
     (if server
       (do (nrepl/stop-server server)
           (assoc this :server nil))
@@ -35,6 +37,7 @@
 (s/def ::nrepl (s/fspec))
 
 (defn nrepl [conf]
+  (log/info "Creating NREPL component" conf)
   (let [{:keys [enable-cider] :as c} (s/conform ::nrepl-config conf)]
     (if (= ::s/invalid c)
       (throw (ex-info "Invalid NREPL configuration" (s/explain-data ::nrepl-config conf)))

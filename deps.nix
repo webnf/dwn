@@ -14,8 +14,8 @@ let
 
   descriptors = {
     clojure = {
-      url = mvnCentral "org.clojure" "clojure" "1.8.0";
-      sha256 = "1a30sdpn1rr50w7qfz6pn3z5i43fjq3z9qm1aa4cd9piwhgpy6h6";
+      url = mvnCentral "org.clojure" "clojure" "1.9.0-alpha13";
+      sha256 = "05d4r5gjbf0hx43v7174ndz2zsv1xdl9gh3kkw1z08dw4gliljck";
     };
     logback-classic = {
       url = logbackDep "logback-classic";

@@ -1,22 +1,30 @@
-{ newScope, jdk, lib, writeScript, fetchurl, runCommand }:
+{ newScope, jdk, lib, writeScript, fetchurl, runCommand, devMode ? true }:
 let callPackage = newScope thisns;
     thisns = { inherit callPackage; } // rec {
 
-  launcher = { env, codes, name ? "runnable-launcher" }: writeScript name ''
+  dwn = callPackage ./dwn.nix {};
+  edn = callPackage ./edn.nix {};
+
+  inherit devMode;
+  inherit (edn) asEdn toEdn toEdnPP;
+  inherit (edn.syntax) tagged hash-map keyword-map list vector set symbol keyword string int bool nil;
+  inherit (edn.data) get get-in eq nth nix-str nix-list extract;
+
+  launcher = { classpath, codes, name ? "runnable-launcher" }: writeScript name ''
     #!/bin/sh
     exec ${jdk.jre}/bin/java \
-      -cp ${renderClasspath (buildClasspath env)} \
+      -cp ${renderClasspath classpath} \
       clojure.main -e "$(cat <<CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
     ${lib.concatStringsSep "\n\n;; ----\n\n" codes}
     CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
     )"
   '';
 
-  cljNsLauncher = { name, env, namespace
+  cljNsLauncher = { name, classpath, namespace
                   , prefixArgs ? [], suffixArgs ? [] }: writeScript name ''
     #!/bin/sh
     exec ${jdk.jre}/bin/java \
-      -cp ${renderClasspath (buildClasspath env)} \
+      -cp ${renderClasspath classpath} \
       clojure.main -m '${namespace}' \
       ${toString prefixArgs} \
       "$@" \
@@ -36,13 +44,13 @@ let callPackage = newScope thisns;
       ${jdk}/bin/javac -d $out -cp $out:$classpath `find $sources -name '*.java'`
     '';
 
-  cljCompile = { name, classpath, aot, sources, options ? {} }:
+  cljCompile = { name, classpath, aot, options ? {} }:
     runCommand name {
-      inherit classpath sources aot;
+      inherit classpath aot;
     } ''
       mkdir -p $out
       ${jdk.jre}/bin/java \
-        -cp $out:$sources:$classpath \
+        -cp $out:$classpath \
         -Dclojure.compile.path=$out \
         -Dclojure.compiler.warn-on-reflection=${options.warnOnReflection or "true"} \
         -Dclojure.compiler.unchecked-math=${options.uncheckedMath or "false"} \
@@ -61,10 +69,27 @@ let callPackage = newScope thisns;
     cp -R out $out
   '';
 
+  sourceDirs = name: meta: dirs:
+    if devMode
+    then lib.fold (dir: d@{ outputs, ... }:
+                   let
+                     outName = "out-${toString (lib.length outputs)}";
+                   in d // {
+                     outputs = outputs ++ [ outName ];
+                     "${outName}" = toString dir;
+                   })
+                  { type = "derivation";
+                    outputs = [];
+                    inherit meta; }
+                  dirs
+    else lib.recursiveUpdate (combinePathes name dirs)
+                             { inherit meta; };
+
   ## Maven
 
   resolveDep = cat: art: let
-    version = if 3 == lib.length art then lib.elemAt art 2 else "DEFAULT";
+    dependencies = if 4 == lib.length art then lib.elemAt art 3 else [];
+    version = if 3 <= lib.length art then lib.elemAt art 2 else "DEFAULT";
     name = lib.elemAt art 1;
     group = lib.elemAt art 0;
     descriptor = lib.getAttr version (
@@ -78,17 +103,21 @@ let callPackage = newScope thisns;
         name = "${name}-${version}.jar";
         urls = mavenMirrors group name version;
         sha256 = lib.elemAt descriptor 1;
+        meta.dwn = {
+          inherit group name version dependencies;
+          classpath-output-jar = "out";
+        };
       }
     else if tag == "nix" then
-      callPackage (lib.elemAt descriptor 1) {}
+      callPackage (lib.elemAt descriptor 1) { meta.dwn = { inherit group name version; }; }
     else if tag == "alias" then
       resolveDep cat (
-      if 2 == lib.length descriptor then
-        [ group name (lib.elemAt descriptor 1) ]
-      else
-        [ (lib.elemAt descriptor 1)
-          (lib.elemAt descriptor 2)
-          (lib.elemAt descriptor 3) ]
+        if 2 == lib.length descriptor then
+          [ group name (lib.elemAt descriptor 1) ]
+        else
+          [ (lib.elemAt descriptor 1)
+            (lib.elemAt descriptor 2)
+            (lib.elemAt descriptor 3) ]
       )
     else throw "unknown op tag [${descriptor}]" ;
 

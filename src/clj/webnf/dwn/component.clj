@@ -1,37 +1,39 @@
 (ns webnf.dwn.component
-  (:require [webnf.jvm :refer [eval-in-container]]
-            [webnf.dwn.container :refer [container clj-container]]
+  (:require [clojure.spec :as s]
+            [com.stuartsierra.component :as cmp]
+            [webnf.jvm :refer [eval-in-container]]
+            [webnf.dwn.container :as wdc :refer [container]]
             [clojure.tools.logging :as log]
-            [webnf.dwn.util :refer [require-call-form]]))
+            [webnf.dwn.util :refer [require-call-form config-ref guard-config!]]))
 
-(defprotocol Stopped
-  (-start [_]))
-(defprotocol Started
-  (-stop [_]))
-(defprotocol Stateful
-  (-dump [_])
-  (-restore [_ dump]))
+(s/def ::factory qualified-symbol?)
+(s/def ::config any?)
+(s/def ::container (config-ref ::wdc/container))
 
-(defrecord ContainerComponent [started container component]
-  Stopped
-  (-start [cmp] (if started
-                  cmp
-                  (assoc cmp
-                         :started true
-                         :component
-                         @(eval-in-container
-                           container
-                           'com.stuartsierra.component/start
-                           component))))
-  Started
-  (-stop [cmp] (if started
-                 (assoc cmp
-                        :started false
-                        :component @(eval-in-container
-                                     container
-                                     'com.stuartsierra.component/stop
-                                     component))
-                 cmp)))
+(s/def ::container-component
+  (s/keys :req-un [::factory ::config ::container]
+          :opt-un [::name]))
+
+(defrecord ContainerComponent [name factory config container component]
+  cmp/Lifecycle
+  (start [this]
+    (log/info "Starting Component" name factory "with config" config "on container" (:name container))
+    (if component
+      this
+      (assoc this :component
+             @(eval-in-container
+               container
+               (require-call-form factory config false
+                                  (partial list `cmp/start))))))
+  (stop [this]
+    (log/info "Stopping Component" name factory)
+    (if component
+      (assoc this :component
+             (do @(eval-in-container
+                   container 'com.stuartsierra.component/stop
+                   component)
+                 nil))
+      this)))
 
 (defn container-component [name component-sym container config start]
   (->ContainerComponent
@@ -43,3 +45,19 @@
                           #(list 'com.stuartsierra.component/start %)
                           identity)))))
 
+(defn container-component [{:keys [name factory config container]
+                            :or {name (gensym "component-")}
+                            :as cfg}]
+  (guard-config! ::container-component cfg "Invalid Container Config")
+  (let [[container' meta'] (if (keyword? container)
+                             [nil {::cmp/dependencies {:container container}}]
+                             [container nil])]
+   (ContainerComponent. name factory config container' nil meta' nil)))
+
+(defrecord LauncherComponent [main args container])
+
+(defn launcher-component [{:keys [container main args]}]
+  (let [[container' meta'] (if (keyword? container)
+                             [nil {::cmp/dependencies {:container container}}]
+                             [container nil])]
+    (LauncherComponent. main args container' meta' nil)))

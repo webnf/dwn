@@ -9,17 +9,22 @@ let
 in {
 "org.clojure" = {
   "clojure" = {
-    "DEFAULT" = [ "alias" "1.8.0" ];
-    "1.9.0-alpha11" = [ "mvn" "020dhb9gn7rlqwfkswbi2ldylyykf7ilz1yvcsky2pvajrg6zwmi" ];
+    "DEFAULT" = [ "alias" "1.9.0-alpha13" ];
+    "1.9.0-alpha13" = [ "mvn" "05d4r5gjbf0hx43v7174ndz2zsv1xdl9gh3kkw1z08dw4gliljck" ];
     "1.8.0" = [ "mvn" "1a30sdpn1rr50w7qfz6pn3z5i43fjq3z9qm1aa4cd9piwhgpy6h6" ];
   };
 } // (
   (versionedDep "tools.logging" "0.3.1" "0727j7861m2b8z7d55a863d8mnlb28cz6850rv2s2cvs95fv4mzx")
-//(versionedDep "tools.nrepl" "0.2.12" "2a30sdpn1rr50w7qfz6pn3z5i43fjq3z9qm1aa4cd9piwhgpy6h6")
+//(versionedDep "tools.nrepl" "0.2.12" "0s9bfxf0w0cv09284w8l1dqcxyiqvl7p0kr9xmv8q6h3fmxs2gg2")
 );
 "webnf" = {
   "dwn" = {
-    "DEFAULT" = [ "nix" ../../../artifact.nix ];
+    "DEFAULT" = [ "nix" ../../../artefact.nix ];
+  };
+};
+"webnf.dwn" = {
+  "nrepl" = {
+    "DEFAULT" = [ "nix" ../../../nrepl-cmp.nix ];
   };
 };
 "ch.qos.logback" = (
@@ -45,5 +50,14 @@ in {
 "com.stuartsierra" = (
   (versionedDep "component" "0.3.1" "06i7dxyl573k0l4f677nq2y96a5yv8jhwzm9ccwbxmh73xc4azcq")
 //(versionedDep "dependency" "0.2.0" "1krbb80jqk7cgszakn3kx0gk1vlzy5a7n6kyva8r42apydjis8s1")
+);
+"refactor-nrepl" = (
+  (versionedDep "refactor-nrepl" "2.1.0-alpha1" "1p359rcjb51i3212pv4vvy659jmj0ckxjanmqzg511czwn01h57x")
+);
+"cider" = (
+  (versionedDep "cider-nrepl" "0.13.0" "0icdaybyb1ln4zjxwa7g3x63d4z0p6liac5vfqwjlssg2xazg48x")
+);
+"org.tcrawley" = (
+  (versionedDep "dynapath" "0.2.3" "1pxaxr5bghbi358l5bfirm5arn0jzhpbip9l6kgs08f84h8lvl06")
 );
 }
