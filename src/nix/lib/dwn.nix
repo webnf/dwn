@@ -2,7 +2,7 @@
 , renderClasspath, cljCompile, jvmCompile, combinePathes
 , keyword-map, symbol, keyword, string, tagged
 , nix-list, nix-str, get, extract }: rec {
-
+/*
   artefactClasspath = cat: art:
    let
      dep = resolveDep cat art;
@@ -23,6 +23,10 @@
        then map (d: string (lib.getAttr d dep))
                 dwn.classpath-output-dirs
        else [ (lib.getAttr dwn.classpath-output-jar dep) ];
+*/
+
+  artifactClasspath = { roots, dependencies, checksums }:
+    let deps
 
   container = tagged (symbol "webnf.dwn" "container");
   component = tagged (symbol "webnf.dwn" "component");

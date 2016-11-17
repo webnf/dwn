@@ -16,10 +16,15 @@ in {
         default = false;
         description = "Whether to enable the dwn runner service";
       };
-      configFile = mkOption {
+      config = mkOption {
+        type = types.any;
+        default = null;
+        description = "Service config to be edn-printed and passed to the dwn service";
+      };
+      configLocation = mkOption {
         type = types.path;
-        default = ./config.edn;
-        description = "Config file in edn format";
+        default = "/etc/dwn.edn";
+        description = "Config file location";
       };
       workingDirectory = mkOption {
         default = "/var/empty";
