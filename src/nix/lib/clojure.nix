@@ -10,7 +10,11 @@ let callPackage = newScope thisns;
   inherit (edn.syntax) tagged hash-map keyword-map list vector set symbol keyword string int bool nil;
   inherit (edn.data) get get-in eq nth nix-str nix-list extract;
 
-  launcher = { classpath, codes, name ? "runnable-launcher" }: writeScript name ''
+  inherit lib;
+  depGraph = callPackage ./dep-graph.nix {};
+
+  launcher = { env, codes, name ? "runnable-launcher" }: writeScript name ''
+
     #!/bin/sh
     exec ${jdk.jre}/bin/java \
       -cp ${renderClasspath classpath} \
