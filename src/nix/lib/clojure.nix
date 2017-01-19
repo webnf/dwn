@@ -17,7 +17,7 @@ let callPackage = newScope thisns;
 
     #!/bin/sh
     exec ${jdk.jre}/bin/java \
-      -cp ${renderClasspath classpath} \
+      -cp ${renderClasspath env.classpath} \
       clojure.main -e "$(cat <<CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
     ${lib.concatStringsSep "\n\n;; ----\n\n" codes}
     CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
@@ -53,7 +53,7 @@ let callPackage = newScope thisns;
       inherit classpath aot;
     } ''
       mkdir -p $out
-      ${jdk.jre}/bin/java \
+      exec ${jdk.jre}/bin/java \
         -cp $out:$classpath \
         -Dclojure.compile.path=$out \
         -Dclojure.compiler.warn-on-reflection=${options.warnOnReflection or "true"} \
@@ -90,6 +90,16 @@ let callPackage = newScope thisns;
                              { inherit meta; };
 
   ## Maven
+
+  mvnResolve = { resolved-version, coordinate, sha1, ... }:
+    let version = lib.elemAt coordinate 2;
+        name    = lib.elemAt coordinate 1;
+        group   = lib.elemAt coordinate 0;
+    in fetchurl {
+      name = "${name}-${version}.jar";
+      urls = mavenMirrors group name version resolved-version;
+      inherit sha1;
+    };
 
   resolveAllDeps = cat:
     lib.mapAttrs (group: gcat:
@@ -145,9 +155,9 @@ let callPackage = newScope thisns;
   mvnCatalog = import ./repository.nix;
   mvnResolved = resolveAllDeps mvnCatalog;
 
-  mavenMirrors = group: name: version: let
+  mavenMirrors = group: name: version: resolvedVersion: let
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];
-    mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${version}.jar";
+    mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}.jar";
   in map mvnPath [
     http://repo1.maven.org/maven2
     https://clojars.org/repo
