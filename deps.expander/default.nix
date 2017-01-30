@@ -1,22 +1,18 @@
-{ cljNsLauncher, cljCompile, mvnResolve, renderClasspath, callPackage }:
+{ lib, compiledClasspath, mainLauncher, mvnResolve, defaultMavenRepos }:
 
-let bootstrap-classpath = map mvnResolve (import ./classpath.bootstrap.nix);
-
-in cljNsLauncher {
-
-  name = "dwn-deps-expander";
-  classpath = [
-      ./src ../nix.data/src
-      (cljCompile {
-        name = "dwn-deps-expander-classes";
-        classpath = renderClasspath ([ ./src ../nix.data/src ] ++ bootstrap-classpath);
-        aot = [ "webnf.dwn.deps.expander" ];
-        options = {
-          elideMeta = "'[:line :file :doc :added]'";
-          directLinking = "true";
-        };
-      })
-    ] ++ bootstrap-classpath;
+mainLauncher rec {
+  name = "dependency-expander";
   namespace = "webnf.dwn.deps.expander";
 
+  classpath = compiledClasspath {
+    name = "${name}-classpath";
+    cljSourceDirs = [ ./src ../nix.data/src ];
+    dependencyClasspath = map (mvnResolve defaultMavenRepos)
+                              (import ./classpath.bootstrap.nix);
+    aot = [ namespace ];
+    compilerOptions = {
+      elideMeta = [":line" ":file" ":doc" ":added"];
+      directLinking = true;
+    };
+  };
 }

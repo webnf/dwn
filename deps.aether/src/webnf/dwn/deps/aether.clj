@@ -10,8 +10,8 @@
             [clojure.edn :as edn]))
 
 (def default-repositories
-  {"central" "http://repo1.maven.org/maven2/"
-   "clojars" "https://clojars.org/repo/"})
+  {"central" "http://repo1.maven.org/maven2"
+   "clojars" "https://clojars.org/repo"})
 
 (defn temp-local-repo []
   (-> (Files/createTempDirectory "m2-" (into-array FileAttribute []))
@@ -72,7 +72,7 @@
          :coord (coordinate* art)
          :deps (mapv #(coordinate* (.getArtifact %))
                      (get-dependencies desc #{} config))
-         :sha1 (try (slurp (str base cs-loc))
+         :sha1 (try (slurp (str base "/" cs-loc))
                     (catch Exception e
                       (println "ERROR" "couldn't fetch sha-1" base cs-loc)
                       nil))
@@ -133,17 +133,14 @@
 (defn aether-config [& {:keys [system session local-repo offline transfer-listener mirror-selector repositories] :as config}]
   (merge-aether-config config))
 
-(defn read* [f]
-  (with-open [i (PushbackReader. (io/reader f))]
-    (edn/read i)))
-
-(defn -main [repo-out-file coordinates-file]
-  (let [repo (repo-for (read* coordinates-file)
+(defn -main [repo-out-file coordinates-str repos-str]
+  (let [repo (repo-for (edn/read-string coordinates-str)
                        (aether-config :include-optionals false
-                                      :include-scopes #{"compile"}))]
-    #_(with-open [o (io/writer repo-out-file)]
-        (doseq [s (data/emit-expr repo)]
-          (.write o (str s))))
+                                      :include-scopes #{"compile"}
+                                      :repositories
+                                      (into {}
+                                            (for [r (edn/read-string repos-str)]
+                                              [(str (gensym "repo")) r]))))]
     (with-open [o (io/writer repo-out-file)]
       (binding [*out* o]
         (pprint repo)))

@@ -51,10 +51,10 @@
   (with-open [i (PushbackReader. (io/reader f))]
     (edn/read i)))
 
-(defn -main [classpath-out-file coordinates-file repo-file & [fixed-versions-file]]
-  (let [classpath (expand-deps (read* coordinates-file)
-                               (if fixed-versions-file
-                                 (read* fixed-versions-file)
+(defn -main [classpath-out-file coordinates-str repo-file fixed-versions-str]
+  (let [classpath (expand-deps (edn/read-string coordinates-str)
+                               (if fixed-versions-str
+                                 (edn/read-string fixed-versions-str)
                                  {})
                                (read* repo-file))]
     (with-open [o (io/writer classpath-out-file)]
