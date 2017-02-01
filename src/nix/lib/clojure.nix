@@ -71,6 +71,7 @@ let callPackage = newScope thisns;
   in cljSourceDirs ++ javaSourceDirs ++ cljClasses ++ javaClasses ++ baseClasspath;
 
   generateDependencyClasspath = { dependencies ? []
+                        , overlayRepo ? {}
                         , closureRepo ? throw "Please pre-generate the repository for this closure"
                         , mavenRepos ? defaultMavenRepos
                         , fixedVersions ? []
@@ -80,25 +81,29 @@ let callPackage = newScope thisns;
   generateClosureRepo = { dependencies ? []
                         , mavenRepos ? defaultMavenRepos
                         , fixedVersions ? []
+                        , overlayRepo ? {}
                         , ... }:
-    aetherDownload mavenRepos (dependencies ++ fixedVersions);
+    aetherDownload mavenRepos (dependencies ++ fixedVersions) overlayRepo;
 
-  aetherDownload = repos: deps: runCommand "repo.edn" {
-   mvnRepos = toEdn repos;
-   mvnDeps = toEdn deps;
+  aetherDownload = repos: deps: overlay: runCommand "repo.edn" {
+   ednRepos = toEdn repos;
+   ednDeps = toEdn deps;
+   ednOverlay = toEdn overlay;
    runner = callPackage ../../../deps.aether { };
   } ''
     #!/bin/sh
-    exec $runner $out "$mvnDeps" "$mvnRepos"
+    ## set -xv
+    exec $runner $out "$ednDeps" "$ednRepos" "$ednOverlay"
   '';
-  depsExpander = repoEdn: deps: fixedVersions: runCommand "deps.nix" {
-    inherit repoEdn;
-    mvnDeps = toEdn deps;
-    mvnFixedVersions = toEdn fixedVersions;
+  depsExpander = repo: deps: fixedVersions: runCommand "deps.nix" {
+    inherit repo;
+    ednDeps = toEdn deps;
+    ednFixedVersions = toEdn fixedVersions;
     launcher = callPackage ../../../deps.expander { };
   } ''
     #!/bin/sh
-    exec $launcher $out "$mvnDeps" "$repoEdn" "$mvnFixedVersions";
+    ## set -xv
+    exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions";
   '';
 
   projectClasspath = args: compiledClasspath (args // {
@@ -192,19 +197,23 @@ let callPackage = newScope thisns;
 */
   ## Maven
 
-  mvnResolve = mavenRepos: { resolved-version, coordinate, sha1, ... }:
-    let version = lib.elemAt coordinate 2;
+  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1, ... }:
+    let version = lib.elemAt coordinate 4;
+        classifier = lib.elemAt coordinate 3;
+        extension = lib.elemAt coordinate 2;
         name    = lib.elemAt coordinate 1;
         group   = lib.elemAt coordinate 0;
     in fetchurl {
       name = "${name}-${version}.jar";
-      urls = mavenMirrors mavenRepos group name version resolved-version;
+      urls = mavenMirrors mavenRepos group name extension classifier version
+                          (if isNull resolved-version then version else resolved-version);
       inherit sha1;
     };
 
-  mavenMirrors = mavenRepos: group: name: version: resolvedVersion: let
+  mavenMirrors = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];
-    mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}.jar";
+    tag = if classifier == "" then "" else "-" + classifier;
+    mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}${tag}.${extension}";
   in map mvnPath mavenRepos;
 
   ## utilities / data structures

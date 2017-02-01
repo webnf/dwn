@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cp `nix-build --no-out-link ./aether.nix -A generatedClosureRepo` ./deps.aether/bootstrap-repo.edn
+cp "$(nix-build --show-trace --no-out-link ./aether.nix -A generatedClosureRepo)" ./deps.aether/bootstrap-repo.edn

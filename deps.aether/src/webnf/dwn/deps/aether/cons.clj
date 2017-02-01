@@ -36,7 +36,8 @@
    org.eclipse.aether.util.version.GenericVersionScheme)
   (:require [clojure.java.io :as io]
             [clojure.spec :as s]
-            [clojure.stacktrace :as st]))
+            [clojure.stacktrace :as st]
+            [clojure.string :as str]))
 
 ; Using HttpWagon (which uses apache httpclient) because the "LightweightHttpWagon"
 ; (which just uses JDK HTTP) reliably flakes if you attempt to resolve SNAPSHOT
@@ -156,28 +157,41 @@
 (defn repositories [repos {:keys [system session]}]
   (.newResolutionRepositories system session (mapv repository repos)))
 
-(defn- group
-  [group-artifact]
-  (or (namespace group-artifact) (name group-artifact)))
+(defn coordinate-info [[a1 a2 & [a3 a4 a5] :as args]]
+  ;; [group' artifact' extension' classifier' version' :as args]
+  (case (count args)
+    2 [a1 a1 "jar" "" a2]
+    3 [a1 a2 "jar" "" a3]
+    4 [a1 a2 a3 "" a4]
+    5 [a1 a2 a3 a4 a5]))
 
+(defn- split-opts [spec]
+  (if (map? (last spec))
+    [(butlast spec) (last spec)]
+    [spec {}]))
 
 (defn- coordinate-string
   "Produces a coordinate string with a format of
    <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>>
    given a lein-style dependency spec.  :extension defaults to jar."
-  [[group-artifact version & {:keys [classifier extension] :or {extension "jar"}}]]
-  (->> [(group group-artifact) (name group-artifact) extension classifier version]
-    (remove nil?)
-    (interpose \:)
-    (apply str)))
+  [coord]
+  (->> (coordinate-info coord)
+       (remove str/blank?)
+       (interpose \:)
+       (apply str)))
 
 (defn- exclusion
-  [[group-artifact & {:as opts}]]
-  (Exclusion.
-    (group group-artifact)
-    (name group-artifact)
-    (:classifier opts "*")
-    (:extension opts "*")))
+  [[s1 s2 s3 :as spec]]
+  (let [[group name {:strs [extension classifier]
+                     :as opts
+                     :or {extension "*"
+                          classifier "*"}}]
+        (case (count spec)
+          1 [s1 s1 {}]
+          2 [s1 s2 {}]
+          3 [s1 s2 s3])]
+  
+    (Exclusion. group name classifier extension)))
 
 (defn- normalize-exclusion-spec [spec]
   (if (symbol? spec)
@@ -185,12 +199,8 @@
     spec))
 
 (defc artifact Artifact
-  [[group-artifact version & {:keys [scope optional exclusions]} :as dep-spec]]
-  (DefaultArtifact. (coordinate-string dep-spec)))
-
-(defc nix-artifact Artifact
-  [[group artifact version]]
-  (DefaultArtifact. (str group \: artifact \: version)))
+  [coord]
+  (DefaultArtifact. (coordinate-string coord)))
 
 (def gvs (GenericVersionScheme.))
 
@@ -198,15 +208,16 @@
   (.parseVersion gvs s))
 
 (defc dependency Dependency
-  [[group-artifact version & {:keys [scope optional exclusions]
-                              :as opts
-                              :or {scope "compile"
-                                   optional false}}
-    :as dep-spec]]
-  (Dependency. (artifact dep-spec)
-               scope
-               optional
-               (map (comp exclusion normalize-exclusion-spec) exclusions)))
+  [spec']
+  (let [[spec {:strs [scope optional exclusions]
+               :as opts
+               :or {scope "compile"
+                    optional false}}]
+        (split-opts spec')]
+    (Dependency. (artifact spec)
+                 scope
+                 optional
+                 (map (comp exclusion normalize-exclusion-spec) exclusions))))
 
 
 (defn collection-request [deps {:keys [repositories]}]
