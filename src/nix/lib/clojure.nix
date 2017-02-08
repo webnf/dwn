@@ -68,7 +68,7 @@ let callPackage = newScope thisns;
         inherit aot;
         options = compilerOptions;
     }) ] else [];
-  in cljSourceDirs ++ javaSourceDirs ++ cljClasses ++ javaClasses ++ baseClasspath;
+  in (map (sourceDir devMode) cljSourceDirs) ++ javaSourceDirs ++ cljClasses ++ javaClasses ++ baseClasspath;
 
   generateDependencyClasspath = { dependencies ? []
                         , overlayRepo ? {}
@@ -179,24 +179,11 @@ let callPackage = newScope thisns;
     done
     cp -R out $out
   '';
-/*
-  sourceDirs = name: meta: dirs:
+
+  sourceDir = devMode: dir:
     if devMode
-    then lib.fold (dir: d@{ outputs, ... }:
-                   let
-                     outName = "out-${toString (lib.length outputs)}";
-                   in d // {
-                     outputs = outputs ++ [ outName ];
-                     "${outName}" = toString dir;
-                   })
-                  { type = "derivation";
-                    outputs = [];
-                    inherit meta; }
-                  dirs
-    else lib.recursiveUpdate (combinePathes name dirs)
-                             { inherit meta; };
-*/
-  ## Maven
+    then toString dir
+    else dir;
 
   mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, files ? null, ... }:
     if isNull files then
@@ -218,8 +205,6 @@ let callPackage = newScope thisns;
     tag = if classifier == "" then "" else "-" + classifier;
     mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}${tag}.${extension}";
   in map mvnPath mavenRepos;
-
-  ## utilities / data structures
 
   renderClasspath = classpath: lib.concatStringsSep ":" classpath;
 

@@ -4,6 +4,8 @@ project {
 
   name = "dwn";
 
+  devMode = true;
+
   cljSourceDirs = [ ./src/clj ];
   javaSourceDirs = [ ./src/jvm ];
 
