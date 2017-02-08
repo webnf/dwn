@@ -72,6 +72,12 @@ in rec {
       (lib.mapAttrsToList (key: val: {
          inherit key val;
        }) attrs);
+    string-map = attrs: hash-map
+      (c: syntax.string c.key)
+      (c: c.val)
+      (lib.mapAttrsToList (key: val: {
+        inherit key val;
+      }) attrs);
     vector = collection { type = "vector"; } "[" "]";
     set = collection { type = "set"; } "#{" "}";
     list = collection { type = "list"; } "(" ")";
@@ -112,7 +118,7 @@ in rec {
     else if lib.isAttrs val && lib.hasAttr "__toEdn" val
       then val
     else if ! lib.isDerivation val && lib.isAttrs val
-      then syntax.keyword-map (lib.mapAttrs (_: asEdn) val)
+      then syntax.string-map (lib.mapAttrs (_: asEdn) val)
     else if lib.isList val
       then syntax.vector (map asEdn val)
     else if lib.isInt val

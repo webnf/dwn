@@ -7,8 +7,8 @@ mainLauncher rec {
   classpath = compiledClasspath {
     name = "${name}-classpath";
     cljSourceDirs = [ ./src ../nix.data/src ];
-    dependencyClasspath = map (mvnResolve defaultMavenRepos)
-                              (import ./classpath.bootstrap.nix);
+    dependencyClasspath = lib.concatLists (map (mvnResolve defaultMavenRepos)
+                              (import ./classpath.bootstrap.nix));
     aot = [ namespace ];
     compilerOptions = {
       elideMeta = [":line" ":file" ":doc" ":added"];

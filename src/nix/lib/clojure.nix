@@ -76,7 +76,8 @@ let callPackage = newScope thisns;
                         , mavenRepos ? defaultMavenRepos
                         , fixedVersions ? []
                         , ... }:
-    map (mvnResolve mavenRepos) (import (depsExpander closureRepo dependencies fixedVersions));
+    lib.concatLists (map (mvnResolve mavenRepos)
+                         (import (depsExpander closureRepo dependencies fixedVersions)));
 
   generateClosureRepo = { dependencies ? []
                         , mavenRepos ? defaultMavenRepos
@@ -119,7 +120,7 @@ let callPackage = newScope thisns;
       classpath = projectClasspath args;
     in stdenv.mkDerivation {
       inherit name classpath;
-      closureRepo = import (generateClosureRepo args);
+      closureRepo = generateClosureRepo args;
       launchers = lib.mapAttrsToList (
           launcherName: nsName:
             mainLauncher {
@@ -197,18 +198,20 @@ let callPackage = newScope thisns;
 */
   ## Maven
 
-  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1, ... }:
+  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, files ? null, ... }:
+    if isNull files then
     let version = lib.elemAt coordinate 4;
         classifier = lib.elemAt coordinate 3;
         extension = lib.elemAt coordinate 2;
         name    = lib.elemAt coordinate 1;
         group   = lib.elemAt coordinate 0;
-    in fetchurl {
+    in [ (fetchurl {
       name = "${name}-${version}.jar";
       urls = mavenMirrors mavenRepos group name extension classifier version
                           (if isNull resolved-version then version else resolved-version);
       inherit sha1;
-    };
+    }) ]
+    else files;
 
   mavenMirrors = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];

@@ -112,8 +112,10 @@
 
 (defn download-info [coord' {:as config :keys [overlay]}]
   (let [coord (cons/coordinate-info coord')]
-    (if-let [desc (get-in overlay coord)]
-      (assoc desc :coord coord)
+    (if-let [{:strs [files dependencies]} (get-in overlay coord)]
+      {:files files
+       :coord coord
+       :dependencies dependencies}
       (maven-download-info coord config))))
 
 (defn dependency-coordinate [dep]
@@ -142,7 +144,9 @@
     (reduce (fn [res {:as dli :keys [coord resolved-version sha1 files dependencies]}]
               (assoc-in res coord
                         (cond-> {}
-                          (not= resolved-version (last coord)) (assoc :resolved-version resolved-version)
+                          (and
+                           (empty? files)
+                           (not= resolved-version (last coord))) (assoc :resolved-version resolved-version)
                           (not (str/blank? sha1)) (assoc :sha1 sha1)
                           (not (empty? files)) (assoc :files files)
                           (not (empty? dependencies)) (assoc :dependencies dependencies))))
