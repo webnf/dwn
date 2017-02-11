@@ -8,4 +8,4 @@ in target.closureRepo
 
 REPO_FILE=$(nix-build --show-trace --no-out-link -E "$EXPR")
 
-cp -f $REPO_FILE $2
+exec cp -f $REPO_FILE $2

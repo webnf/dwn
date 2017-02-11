@@ -1,0 +1,3 @@
+#!/bin/sh -e
+
+exec ./gen-repo.sh ./project.nix repo.edn

@@ -5,11 +5,12 @@ then
     echo "Already running at PID `cat devel.pid`"
     exit 1
 fi
-CMD=$(nix-build --no-out-link --show-trace -E '
+CMD="$(nix-build --no-out-link --show-trace -E '
 ((import <nixpkgs> {})
  .callPackage ./src/nix/lib/clojure.nix {})
-.callPackage ./dwn-next.nix {}
-')
+.callPackage ./project.nix {}
+')/bin/dwn devel.socket"
+
 $CMD &
 CHILDPID=$!
 echo "Running '$CMD' with PPID $$; CPID $CHILDPID"

@@ -1,6 +1,6 @@
-{ project, callPackage }:
+{ project, callPackage, lib }:
 
-project {
+project rec {
 
   name = "dwn";
 
@@ -12,7 +12,7 @@ project {
   mainNs = {
     dwn = "webnf.dwn.boot";
   };
-  aot = [ "webnf.dwn.boot" ];
+  aot = lib.optionals (! devMode) [ "webnf.dwn.boot" ];
   compilerOptions = {
     directLinking = true;
     elideMeta = [ ":line" ":file" ":doc" ":added" ];

@@ -62,7 +62,7 @@ let callPackage = newScope thisns;
         classpath = baseClasspath;
         sources = javaSourceDirs;
     }) ] else [];
-    cljClasses = if lib.length cljSourceDirs > 0 then [ (cljCompile {
+    cljClasses = if (lib.length cljSourceDirs > 0) && (lib.length aot > 0) then [ (cljCompile {
         name = name + "-clj-classes";
         classpath = cljSourceDirs ++ javaSourceDirs ++ javaClasses ++ baseClasspath;
         inherit aot;
