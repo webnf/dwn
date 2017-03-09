@@ -1,11 +1,8 @@
-{ mvnCatalog, dwn, keyword, symbol, keyword-map
-, repository ? mvnCatalog
-, configLocation ? "/dev/null" }:
+{ dwn, keyword, symbol, keyword-map }:
 
 keyword-map {
-  "webnf.dwn/app-loader" = dwn.container {
-    classpath = dwn.artefactClasspath repository ["webnf" "dwn"];
-  };
+  # defined implicitly from project classpath
+  # "webnf.dwn/app-loader" = dwn.container { };
 
   "webnf.dwn.nrepl/cider-mixin-container" = dwn.container {
     parent = keyword "webnf.dwn" "app-loader";

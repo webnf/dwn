@@ -1,32 +1,9 @@
 { resolveDep, edn, lib, mvnCatalog, cljNsLauncher, toEdn
 , renderClasspath, cljCompile, jvmCompile, combinePathes
 , keyword-map, symbol, keyword, string, tagged
-, nix-list, nix-str, get, extract }: rec {
-/*
-  artefactClasspath = cat: art:
-   let
-     dep = resolveDep cat art;
-     inherit (dep.meta) dwn;
-   in [ (keyword-map ({
-           name = symbol dwn.group dwn.name;
-           inherit (dwn) version;
-         } // (if lib.hasAttr "classpath-output-dirs" dwn
-               then { source-dirs = map (d: string (lib.getAttr d dep))
-                                        dwn.classpath-output-dirs; }
-               else { jar-file = string (lib.getAttr dwn.classpath-output-jar dep); }))) ]
-      ++ (lib.concatMap (artefactClasspath dwn.repository) dwn.dependencies);
-  artefactOutputs = cat: art:
-    let
-      dep = resolveDep cat art;
-      inherit (dep.meta) dwn;
-    in if lib.hasAttr "classpath-output-dirs" dwn
-       then map (d: string (lib.getAttr d dep))
-                dwn.classpath-output-dirs
-       else [ (lib.getAttr dwn.classpath-output-jar dep) ];
-*/
+, nix-list, nix-str, get, extract }:
 
-  artifactClasspath = { roots, dependencies, checksums }:
-    let deps
+rec {
 
   container = tagged (symbol "webnf.dwn" "container");
   component = tagged (symbol "webnf.dwn" "component");

@@ -2,7 +2,7 @@
 
 project rec {
 
-  name = "dwn";
+  name = "webnf.dwn";
 
   devMode = true;
 
@@ -10,7 +10,7 @@ project rec {
   javaSourceDirs = [ ./src/jvm ];
 
   mainNs = {
-    dwn = "webnf.dwn.boot";
+    boot = "webnf.dwn.boot";
   };
   aot = lib.optionals (! devMode) [ "webnf.dwn.boot" ];
   compilerOptions = {

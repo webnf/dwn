@@ -1,6 +1,20 @@
-{ stdenv, newScope, jdk, lib, writeScript, fetchurl, runCommand }:
+{ stdenv, newScope, jdk, lib, writeScript, writeText, fetchurl, runCommand }:
 
 let callPackage = newScope thisns;
+    lib' = lib // {
+      types = lib.types // {
+        symbol = lib.mkOptionType {
+          name = "symbol";
+          merge = lib.mergeOneOption;
+          check = s: ! lib.hasPrefix ":" s;
+        };
+        keyword = lib.mkOptionType {
+          name = "keyword";
+          merge = lib.mergeOneOption;
+          check = lib.hasPrefix ":";
+        };
+      };
+    };
     thisns = { inherit callPackage; } // rec {
   defaultMavenRepos = [ http://repo1.maven.org/maven2
                         https://clojars.org/repo ];
@@ -11,7 +25,7 @@ let callPackage = newScope thisns;
   inherit (edn.syntax) tagged hash-map keyword-map list vector set symbol keyword string int bool nil;
   inherit (edn.data) get get-in eq nth nix-str nix-list extract;
 
-  inherit lib;
+  lib = lib';
 
   classLauncher = { name, classpath, class, jvmArgs ? []
                   , prefixArgs ? [], suffixArgs ? [], debug ? false }:
@@ -57,25 +71,31 @@ let callPackage = newScope thisns;
     , ...
   }: let
     baseClasspath = resourceDirs ++ dependencyClasspath;
-    javaClasses = if lib.length javaSourceDirs > 0 then [ (jvmCompile {
+    javaClasses = if lib.length javaSourceDirs > 0
+      then [ (jvmCompile {
         name = name + "-java-classes";
         classpath = baseClasspath;
         sources = javaSourceDirs;
-    }) ] else [];
-    cljClasses = if (lib.length cljSourceDirs > 0) && (lib.length aot > 0) then [ (cljCompile {
+      }) ] else [];
+    cljClasses = if (lib.length cljSourceDirs > 0) && (lib.length aot > 0)
+      then [ (cljCompile {
         name = name + "-clj-classes";
         classpath = cljSourceDirs ++ javaSourceDirs ++ javaClasses ++ baseClasspath;
         inherit aot;
         options = compilerOptions;
-    }) ] else [];
-  in (map (sourceDir devMode) cljSourceDirs) ++ javaSourceDirs ++ cljClasses ++ javaClasses ++ baseClasspath;
+      }) ] else [];
+  in (map (sourceDir devMode) cljSourceDirs)
+     ++ javaSourceDirs
+     ++ cljClasses
+     ++ javaClasses
+     ++ baseClasspath;
 
   generateDependencyClasspath = { dependencies ? []
-                        , overlayRepo ? {}
-                        , closureRepo ? throw "Please pre-generate the repository for this closure"
-                        , mavenRepos ? defaultMavenRepos
-                        , fixedVersions ? []
-                        , ... }:
+                                , overlayRepo ? {}
+                                , closureRepo ? throw "Please pre-generate the repository for this closure"
+                                , mavenRepos ? defaultMavenRepos
+                                , fixedVersions ? []
+                                , ... }:
     lib.concatLists (map (mvnResolve mavenRepos)
                          (import (depsExpander closureRepo dependencies fixedVersions)));
 
@@ -87,10 +107,10 @@ let callPackage = newScope thisns;
     aetherDownload mavenRepos (dependencies ++ fixedVersions) overlayRepo;
 
   aetherDownload = repos: deps: overlay: runCommand "repo.edn" {
-   ednRepos = toEdn repos;
-   ednDeps = toEdn deps;
-   ednOverlay = toEdn overlay;
-   runner = callPackage ../../../deps.aether { };
+    ednRepos = toEdn repos;
+    ednDeps = toEdn deps;
+    ednOverlay = toEdn overlay;
+    runner = callPackage ../../../deps.aether { };
   } ''
     #!/bin/sh
     ## set -xv
@@ -111,15 +131,59 @@ let callPackage = newScope thisns;
     dependencyClasspath = generateDependencyClasspath args;
   });
 
+  projectDescriptor = args@{
+                        name
+                      , mainNs
+                      , components
+                      , ... }:
+                      classpath:
+                      binder@{
+                        parent
+                      , ...}:
+  let containerName = "${name}/container"; in
+  keyword-map ({
+      "${containerName}" = dwn.container {
+        inherit parent classpath;
+      }
+    } // lib.listToAttr ((projectNsLaunchers containerName mainNs binder)
+                      ++ (projectComponents containerName components binder))
+  );
+
+  projectNsLaunchers = container: mainNs: { mainArgs }:
+  lib.mapAttrsToList (
+      name: ns: {
+        inherit name;
+        value = dwn.ns-launcher {
+          inherit container;
+          main = symbol null ns;
+          args = lib.getAttr name mainArgs;
+        };
+      };
+  ) mainNs;
+
+  projectComponents = container: components: { componentConfig }:
+  lib.mapAttrsToList (
+      name: { factory, options ? {} }: {
+        inherit name;
+        value = dwn.component {
+          inherit factory container;
+          config = mkConfig options (lib.getAttr name componentConfig);
+        };
+      };
+  ) components;
+
+  mkConfig = optionsDecl: options: options; ## FIXME validate, fill defaults
+
   project = args@{
-      name
-    , mainNs ? {}
-    , jvmArgs ? []
-    , ...
-    }: let
+              name
+            , mainNs ? {}
+            , jvmArgs ? []
+            , ... }:
+    let
       classpath = projectClasspath args;
     in stdenv.mkDerivation {
       inherit name classpath;
+      descriptor = projectDescriptor args classpath;
       closureRepo = generateClosureRepo args;
       launchers = lib.mapAttrsToList (
           launcherName: nsName:

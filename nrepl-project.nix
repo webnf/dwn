@@ -1,8 +1,10 @@
-{ project }:
+{ project, symbol, lib }:
 
 project {
 
-  name = "nrepl-cmp";
+  name = "webnf.dwn.nrepl";
+
+  devMode = true;
 
   cljSourceDirs = [ ./nrepl-cmp ];
   dependencies = [
@@ -11,4 +13,33 @@ project {
     ["refactor-nrepl" "2.3.0-SNAPSHOT"]
   ];
 
+  aot = lib.optionals (! devMode) [ "webnf.dwn.nrepl" ];
+
+  components = {
+    server = {
+      factory = symbol "webnf.dwn.nrepl" "nrepl";
+      options = with lib; {
+        host = mkOption {
+          type = types.string;
+          doc = "host name / ip address to bind to";
+          default = "0.0.0.0";
+        };
+        port = mkOption {
+          type = types.nullOr types.int;
+          doc = "port to bind to";
+          default = null;
+        };
+        middleware = mkOption {
+          type = types.listOf types.symbol;
+          doc = "Nrepl middlewares";
+          default = [ ];
+        };
+        enable-cider = mkOption {
+          type = types.boolean;
+          doc = "Whether to add cider middleware";
+          default = true;
+        };
+      };
+    };
+  };
 }
