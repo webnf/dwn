@@ -33,25 +33,32 @@
                  (reify SignalHandler
                    (handle [_ sig] (thunk signal)))))
 
-(defn -main [cfg-pipe]
-  (let [socket-server (UnixDomainSocketServer. cfg-pipe JUDS/SOCK_STREAM 1)
-        tih (fn [_]
-              (try
-                (log/info "SIG" :TERM "/" :INT "handler fired, shutting down")
-                (shutdown-agents)
-                (.unlink socket-server)
-                (catch Exception e
-                  (log/error e "during shutdown")
-                  (System/exit 1))
-                (finally (System/exit 0))))]
-    (install-handler! :TERM tih)
-    (install-handler! :INT tih)
-    (log/info "Started up, waiting for config on" cfg-pipe)
-    (loop []
-      (with-open [sock (.accept socket-server)
-                  is (.getInputStream sock)
-                  os (.getOutputStream sock)]
-        (try (update! is os)
-             (catch Exception e
-               (log/error e "During config read"))))
-      (recur))))
+(defn -main [cfg-server]
+  (let [server (io/file cfg-server)]
+    (when (.delete server)
+      (log/warn "Unlinking previous socket"))
+    (let [socket-server (UnixDomainSocketServer. cfg-server JUDS/SOCK_STREAM 1)
+          tih (fn [_]
+                (try
+                  (log/info "SIG" :TERM "/" :INT "handler fired, shutting down")
+                  (shutdown-agents)
+                  (.unlink socket-server)
+                  (catch Exception e
+                    (log/error e "during shutdown")
+                    (System/exit 1))
+                  (finally (System/exit 0))))]
+      (try
+        (install-handler! :TERM tih)
+        (install-handler! :INT tih)
+        (log/info "Started up, waiting for config on" cfg-server)
+        (loop []
+          (with-open [sock (.accept socket-server)
+                      is (.getInputStream sock)
+                      os (.getOutputStream sock)]
+            (try (update! is os)
+                 (catch Exception e
+                   (log/error e "During config read"))))
+          (recur))
+        (catch Exception e
+          (log/fatal e "Unexpected exit, running shutdown routines"))
+        (finally (tih nil))))))

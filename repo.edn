@@ -34,54 +34,54 @@
  {"logback"
   {"jar"
    {""
-    {"0.2.0-alpha1"
-     {:sha1 "c55edd3238b75a4bd5a191143afa4858cd8a6944",
+    {"0.2.0-alpha2"
+     {:sha1 "435e8d61aebcb6ea86b2b27b298188514585c80e",
       :dependencies
-      [["ch.qos.logback" "logback-classic" "1.1.8"]
-       ["org.slf4j" "slf4j-api" "1.7.22"]
-       ["org.slf4j" "log4j-over-slf4j" "1.7.22"]
-       ["org.slf4j" "jcl-over-slf4j" "1.7.22"]
-       ["org.slf4j" "jul-to-slf4j" "1.7.22"]]}}}}},
+      [["ch.qos.logback" "logback-classic" "1.2.1"]
+       ["org.slf4j" "slf4j-api" "1.7.24"]
+       ["org.slf4j" "log4j-over-slf4j" "1.7.24"]
+       ["org.slf4j" "jcl-over-slf4j" "1.7.24"]
+       ["org.slf4j" "jul-to-slf4j" "1.7.24"]]}}}}},
  "ch.qos.logback"
  {"logback-classic"
   {"jar"
    {""
-    {"1.1.8"
-     {:sha1 "e54f49a227611976642f81cf2106b81c1ece8bf5",
+    {"1.2.1"
+     {:sha1 "706a8b8206ead3683ec639dd270d11fd948fbb0e",
       :dependencies
-      [["ch.qos.logback" "logback-core" "1.1.8"]
-       ["org.slf4j" "slf4j-api" "1.7.21"]]}}}},
+      [["ch.qos.logback" "logback-core" "1.2.1"]
+       ["org.slf4j" "slf4j-api" "1.7.22"]]}}}},
   "logback-core"
   {"jar"
-   {"" {"1.1.8" {:sha1 "0b4d1c3dea91727faf8b3d19cf4b9b972d6c0b89"}}}}},
+   {"" {"1.2.1" {:sha1 "0378913dfc3c6c71e7e2a2853eff2c3e8ac27599"}}}}},
  "org.slf4j"
  {"slf4j-api"
   {"jar"
    {""
-    {"1.7.21" {:sha1 "139535a69a4239db087de9bab0bee568bf8e0b70"},
-     "1.7.22" {:sha1 "a1c83373863cec7ae8d89dc1c5722d8cb6ec0309"}}}},
+    {"1.7.22" {:sha1 "a1c83373863cec7ae8d89dc1c5722d8cb6ec0309"},
+     "1.7.24" {:sha1 "3f6b4bd4f8dbe8d4bea06d107a3826469b85c3e9"}}}},
   "log4j-over-slf4j"
   {"jar"
    {""
-    {"1.7.22"
-     {:sha1 "a527c37e9ca6c3d19ba298edd4aa344ca751a203",
-      :dependencies [["org.slf4j" "slf4j-api" "1.7.22"]]}}}},
+    {"1.7.24"
+     {:sha1 "6ab46c51a3848286a0db3ba7b22037b3834c3c44",
+      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}},
   "jcl-over-slf4j"
   {"jar"
    {""
-    {"1.7.22"
-     {:sha1 "86ceac14535af5a42c8fb0d06d79b925dd3cb263",
-      :dependencies [["org.slf4j" "slf4j-api" "1.7.22"]]}}}},
+    {"1.7.24"
+     {:sha1 "e6a8629079856a2aa7862c6327ccf6dd1988d7fc",
+      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}},
   "jul-to-slf4j"
   {"jar"
    {""
-    {"1.7.22"
-     {:sha1 "b0429e950b3d2bc2c39c1bacafac753edbe3781c",
-      :dependencies [["org.slf4j" "slf4j-api" "1.7.22"]]}}}}},
+    {"1.7.24"
+     {:sha1 "25a2be668cb2ad1d05d76c0773df73b4b53617fd",
+      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}}},
  "webnf"
  {"juds"
   {"jar"
    {""
     {"CUSTOM"
      {:files
-      ["/nix/store/rqpxghbbm92fkdy02mivm5b4xz8xwgss-juds-0.95/lib"]}}}}}}
+      ["/nix/store/d9s21sjqfd5sxlskmp0fihix9y2rwjqn-juds-0.95/lib"]}}}}}}

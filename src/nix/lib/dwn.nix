@@ -1,5 +1,4 @@
-{ resolveDep, edn, lib, mvnCatalog, cljNsLauncher, toEdn
-, renderClasspath, cljCompile, jvmCompile, combinePathes
+{ lib, shellBinder
 , keyword-map, symbol, keyword, string, tagged
 , nix-list, nix-str, get, extract }:
 
@@ -9,46 +8,7 @@ rec {
   component = tagged (symbol "webnf.dwn" "component");
   ns-launcher = tagged (symbol "webnf.dwn" "ns-launcher");
 
-  build = { group, name, version, dependencies
-          , repository ? mvnCatalog
-          , source-paths ? []
-          , java-source-paths ? []
-          , aot ? [] }: let
-       base-classpath = renderClasspath (
-           source-paths ++ java-source-paths
-           ++ (lib.concatMap (artefactOutputs repository) dependencies)
-         );
-       jvmClasses = jvmCompile {
-         name = "${group}-${name}-jvm-classes-${version}";
-         classpath = base-classpath;
-         sources = java-source-paths;
-       };
-       cljClasses = cljCompile {
-         name = "${group}-${name}-clj-classes-${version}";
-         classpath = "${jvmClasses}:${base-classpath}";
-         inherit aot;
-       };
-       sources = combinePathes "${group}-${name}-sources-${version}" (
-         source-paths ++ java-source-paths
-       );
-       hasJvm = lib.length java-source-paths > 0;
-       hasAot = lib.length aot > 0;
-    in combinePathes "${group}-${name}-${version}" (
-         (lib.optional hasJvm jvmClasses)
-      ++ (lib.optional hasAot cljClasses)
-      ++ sources
-    ) // {
-      inherit jvmClasses cljClasses sources;
-      meta.dwn = {
-        inherit group name version dependencies repository;
-        classpath-output-dirs =
-          ## FIXME guard collisions
-             (lib.optional hasJvm "jvmClasses")
-          ++ (lib.optional hasAot "cljClasses")
-          ++ [ "sources" ];
-      };
-    };
-
+  /*
   componentLauncher = cfgFile: componentKey:
     let
       inherit (cfgFile.meta.dwn) config;
@@ -70,5 +30,6 @@ rec {
       namespace = nix-str (get launcherConfig (keyword null "main"));
       suffixArgs = [ cfgFile ];
     };
+*/
 }
       

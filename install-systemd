@@ -1,0 +1,13 @@
+#!/bin/sh -e
+
+mkdir -p ~/.config/systemd/user
+rm ~/.config/systemd/dwn -f
+nix-build shell.nix -A dwnSystemd --out-link ~/.config/systemd/dwn
+
+for f in dwn.service; do
+    if [ ! -f ~/.config/systemd/user/$f ]; then
+        ln -s ~/.config/systemd/dwn/$f ~/.config/systemd/user/$f
+    fi
+done
+
+systemctl --user daemon-reload

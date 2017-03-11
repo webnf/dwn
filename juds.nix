@@ -1,4 +1,4 @@
-{ stdenv, stdenv_32bit, jdk, fetchFromGitHub, fetchurl, autoconf }:
+{ stdenv, jdk, fetchFromGitHub, fetchurl, autoconf }:
 let
 
   version = "0.95";

@@ -1,6 +1,6 @@
-{ lib, compiledClasspath, mainLauncher, mvnResolve, defaultMavenRepos }:
+{ lib, compiledClasspath, shellBinder, mvnResolve, defaultMavenRepos }:
 
-mainLauncher rec {
+shellBinder.mainLauncher rec {
   name = "dependency-expander";
   namespace = "webnf.dwn.deps.expander";
 

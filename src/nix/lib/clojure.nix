@@ -27,38 +27,42 @@ let callPackage = newScope thisns;
 
   lib = lib';
 
-  classLauncher = { name, classpath, class, jvmArgs ? []
-                  , prefixArgs ? [], suffixArgs ? [], debug ? false }:
-    writeScript name ''
-      #!/bin/sh
-      ${if debug then "set -vx" else ""}
-      exec ${jdk.jre}/bin/java \
-        -cp ${renderClasspath classpath} \
-        ${toString jvmArgs} \
-        ${class} \
-        ${toString prefixArgs} \
-        "$@" ${toString suffixArgs}
-    '';
+  shellBinder = rec {
 
-  scriptLauncher = { name, classpath, codes, jvmArgs ? [], debug ? false }:
-    classLauncher {
-      inherit name classpath jvmArgs debug;
-      class = "clojure.main";
-      prefixArgs = [ "-e" ''
-        "$(cat <<CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
-        ${lib.concatStringsSep "\n\n;; ----\n\n" codes}
-        CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
-        )"
-      '' ];
-    };
+    classLauncher = { name, classpath, class, jvmArgs ? []
+                    , prefixArgs ? [], suffixArgs ? [], debug ? false }:
+      writeScript name ''
+        #!/bin/sh
+        ${if debug then "set -vx" else ""}
+        exec ${jdk.jre}/bin/java \
+          -cp ${renderClasspath classpath} \
+          ${toString jvmArgs} \
+          ${class} \
+          ${toString prefixArgs} \
+          "$@" ${toString suffixArgs}
+      '';
 
-  mainLauncher = { name, classpath, namespace, jvmArgs ? []
-                 , prefixArgs ? [], suffixArgs ? [], debug ? false }:
-    classLauncher {
-      inherit name classpath jvmArgs suffixArgs debug;
-      class = "clojure.main";
-      prefixArgs = [ "-m" namespace ] ++ prefixArgs;
-    };
+    scriptLauncher = { name, classpath, codes, jvmArgs ? [], debug ? false }:
+      classLauncher {
+        inherit name classpath jvmArgs debug;
+        class = "clojure.main";
+        prefixArgs = [ "-e" ''
+          "$(cat <<CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
+          ${lib.concatStringsSep "\n\n;; ----\n\n" codes}
+          CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
+          )"
+        '' ];
+      };
+
+    mainLauncher = { name, classpath, namespace, jvmArgs ? []
+                   , prefixArgs ? [], suffixArgs ? [], debug ? false }:
+      classLauncher {
+        inherit name classpath jvmArgs suffixArgs debug;
+        class = "clojure.main";
+        prefixArgs = [ "-m" namespace ] ++ prefixArgs;
+      };
+      
+  };
 
   compiledClasspath = {
       name, dependencyClasspath
@@ -92,9 +96,10 @@ let callPackage = newScope thisns;
 
   generateDependencyClasspath = { dependencies ? []
                                 , overlayRepo ? {}
-                                , closureRepo ? throw "Please pre-generate the repository for this closure"
+                                , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
                                 , mavenRepos ? defaultMavenRepos
                                 , fixedVersions ? []
+                                , name
                                 , ... }:
     lib.concatLists (map (mvnResolve mavenRepos)
                          (import (depsExpander closureRepo dependencies fixedVersions)));
@@ -133,43 +138,42 @@ let callPackage = newScope thisns;
 
   projectDescriptor = args@{
                         name
-                      , mainNs
-                      , components
+                      , mainNs ? {}
+                      , components ? {}
                       , ... }:
                       classpath:
                       binder@{
-                        parent
+                        parentLoader ? keyword "dwn.base" "app-loader"
                       , ...}:
   let containerName = "${name}/container"; in
   keyword-map ({
       "${containerName}" = dwn.container {
-        inherit parent classpath;
-      }
-    } // lib.listToAttr ((projectNsLaunchers containerName mainNs binder)
-                      ++ (projectComponents containerName components binder))
-  );
+        inherit parentLoader classpath;
+      };
+    } // lib.listToAttrs ((projectNsLaunchers containerName mainNs binder)
+                       ++ (projectComponents containerName components binder)));
 
-  projectNsLaunchers = container: mainNs: { mainArgs }:
+  projectNsLaunchers = container: mainNs: { mainArgs ? {}, ... }:
   lib.mapAttrsToList (
       name: ns: {
         inherit name;
         value = dwn.ns-launcher {
           inherit container;
           main = symbol null ns;
-          args = lib.getAttr name mainArgs;
+          args = mainArgs.${name} or [];
         };
-      };
+      }
   ) mainNs;
 
-  projectComponents = container: components: { componentConfig }:
+  projectComponents = container: components: { componentConfig ? {}, ... }:
   lib.mapAttrsToList (
       name: { factory, options ? {} }: {
         inherit name;
         value = dwn.component {
           inherit factory container;
-          config = mkConfig options (lib.getAttr name componentConfig);
+          config = mkConfig options componentConfig.${name} or {};
         };
-      };
+      }
   ) components;
 
   mkConfig = optionsDecl: options: options; ## FIXME validate, fill defaults
@@ -179,13 +183,10 @@ let callPackage = newScope thisns;
             , mainNs ? {}
             , jvmArgs ? []
             , ... }:
+            { mainLauncher, ... }@binder:
     let
       classpath = projectClasspath args;
-    in stdenv.mkDerivation {
-      inherit name classpath;
-      descriptor = projectDescriptor args classpath;
-      closureRepo = generateClosureRepo args;
-      launchers = lib.mapAttrsToList (
+      launchers = lib.mapAttrs (
           launcherName: nsName:
             mainLauncher {
               inherit classpath jvmArgs;
@@ -193,9 +194,17 @@ let callPackage = newScope thisns;
               namespace = nsName;
             }
         ) mainNs;
+    in stdenv.mkDerivation {
+      inherit name classpath;
+      meta.dwn = {
+        descriptor = toEdnPP (projectDescriptor args classpath binder);
+        inherit launchers;
+      };
+      launcherScripts = lib.attrValues launchers;
+      closureRepo = generateClosureRepo args;
       buildCommand = ''
         mkdir -p $out/bin $out/share/dwn/classpath
-        for l in $launchers; do
+        for l in $launcherScripts; do
           cp $l $out/bin/$(stripHash $l)
         done
         for c in $classpath; do

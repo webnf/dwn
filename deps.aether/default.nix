@@ -1,4 +1,4 @@
-{ projectClasspath, mainLauncher, generateClosureRepo }:
+{ projectClasspath, shellBinder, generateClosureRepo }:
 let dependencies = [
       ["org.clojure" "clojure" "1.9.0-alpha14"]
       ["org.apache.maven" "maven-aether-provider" "3.3.9"]
@@ -10,7 +10,7 @@ let dependencies = [
       ["org.apache.maven.wagon" "wagon-http" "2.10"]
       ["org.apache.maven.wagon" "wagon-ssh" "2.10"]
     ];
-in (mainLauncher rec {
+in (shellBinder.mainLauncher rec {
   name = "aether-downloader";
   namespace = "webnf.dwn.deps.aether";
   classpath = projectClasspath {

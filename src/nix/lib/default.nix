@@ -1,1 +1,1 @@
-(import <nixpkgs> {}).callPackage ./clojure.nix {}
+{ callPackage }: callPackage ./clojure.nix {}

@@ -1,0 +1,7 @@
+[Unit]
+Description=`dwn` clojure runner at @socket@
+
+[Service]
+Type=simple
+ExecStart=@launcher@ @socket@
+ExecStartPost=/bin/sh -c 'while [ ! -S @socket@ ]; do sleep 0.2; done'

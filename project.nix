@@ -1,10 +1,10 @@
-{ project, callPackage, lib }:
+{ project, callPackage, lib, devMode }:
 
 project rec {
 
   name = "webnf.dwn";
 
-  devMode = true;
+  inherit devMode;
 
   cljSourceDirs = [ ./src/clj ];
   javaSourceDirs = [ ./src/jvm ];
@@ -23,7 +23,7 @@ project rec {
     ["org.clojure" "test.check" "0.9.0"]
     ["org.clojure" "tools.logging" "0.3.1"]
     ["com.stuartsierra" "component" "0.3.2"]
-    ["webnf.deps" "logback" "0.2.0-alpha1"]
+    ["webnf.deps" "logback" "0.2.0-alpha2"]
     ["webnf" "juds" "CUSTOM"]
   ];
 

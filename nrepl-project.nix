@@ -1,10 +1,10 @@
-{ project, symbol, lib }:
+{ project, symbol, lib, devMode }:
 
 project {
 
   name = "webnf.dwn.nrepl";
 
-  devMode = true;
+  inherit devMode;
 
   cljSourceDirs = [ ./nrepl-cmp ];
   dependencies = [
@@ -42,4 +42,5 @@ project {
       };
     };
   };
+  closureRepo = ./nrepl-repo.edn;
 }
