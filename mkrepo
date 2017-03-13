@@ -1,3 +1,3 @@
 #!/bin/sh -e
 
-exec ./gen-repo.sh ./project.nix repo.edn
+exec ./gen-repo.sh dwn repo.edn

@@ -1,11 +1,5 @@
-#!/bin/sh -e
+#!/bin/sh -e"
 
-EXPR="let
-  pkgs = (import <nixpkgs> {}).callPackage ./src/nix/lib/clojure.nix {};
-  target = pkgs.callPackage $1 {};
-in target.closureRepo
-"
-
-REPO_FILE=$(nix-build --show-trace --no-out-link -E "$EXPR")
+REPO_FILE=$(nix-build --show-trace --no-out-link shell.nix -A $1.closureRepo)
 
 exec cp -f $REPO_FILE $2

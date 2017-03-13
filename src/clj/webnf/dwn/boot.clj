@@ -35,6 +35,8 @@
 
 (defn -main [cfg-server]
   (let [server (io/file cfg-server)]
+    (when (.mkdirs (.getParentFile server))
+      (log/info "Created socket directory" (.getParent server)))
     (when (.delete server)
       (log/warn "Unlinking previous socket"))
     (let [socket-server (UnixDomainSocketServer. cfg-server JUDS/SOCK_STREAM 1)
