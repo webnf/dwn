@@ -2,13 +2,42 @@
  {"clojure"
   {"jar"
    {""
-    {"1.9.0-alpha14"
-     {:sha1 "fa096515988cec810a2c75cdbd74d7d3826d414f"},
+    {"1.9.0-alpha16"
+     {:sha1 "9d873903c39e756f1ca3472075fe9c1a7f0283ea",
+      :dependencies
+      [["org.clojure"
+        "spec.alpha"
+        "0.1.94"
+        {"exclusions" [["org.clojure" "clojure"]]}]
+       ["org.clojure"
+        "core.specs.alpha"
+        "0.1.10"
+        {"exclusions"
+         [["org.clojure" "clojure"] ["org.clojure" "spec.alpha"]]}]]},
+     "1.9.0-alpha15"
+     {:sha1 "d239fa707e1545ca63a9135defea7ad9c7f36504"},
      "1.2.0" {:sha1 "2b63087f3d0e3076db16d7ede71018d9ea694b89"}}}},
+  "spec.alpha"
+  {"jar"
+   {""
+    {"0.1.94"
+     {:sha1 "4cf90613157c002e793f97e15189bfa7a27c1d5e",
+      :dependencies [["org.clojure" "clojure" "1.9.0-alpha15"]]}}}},
+  "core.specs.alpha"
+  {"jar"
+   {""
+    {"0.1.10"
+     {:sha1 "eab5ba816694a82017c1264a03e81a34a37d273d",
+      :dependencies
+      [["org.clojure" "spec.alpha" "0.1.94"]
+       ["org.clojure" "clojure" "1.9.0-alpha15"]]}}}},
   "tools.nrepl"
   {"jar"
    {""
-    {"0.2.12"
+    {"0.2.13"
+     {:sha1 "ee63abe4d3a2914de9343412aa5dc375436eac5c",
+      :dependencies [["org.clojure" "clojure" "1.2.0"]]},
+     "0.2.12"
      {:sha1 "72b4be694c5a9b253e4cd10d512ae60bb80a5450",
       :dependencies [["org.clojure" "clojure" "1.2.0"]]}}}}},
  "cider"
@@ -34,7 +63,6 @@
  {"refactor-nrepl"
   {"jar"
    {""
-    {"2.3.0-SNAPSHOT"
-     {:resolved-version "2.3.0-20170210.162113-13",
-      :sha1 "0a17b24465a05b28ede286c006da992c53fe2681",
+    {"2.3.0"
+     {:sha1 "80ef69faf5b8e14a3859ed09e0f5a0dae0102ebb",
       :dependencies [["org.clojure" "tools.nrepl" "0.2.12"]]}}}}}}

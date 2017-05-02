@@ -4,9 +4,9 @@
 
 rec {
 
-  container = tagged (symbol "webnf.dwn" "container");
-  component = tagged (symbol "webnf.dwn" "component");
-  ns-launcher = tagged (symbol "webnf.dwn" "ns-launcher");
+  container = x: tagged (symbol "webnf.dwn" "container") (keyword-map x);
+  component = x: tagged (symbol "webnf.dwn" "component") (keyword-map x);
+  ns-launcher = x: tagged (symbol "webnf.dwn" "ns-launcher") (keyword-map x);
 
   /*
   componentLauncher = cfgFile: componentKey:

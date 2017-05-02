@@ -1,4 +1,4 @@
-{ project, callPackage, lib, devMode }:
+{ project, callPackage, lib, devMode, juds }:
 
 project rec {
 
@@ -19,7 +19,7 @@ project rec {
   };
 
   dependencies = [
-    ["org.clojure" "clojure" "1.9.0-alpha14"]
+    ["org.clojure" "clojure" "1.9.0-alpha16"]
     ["org.clojure" "test.check" "0.9.0"]
     ["org.clojure" "tools.logging" "0.3.1"]
     ["com.stuartsierra" "component" "0.3.2"]
@@ -29,7 +29,7 @@ project rec {
 
   overlayRepo = {
     "webnf"."juds"."jar".""."CUSTOM" = {
-      files = [ "${callPackage ./juds.nix {}}/lib" ];
+      files = [ "${juds}/lib" ];
     };
   };
 

@@ -8,9 +8,10 @@ project {
 
   cljSourceDirs = [ ./nrepl-cmp ];
   dependencies = [
-    ["org.clojure" "clojure" "1.9.0-alpha14"]
+    ["org.clojure" "clojure" "1.9.0-alpha16"]
+    ["org.clojure" "tools.nrepl" "0.2.13"]
     ["cider" "cider-nrepl" "0.14.0"]
-    ["refactor-nrepl" "2.3.0-SNAPSHOT"]
+    ["refactor-nrepl" "2.3.0"]
   ];
 
   aot = lib.optionals (! devMode) [ "webnf.dwn.nrepl" ];

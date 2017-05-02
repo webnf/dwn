@@ -145,18 +145,19 @@ let callPackage = newScope thisns;
                       binder@{
                         parentLoader ? keyword "dwn.base" "app-loader"
                       , ...}:
-  let containerName = "${name}/container"; in
+  let containerName = keyword name "container"; in
   keyword-map ({
-      "${containerName}" = dwn.container {
-        inherit parentLoader classpath;
+      "${name}/container" = dwn.container {
+        inherit classpath;
+        parent-loader = parentLoader;
       };
-    } // lib.listToAttrs ((projectNsLaunchers containerName mainNs binder)
-                       ++ (projectComponents containerName components binder)));
+    } // lib.listToAttrs (projectNsLaunchers name containerName mainNs binder
+                       ++ projectComponents name containerName components binder));
 
-  projectNsLaunchers = container: mainNs: { mainArgs ? {}, ... }:
+  projectNsLaunchers = prjName: container: mainNs: { mainArgs ? {}, ... }:
   lib.mapAttrsToList (
       name: ns: {
-        inherit name;
+        name = "${prjName}/${name}";
         value = dwn.ns-launcher {
           inherit container;
           main = symbol null ns;
@@ -165,10 +166,10 @@ let callPackage = newScope thisns;
       }
   ) mainNs;
 
-  projectComponents = container: components: { componentConfig ? {}, ... }:
+  projectComponents = prjName: container: components: { componentConfig ? {}, ... }:
   lib.mapAttrsToList (
       name: { factory, options ? {} }: {
-        inherit name;
+        name = "${prjName}/${name}";
         value = dwn.component {
           inherit factory container;
           config = mkConfig options componentConfig.${name} or {};
@@ -194,11 +195,11 @@ let callPackage = newScope thisns;
               namespace = nsName;
             }
         ) mainNs;
+      descriptor = toEdnPP (projectDescriptor args classpath binder);
     in stdenv.mkDerivation {
-      inherit name classpath;
+      inherit name classpath descriptor;
       meta.dwn = {
-        descriptor = toEdnPP (projectDescriptor args classpath binder);
-        inherit launchers;
+        inherit launchers descriptor;
       };
       launcherScripts = lib.attrValues launchers;
       closureRepo = generateClosureRepo args;
@@ -210,6 +211,7 @@ let callPackage = newScope thisns;
         for c in $classpath; do
           ln -s $c $out/share/dwn/classpath/$(stripHash $c)
         done
+        echo "$descriptor" > $out/share/dwn.edn
       '';
     };
 

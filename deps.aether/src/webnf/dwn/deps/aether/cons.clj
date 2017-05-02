@@ -35,7 +35,7 @@
    (org.eclipse.aether.transport.wagon WagonProvider WagonTransporterFactory)
    org.eclipse.aether.util.version.GenericVersionScheme)
   (:require [clojure.java.io :as io]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [clojure.stacktrace :as st]
             [clojure.string :as str]))
 
