@@ -1,6 +1,6 @@
 (ns webnf.dwn.nrepl
   (:require
-   [clojure.spec :as s]
+   [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [com.stuartsierra.component :as cmp]
    [clojure.tools.nrepl.server :as nrepl]))

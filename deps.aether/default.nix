@@ -1,4 +1,4 @@
-{ projectClasspath, shellBinder, generateClosureRepo }:
+{ classpathFor, shellBinder, generateClosureRepo }:
 let dependencies = [
       ["org.clojure" "clojure" "1.9.0-alpha16"]
       ["org.apache.maven" "maven-aether-provider" "3.3.9"]
@@ -13,7 +13,7 @@ let dependencies = [
 in (shellBinder.mainLauncher rec {
   name = "aether-downloader";
   namespace = "webnf.dwn.deps.aether";
-  classpath = projectClasspath {
+  classpath = classpathFor {
     name = "${name}-classpath";
     cljSourceDirs = [ ./src ]; # ../nix.data/src
     inherit dependencies;

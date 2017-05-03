@@ -16,6 +16,8 @@
          [["org.clojure" "clojure"] ["org.clojure" "spec.alpha"]]}]]},
      "1.9.0-alpha15"
      {:sha1 "d239fa707e1545ca63a9135defea7ad9c7f36504"},
+     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"},
+     "1.7.0" {:sha1 "4953eb1ffa4adca22760c9324c9c26d2038c392a"},
      "1.2.0" {:sha1 "2b63087f3d0e3076db16d7ede71018d9ea694b89"}}}},
   "spec.alpha"
   {"jar"
@@ -31,6 +33,12 @@
       :dependencies
       [["org.clojure" "spec.alpha" "0.1.94"]
        ["org.clojure" "clojure" "1.9.0-alpha15"]]}}}},
+  "tools.logging"
+  {"jar"
+   {""
+    {"0.3.1"
+     {:sha1 "d8342cb0b6825cd12115cc1a9ccef988484478b2",
+      :dependencies [["org.clojure" "clojure" "1.4.0"]]}}}},
   "tools.nrepl"
   {"jar"
    {""
@@ -40,6 +48,18 @@
      "0.2.12"
      {:sha1 "72b4be694c5a9b253e4cd10d512ae60bb80a5450",
       :dependencies [["org.clojure" "clojure" "1.2.0"]]}}}}},
+ "com.stuartsierra"
+ {"component"
+  {"jar"
+   {""
+    {"0.3.2"
+     {:sha1 "356fcceba88787671bd08c5cd788ef3541cce6ca",
+      :dependencies
+      [["com.stuartsierra" "dependency" "0.2.0"]
+       ["org.clojure" "clojure" "1.7.0"]]}}}},
+  "dependency"
+  {"jar"
+   {"" {"0.2.0" {:sha1 "9e192005144258ea82ee8459bf2afeda88d45a36"}}}}},
  "cider"
  {"cider-nrepl"
   {"jar"

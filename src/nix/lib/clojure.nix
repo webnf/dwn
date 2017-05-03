@@ -1,4 +1,5 @@
-{ stdenv, newScope, jdk, lib, writeScript, writeText, fetchurl, runCommand }:
+{ stdenv, newScope, jdk, lib, writeScript, writeText, fetchurl, runCommand
+, copyPathToStore }:
 
 let callPackage = newScope thisns;
     lib' = lib // {
@@ -61,11 +62,11 @@ let callPackage = newScope thisns;
         class = "clojure.main";
         prefixArgs = [ "-m" namespace ] ++ prefixArgs;
       };
-      
+
   };
 
-  compiledClasspath = {
-      name, dependencyClasspath
+  artifactClasspath = args@{
+      name
     , cljSourceDirs ? []
     , javaSourceDirs ? []
     , resourceDirs ? []
@@ -74,7 +75,7 @@ let callPackage = newScope thisns;
     , devMode ? true
     , ...
   }: let
-    baseClasspath = resourceDirs ++ dependencyClasspath;
+    baseClasspath = resourceDirs ++ dependencyClasspath args;
     javaClasses = if lib.length javaSourceDirs > 0
       then [ (jvmCompile {
         name = name + "-java-classes";
@@ -92,17 +93,24 @@ let callPackage = newScope thisns;
      ++ javaSourceDirs
      ++ cljClasses
      ++ javaClasses
-     ++ baseClasspath;
+     ++ resourceDirs;
 
-  generateDependencyClasspath = { dependencies ? []
-                                , overlayRepo ? {}
-                                , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
-                                , mavenRepos ? defaultMavenRepos
-                                , fixedVersions ? []
-                                , name
-                                , ... }:
-    lib.concatLists (map (mvnResolve mavenRepos)
-                         (import (depsExpander closureRepo dependencies fixedVersions)));
+  classpathFor = args: artifactClasspath args ++ dependencyClasspath args;
+
+  expandDependencies = {name
+                       , dependencies ? []
+                       , overlayRepo ? {}
+                       , fixedVersions ? []
+                       , fixedDependencies ? null
+                       , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
+                       , ... }:
+    if isNull fixedDependencies
+    then import (depsExpander closureRepo dependencies fixedVersions)
+    else fixedDependencies;
+
+  dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos
+                             , ... }:
+    lib.concatLists (map (mvnResolve mavenRepos) (expandDependencies args));
 
   generateClosureRepo = { dependencies ? []
                         , mavenRepos ? defaultMavenRepos
@@ -132,23 +140,30 @@ let callPackage = newScope thisns;
     exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions";
   '';
 
-  projectClasspath = args: compiledClasspath (args // {
-    dependencyClasspath = generateDependencyClasspath args;
-  });
+  artifactDescriptor = mavenRepos: args@{ coordinate
+                                        , dirs ? null
+                                        , ...}:
+    coordinate ++ (if "dirs" == lib.elemAt coordinate 2
+      then [dirs]
+      else mvnResolve mavenRepos args
+    );
 
   projectDescriptor = args@{
                         name
                       , mainNs ? {}
                       , components ? {}
+                      , mavenRepos ? defaultMavenRepos
                       , ... }:
-                      classpath:
                       binder@{
                         parentLoader ? keyword "dwn.base" "app-loader"
                       , ...}:
   let containerName = keyword name "container"; in
   keyword-map ({
       "${name}/container" = dwn.container {
-        inherit classpath;
+        loaded-artifacts = map (artifactDescriptor mavenRepos) ([{
+          coordinate = [ name name "dirs" "" "0"];
+          dirs = artifactClasspath args;
+        }] ++ expandDependencies args);
         parent-loader = parentLoader;
       };
     } // lib.listToAttrs (projectNsLaunchers name containerName mainNs binder
@@ -186,7 +201,7 @@ let callPackage = newScope thisns;
             , ... }:
             { mainLauncher, ... }@binder:
     let
-      classpath = projectClasspath args;
+      classpath = classpathFor args;
       launchers = lib.mapAttrs (
           launcherName: nsName:
             mainLauncher {
@@ -195,7 +210,7 @@ let callPackage = newScope thisns;
               namespace = nsName;
             }
         ) mainNs;
-      descriptor = toEdnPP (projectDescriptor args classpath binder);
+      descriptor = toEdnPP (projectDescriptor args binder);
     in stdenv.mkDerivation {
       inherit name classpath descriptor;
       meta.dwn = {
@@ -257,8 +272,8 @@ let callPackage = newScope thisns;
 
   sourceDir = devMode: dir:
     if devMode
-    then toString dir
-    else dir;
+    then dir
+    else copyPathToStore dir;
 
   mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, files ? null, ... }:
     if isNull files then

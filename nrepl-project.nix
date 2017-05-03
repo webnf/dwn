@@ -9,6 +9,8 @@ project {
   cljSourceDirs = [ ./nrepl-cmp ];
   dependencies = [
     ["org.clojure" "clojure" "1.9.0-alpha16"]
+    ["org.clojure" "tools.logging" "0.3.1"]
+    ["com.stuartsierra" "component" "0.3.2"]
     ["org.clojure" "tools.nrepl" "0.2.13"]
     ["cider" "cider-nrepl" "0.14.0"]
     ["refactor-nrepl" "2.3.0"]

@@ -1,14 +1,13 @@
-{ lib, compiledClasspath, shellBinder, mvnResolve, defaultMavenRepos }:
+{ lib, classpathFor, shellBinder, mvnResolve, defaultMavenRepos }:
 
 shellBinder.mainLauncher rec {
   name = "dependency-expander";
   namespace = "webnf.dwn.deps.expander";
 
-  classpath = compiledClasspath {
+  classpath = classpathFor {
     name = "${name}-classpath";
     cljSourceDirs = [ ./src ../nix.data/src ];
-    dependencyClasspath = lib.concatLists (map (mvnResolve defaultMavenRepos)
-                              (import ./classpath.bootstrap.nix));
+    fixedDependencies = import ./deps.bootstrap.nix;
     aot = [ namespace ];
     compilerOptions = {
       elideMeta = [":line" ":file" ":doc" ":added"];
