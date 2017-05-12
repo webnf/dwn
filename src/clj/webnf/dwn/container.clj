@@ -1,7 +1,7 @@
 (ns webnf.dwn.container
   (:require
    ;; [dynapath.util :refer [addable-classpath? add-classpath-url]]
-   [clojure.spec :as s]
+   [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [clojure.java.io :refer [as-url]]
    [com.stuartsierra.component :as cmp]

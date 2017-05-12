@@ -2,7 +2,7 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [clojure.spec :as s]
+            [clojure.spec.alpha :as s]
             [clojure.walk :as w]
             [webnf.jvm :as jvm :refer [eval-in-container]]
             [webnf.dwn.component :as wdcmp]

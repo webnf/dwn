@@ -112,8 +112,8 @@
 
 (defn download-info [coord' {:as config :keys [overlay]}]
   (let [coord (cons/coordinate-info coord')]
-    (if-let [{:strs [files dependencies]} (get-in overlay coord)]
-      {:files files
+    (if-let [{:strs [dirs dependencies]} (get-in overlay coord)]
+      {:dirs dirs
        :coord coord
        :dependencies dependencies}
       (maven-download-info coord config))))
@@ -141,14 +141,14 @@
 
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
-    (reduce (fn [res {:as dli :keys [coord resolved-version sha1 files dependencies]}]
+    (reduce (fn [res {:as dli :keys [coord resolved-version sha1 dirs dependencies]}]
               (assoc-in res coord
                         (cond-> {}
                           (and
-                           (empty? files)
+                           (empty? dirs)
                            (not= resolved-version (last coord))) (assoc :resolved-version resolved-version)
                           (not (str/blank? sha1)) (assoc :sha1 sha1)
-                          (not (empty? files)) (assoc :files files)
+                          (not (empty? dirs)) (assoc :dirs dirs)
                           (not (empty? dependencies)) (assoc :dependencies dependencies))))
             {} download-infos)))
 

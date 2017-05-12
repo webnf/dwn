@@ -106,8 +106,8 @@
       :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}}},
  "webnf"
  {"juds"
-  {"jar"
+  {"dirs"
    {""
     {"CUSTOM"
-     {:files
+     {:dirs
       ["/nix/store/zvhkcca7fx0v8cyz6xdiqmrgm2ln5lm6-juds-0.95/lib"]}}}}}}

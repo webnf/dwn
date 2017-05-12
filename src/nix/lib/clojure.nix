@@ -272,23 +272,24 @@ let callPackage = newScope thisns;
 
   sourceDir = devMode: dir:
     if devMode
-    then dir
+    then toString dir
     else copyPathToStore dir;
 
-  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, files ? null, ... }:
-    if isNull files then
+  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, dirs ? null, ... }:
+    if "dirs" == lib.elemAt coordinate 2 then
+      dirs
+    else
     let version = lib.elemAt coordinate 4;
         classifier = lib.elemAt coordinate 3;
         extension = lib.elemAt coordinate 2;
         name    = lib.elemAt coordinate 1;
         group   = lib.elemAt coordinate 0;
     in [ (fetchurl {
-      name = "${name}-${version}.jar";
+      name = "${name}-${version}.${extension}";
       urls = mavenMirrors mavenRepos group name extension classifier version
                           (if isNull resolved-version then version else resolved-version);
       inherit sha1;
-    }) ]
-    else files;
+    }) ];
 
   mavenMirrors = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];

@@ -1,6 +1,6 @@
 (ns webnf.jvm
   (:require
-   [clojure.spec :as s]
+   [clojure.spec.alpha :as s]
    (webnf.jvm
     [threading :refer [run-on-group]]
     [security :refer [with-security-manager]]

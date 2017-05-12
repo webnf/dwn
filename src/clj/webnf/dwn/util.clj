@@ -1,7 +1,7 @@
 (ns webnf.dwn.util
   (:require [clojure.java.io :as io]
             [clojure.edn :as edn]
-            [clojure.spec :as s]))
+            [clojure.spec.alpha :as s]))
 
 (defn require-call-form
   ([sym arg] (require-call-form sym arg false identity))

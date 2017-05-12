@@ -1,5 +1,5 @@
 (ns webnf.dwn.component
-  (:require [clojure.spec :as s]
+  (:require [clojure.spec.alpha :as s]
             [com.stuartsierra.component :as cmp]
             [webnf.jvm :refer [eval-in-container]]
             [webnf.dwn.container :as wdc :refer [container]]
