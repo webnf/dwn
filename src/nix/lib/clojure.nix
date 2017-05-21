@@ -65,6 +65,14 @@ let callPackage = newScope thisns;
 
   };
 
+  descriptorPaths = desc:
+  let pkg = lib.elemAt desc 2;
+  in if pkg == "dirs"
+   then lib.elemAt desc 5
+   else if pkg == "jar"
+   then [ (lib.elemAt desc 5) ]
+   else throw "Unknown packaging '${pkg}'";
+
   artifactClasspath = args@{
       name
     , cljSourceDirs ? []
@@ -72,10 +80,13 @@ let callPackage = newScope thisns;
     , resourceDirs ? []
     , aot ? []
     , compilerOptions ? {}
+    , providedVersions ? []
     , devMode ? true
     , ...
   }: let
-    baseClasspath = resourceDirs ++ dependencyClasspath args;
+    baseClasspath = resourceDirs ++ dependencyClasspath args ++ (
+      lib.concatLists (map descriptorPaths providedVersions)
+    );
     javaClasses = if lib.length javaSourceDirs > 0
       then [ (jvmCompile {
         name = name + "-java-classes";
@@ -90,7 +101,6 @@ let callPackage = newScope thisns;
         options = compilerOptions;
       }) ] else [];
   in (map (sourceDir devMode) cljSourceDirs)
-     ++ javaSourceDirs
      ++ cljClasses
      ++ javaClasses
      ++ resourceDirs;
@@ -101,11 +111,12 @@ let callPackage = newScope thisns;
                        , dependencies ? []
                        , overlayRepo ? {}
                        , fixedVersions ? []
-                       , fixedDependencies ? null
+                       , providedVersions ? []
+                       , fixedDependencies ? null # bootstrap hack
                        , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
                        , ... }:
     if isNull fixedDependencies
-    then import (depsExpander closureRepo dependencies fixedVersions)
+    then import (depsExpander closureRepo dependencies fixedVersions providedVersions)
     else fixedDependencies;
 
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos
@@ -129,15 +140,16 @@ let callPackage = newScope thisns;
     ## set -xv
     exec $runner $out "$ednDeps" "$ednRepos" "$ednOverlay"
   '';
-  depsExpander = repo: deps: fixedVersions: runCommand "deps.nix" {
+  depsExpander = repo: deps: fixedVersions: providedVersions: runCommand "deps.nix" {
     inherit repo;
     ednDeps = toEdn deps;
     ednFixedVersions = toEdn fixedVersions;
+    ednProvidedVersions = toEdn providedVersions;
     launcher = callPackage ../../../deps.expander { };
   } ''
     #!/bin/sh
     ## set -xv
-    exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions";
+    exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions" "$ednProvidedVersions";
   '';
 
   artifactDescriptor = mavenRepos: args@{ coordinate
@@ -153,6 +165,7 @@ let callPackage = newScope thisns;
                       , mainNs ? {}
                       , components ? {}
                       , mavenRepos ? defaultMavenRepos
+                      , providedVersions ? []
                       , ... }:
                       binder@{
                         parentLoader ? keyword "dwn.base" "app-loader"
@@ -165,6 +178,7 @@ let callPackage = newScope thisns;
           dirs = artifactClasspath args;
         }] ++ expandDependencies args);
         parent-loader = parentLoader;
+        inherit providedVersions;
       };
     } // lib.listToAttrs (projectNsLaunchers name containerName mainNs binder
                        ++ projectComponents name containerName components binder));
@@ -198,6 +212,7 @@ let callPackage = newScope thisns;
               name
             , mainNs ? {}
             , jvmArgs ? []
+            , mavenRepos ? defaultMavenRepos
             , ... }:
             { mainLauncher, ... }@binder:
     let
@@ -215,6 +230,10 @@ let callPackage = newScope thisns;
       inherit name classpath descriptor;
       meta.dwn = {
         inherit launchers descriptor;
+        providedVersions = map (artifactDescriptor mavenRepos) ([{
+          coordinate = [ name name "dirs" "" "0" ];
+          dirs = artifactClasspath args;
+        }] ++ expandDependencies args);
       };
       launcherScripts = lib.attrValues launchers;
       closureRepo = generateClosureRepo args;

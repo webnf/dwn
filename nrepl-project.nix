@@ -1,10 +1,10 @@
-{ project, symbol, lib, devMode }:
+{ project, symbol, lib, devMode, providedVersions }:
 
 project {
 
   name = "webnf.dwn.nrepl";
 
-  inherit devMode;
+  inherit devMode providedVersions;
 
   cljSourceDirs = [ ./nrepl-cmp ];
   dependencies = [

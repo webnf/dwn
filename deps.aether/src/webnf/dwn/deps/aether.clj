@@ -5,6 +5,7 @@
    java.io.PushbackReader)
   (:require [webnf.dwn.deps.aether.cons :as cons]
             ;; [webnf.nix.data :as data]
+            [webnf.nix.aether :refer [coordinate-info]]
             [clojure.pprint :refer [pprint]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
@@ -83,11 +84,12 @@
        (mapv dependency)))
 
 (defn maven-download-info [coord' {:as config}]
-  (let [coord (cons/coordinate-info coord')
+  (let [coord (coordinate-info coord')
         art (cons/artifact coord)
         rv (.getVersion (or (cons/version-resolution art config)
                             art))
         rart (-> (coordinate art)
+                 coordinate-info
                  (assoc 4 rv)
                  cons/artifact)
         desc (cons/artifact-descriptor rart config)
@@ -111,15 +113,17 @@
       res)))
 
 (defn download-info [coord' {:as config :keys [overlay]}]
-  (let [coord (cons/coordinate-info coord')]
-    (if-let [{:strs [dirs dependencies]} (get-in overlay coord)]
-      {:dirs dirs
+  (let [{:keys [group artifact extension classifier version]
+         :as coord} (coordinate-info coord')]
+    (if-let [{:strs [sha1 dirs dependencies]} (get-in overlay [group artifact extension classifier version])]
+      {:sha1 sha1
+       :dirs dirs
        :coord coord
        :dependencies dependencies}
       (maven-download-info coord config))))
 
 (defn dependency-coordinate [dep]
-  (coordinate (.getArtifact (cons/dependency dep))))
+  (coordinate (.getArtifact (cons/dependency (coordinate-info dep)))))
 
 (defn expand-download-info
   ([art conf] (expand-download-info art conf #{}))
@@ -141,12 +145,13 @@
 
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
-    (reduce (fn [res {:as dli :keys [coord resolved-version sha1 dirs dependencies]}]
-              (assoc-in res coord
+    (reduce (fn [res {:as dli :keys [resolved-version sha1 dirs dependencies]
+                      {:keys [group artifact extension classifier version]} :coord}]
+              (assoc-in res [group artifact extension classifier version]
                         (cond-> {}
                           (and
                            (empty? dirs)
-                           (not= resolved-version (last coord))) (assoc :resolved-version resolved-version)
+                           (not= resolved-version version)) (assoc :resolved-version resolved-version)
                           (not (str/blank? sha1)) (assoc :sha1 sha1)
                           (not (empty? dirs)) (assoc :dirs dirs)
                           (not (empty? dependencies)) (assoc :dependencies dependencies))))
@@ -196,7 +201,8 @@
                           :include-scopes #{"compile"}
                           :repositories default-repositories))
 
-  (with-open [o (io/writer "/home/herwig/checkout/webnf/dwn/deps.aether/bootstrap-repo.edn")]
+  (with-open [o (io/writer #_"/home/herwig/checkout/webnf/dwn/deps.aether/bootstrap-repo.edn"
+                           "/tmp/repo.edn")]
     (binding [*out* o]
       (clojure.pprint/pprint
        (repo-for [["org.clojure" "clojure" "1.9.0-alpha14"]
@@ -208,6 +214,17 @@
                   ["org.apache.maven.wagon" "wagon-provider-api" "2.10"]
                   ["org.apache.maven.wagon" "wagon-http" "2.10"]
                   ["org.apache.maven.wagon" "wagon-ssh" "2.10"]]
+                 cfg))))
+
+  (with-open [o (io/writer #_"/home/herwig/checkout/webnf/dwn/deps.aether/bootstrap-repo.edn"
+                           "/tmp/repo.edn")]
+    (binding [*out* o]
+      (clojure.pprint/pprint
+       (repo-for [["org.clojure" "spec.alpha" "0.1.94"
+                   {"exclusions" [["org.clojure" "clojure"]]}]
+                  ["org.clojure" "core.specs.alpha" "0.1.10"
+                   {"exclusions" [["org.clojure" "clojure"]
+                                  ["org.clojure" "spec.alpha"]]}]]
                  cfg))))
 
   (expand-download-info ["org.eclipse.aether" "aether-impl" "1.1.0"] cfg)

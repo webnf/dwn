@@ -3,7 +3,9 @@
            java.io.PushbackReader)
   (:require [clojure.java.io :as io]
             [webnf.nix.data :as data]
-            [clojure.edn :as edn]))
+            [webnf.nix.aether :refer [coordinate-info]]
+            [clojure.edn :as edn]
+            [clojure.set :as set]))
 
 (def gvs (GenericVersionScheme.))
 
@@ -11,57 +13,72 @@
   (compare (.parseVersion gvs v1)
            (.parseVersion gvs v2)))
 
-(defn coordinate-info [[a1 a2 & [a3 a4 a5] :as args]]
-  ;; [group' artifact' extension' classifier' version' :as args]
-  (case (count args)
-    2 [a1 a1 "jar" "" a2]
-    3 [a1 a2 "jar" "" a3]
-    4 [a1 a2 a3 "" a4]
-    5 [a1 a2 a3 a4 a5]))
+(defn- exclusions-pred [exclusion-set]
+  (fn [{:keys [group artifact]}]
+    (boolean (some (fn [excl]
+                     ;; TODO classifier, extension
+                     (and (= group (:group excl))
+                          (= artifact (:artifact excl))))
+                   exclusion-set))))
 
-(defn dependency-coordinate-info [spec]
-  (coordinate-info (if (map? (last spec))
-                     (butlast spec) spec)))
-
-(defn- unify-versions [result coordinates fixed-coordinates repo]
-  (reduce (fn [r [group artifact extension classifier version :as coordinate]]
-            (let [rv (get-in r [group artifact extension classifier])
+(defn- unify-versions [result coordinates fixed-coordinates repo tree-exclusions]
+  (reduce (fn [r {:keys [group artifact extension classifier version
+                         exclusions scope]
+                  :as coordinate}]
+            (let [{rv :version
+                   re :exclusions} (get-in r [group artifact extension classifier])
                   version* (or (get-in fixed-coordinates [group artifact extension classifier])
                                (and rv (neg? (compare-versions version rv))
                                     rv)
-                               version)]
+                               version)
+                  tree-exclusions* (set/union tree-exclusions exclusions)]
               (if (= rv version*)
-                r (unify-versions (assoc-in r [group artifact extension classifier] version*)
-                                  (map dependency-coordinate-info
-                                       (get-in repo [group artifact extension classifier version* :dependencies]))
-                                  fixed-coordinates repo))))
+                r (unify-versions (assoc-in r [group artifact extension classifier]
+                                            {:version version*
+                                             :exclusions (if rv
+                                                           (set/intersection re exclusions)
+                                                           exclusions)})
+                                  (->> [group artifact extension classifier version* :dependencies]
+                                       (get-in repo)
+                                       (map coordinate-info)
+                                       (remove (exclusions-pred tree-exclusions*)))
+                                  fixed-coordinates repo
+                                  tree-exclusions*))))
           result coordinates))
 
+(defn- seen-pred [seen]
+  (fn [{:keys [group artifact extension classifier]}]
+    (contains? seen [group artifact extension classifier])))
+
 (defn- expand-deps* [coordinates seen version-map repo]
-  (mapcat (fn [[group art ext cls _]]
-            (let [version (get-in version-map [group art ext cls])]
-              (cons [group art ext cls]
-                    (expand-deps* (remove
-                                   (fn [[group art ext cls _]]
-                                     (contains? seen [group art ext cls]))
-                                   (map dependency-coordinate-info
-                                        (get-in repo [group art ext cls version :dependencies])))
-                                  (conj seen [group art ext cls])
-                                  version-map repo))))
+  (mapcat (fn [{:keys [group artifact extension classifier]}]
+            (let [{:keys [version exclusions] :as vmi} (get-in version-map [group artifact extension classifier])]
+              (concat
+               (when-not (contains? seen [group artifact extension classifier])
+                 [[group artifact extension classifier version]])
+               (expand-deps* (->> [group artifact extension classifier version]
+                                  (get-in repo)
+                                  :dependencies
+                                  (map coordinate-info)
+                                  (remove (seen-pred seen))
+                                  (remove (exclusions-pred exclusions)))
+                             (conj seen [group artifact extension classifier])
+                             version-map repo))))
           coordinates))
 
-(defn expand-deps [coordinates' fixed-coordinates repo]
+(defn- provided->seen [provided]
+  (transduce (map (comp vec (partial take 4)))
+             conj #{} provided))
+
+(defn expand-deps [coordinates' fixed-coordinates provided-versions repo]
   (let [coordinates (map coordinate-info coordinates')
-        version-map (unify-versions {} coordinates fixed-coordinates repo)]
-    (->> (expand-deps* coordinates #{} version-map repo)
+        version-map (unify-versions {} coordinates fixed-coordinates repo #{})]
+    (->> (expand-deps* coordinates (provided->seen provided-versions) version-map repo)
          reverse distinct reverse
-         (mapv (fn [[g a e c :as ga]]
-                 (let [v (get-in version-map ga)
-                       coord [g a e c v]
-                       desc (get-in repo coord)]
-                   (-> desc
-                       (assoc :coordinate coord)
-                       (dissoc :dependencies))))))))
+         (mapv (fn [coord]
+                 (-> (get-in repo coord)
+                     (assoc :coordinate coord)
+                     (dissoc :dependencies :exclusions)))))))
 
 (defn read* [f]
   (with-open [i (PushbackReader. (io/reader f))]
@@ -96,9 +113,10 @@
                 (get r group {}) artifacts)))
             repo overlay)))
 
-(defn -main [classpath-out-file repo-file coordinates-str fixed-coordinates-str]
+(defn -main [classpath-out-file repo-file coordinates-str fixed-coordinates-str provided-versions-str]
   (let [classpath (expand-deps (edn/read-string coordinates-str)
                                (edn/read-string fixed-coordinates-str)
+                               (edn/read-string provided-versions-str)
                                (read* repo-file))]
     (with-open [o (io/writer classpath-out-file)]
       (doseq [s (data/emit-expr classpath)]

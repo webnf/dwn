@@ -15,7 +15,7 @@ in (shellBinder.mainLauncher rec {
   namespace = "webnf.dwn.deps.aether";
   classpath = classpathFor {
     name = "${name}-classpath";
-    cljSourceDirs = [ ./src ]; # ../nix.data/src
+    cljSourceDirs = [ ./src ../nix.aether/src ];
     inherit dependencies;
     aot = [ namespace ];
     compilerOptions = {
