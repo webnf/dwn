@@ -1,13 +1,36 @@
 diff --git a/src/jvm/clojure/lang/RT.java b/src/jvm/clojure/lang/RT.java
-index a6552f74..b56998be 100644
+index a6552f74..0dfe0b0e 100644
 --- a/src/jvm/clojure/lang/RT.java
 +++ b/src/jvm/clojure/lang/RT.java
-@@ -435,7 +435,7 @@ static public void load(String scriptbase, boolean failIfNotFound) throws IOExce
+@@ -433,21 +433,16 @@ static public void load(String scriptbase, boolean failIfNotFound) throws IOExce
+ 	}
+ 	boolean loaded = false;
  
- 	if((classURL != null &&
- 	    (cljURL == null
+-	if((classURL != null &&
+-	    (cljURL == null
 -	     || lastModified(classURL, classfile) > lastModified(cljURL, scriptfile)))
-+	     || lastModified(classURL, classfile) >= lastModified(cljURL, scriptfile)))
- 	   || classURL == null) {
- 		try {
- 			Var.pushThreadBindings(
+-	   || classURL == null) {
+-		try {
+-			Var.pushThreadBindings(
+-					RT.mapUniqueKeys(CURRENT_NS, CURRENT_NS.deref(),
+-					       WARN_ON_REFLECTION, WARN_ON_REFLECTION.deref()
+-							,RT.UNCHECKED_MATH, RT.UNCHECKED_MATH.deref()));
+-			loaded = (loadClassForName(scriptbase.replace('/', '.') + LOADER_SUFFIX) != null);
+-		}
+-		finally {
+-			Var.popThreadBindings();
+-		}
+-	}
++        try {
++                Var.pushThreadBindings(
++                                RT.mapUniqueKeys(CURRENT_NS, CURRENT_NS.deref(),
++                                       WARN_ON_REFLECTION, WARN_ON_REFLECTION.deref()
++                                                ,RT.UNCHECKED_MATH, RT.UNCHECKED_MATH.deref()));
++                loaded = (loadClassForName(scriptbase.replace('/', '.') + LOADER_SUFFIX) != null);
++        }
++        finally {
++                Var.popThreadBindings();
++        }
+ 	if(!loaded && cljURL != null) {
+ 		if(booleanCast(Compiler.COMPILE_FILES.deref()))
+ 			compile(scriptfile);

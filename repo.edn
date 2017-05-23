@@ -2,8 +2,9 @@
  {"clojure"
   {"jar"
    {""
-    {"1.9.0-alpha16"
-     {:sha1 "9d873903c39e756f1ca3472075fe9c1a7f0283ea",
+    {"1.9.0-CUSTOM"
+     {:jar
+      "/nix/store/dqc4qq8qncv6lyfh8blr1zmvc0l47ljl-clojure-1.9.0-alpha16-CUSTOM.jar",
       :dependencies
       [["org.clojure"
         "spec.alpha"
@@ -110,4 +111,4 @@
    {""
     {"CUSTOM"
      {:dirs
-      ["/nix/store/zvhkcca7fx0v8cyz6xdiqmrgm2ln5lm6-juds-0.95/lib"]}}}}}}
+      ["/nix/store/zr69vcv2wrzlyxb49pxdj8z9g0mdcbbj-juds-0.95/lib"]}}}}}}

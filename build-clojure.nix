@@ -15,9 +15,10 @@ let
         ];
       } ]
   ];
-in stdenv.mkDerivation rec {
+jarfile = stdenv.mkDerivation rec {
   rev = "clojure-1.9.0-alpha16";
-  name = "${rev}.jar";
+  name = "${rev}-CUSTOM.jar";
+  builtName = "${rev}.jar";
   src = fetchFromGitHub {
     owner = "clojure";
     repo = "clojure";
@@ -43,6 +44,14 @@ in stdenv.mkDerivation rec {
     ant jar
   '';
   installPhase = ''
-    cp $name $out
+    cp $builtName $out
   '';
-}
+  meta.dwn = {
+    repoEntry = {
+      resolvedVersion = "1.9.0-alpha16-CUSTOM";
+      jar = jarfile;
+      inherit dependencies;
+    };
+  };
+};
+in jarfile

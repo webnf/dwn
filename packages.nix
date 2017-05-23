@@ -10,7 +10,7 @@ let
 
     clojure = callPackage ./build-clojure.nix { };
 
-    dwn = callProject ./project.nix {};
+    dwn = callProject ./project.nix { };
     dwnSystemd = callPackage ./src/systemd {
       dwnLauncher = dwn.meta.dwn.launchers.boot;
       inherit (dwnConfig) varDirectory;

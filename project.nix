@@ -1,4 +1,4 @@
-{ project, callPackage, lib, devMode, juds }:
+{ project, callPackage, lib, devMode, juds, clojure }:
 
 project rec {
 
@@ -19,7 +19,7 @@ project rec {
   };
 
   dependencies = [
-    ["org.clojure" "clojure" "1.9.0-alpha16"]
+    ["org.clojure" "clojure" "1.9.0-CUSTOM"]
     ["org.clojure" "test.check" "0.9.0"]
     ["org.clojure" "tools.logging" "0.3.1"]
     ["com.stuartsierra" "component" "0.3.2"]
@@ -31,6 +31,7 @@ project rec {
     "webnf"."juds"."dirs".""."CUSTOM" = {
       dirs = [ "${juds}/lib" ];
     };
+    "org.clojure"."clojure"."jar".""."1.9.0-CUSTOM" = clojure.meta.dwn.repoEntry;
   };
 
   closureRepo = ./repo.edn;

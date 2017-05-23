@@ -294,9 +294,12 @@ let callPackage = newScope thisns;
     then toString dir
     else copyPathToStore dir;
 
-  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, dirs ? null, ... }:
+  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, dirs ? null, jar ? null, ... }:
     if "dirs" == lib.elemAt coordinate 2 then
       dirs
+    else if "jar" == lib.elemAt coordinate 2
+         && isNull sha1 then
+      [ jar ]
     else
     let version = lib.elemAt coordinate 4;
         classifier = lib.elemAt coordinate 3;

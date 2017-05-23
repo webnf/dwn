@@ -115,9 +115,10 @@
 (defn download-info [coord' {:as config :keys [overlay]}]
   (let [{:keys [group artifact extension classifier version]
          :as coord} (coordinate-info coord')]
-    (if-let [{:strs [sha1 dirs dependencies]} (get-in overlay [group artifact extension classifier version])]
+    (if-let [{:strs [sha1 dirs jar dependencies]} (get-in overlay [group artifact extension classifier version])]
       {:sha1 sha1
        :dirs dirs
+       :jar jar
        :coord coord
        :dependencies dependencies}
       (maven-download-info coord config))))
@@ -145,15 +146,17 @@
 
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
-    (reduce (fn [res {:as dli :keys [resolved-version sha1 dirs dependencies]
+    (reduce (fn [res {:as dli :keys [resolved-version sha1 dirs jar dependencies]
                       {:keys [group artifact extension classifier version]} :coord}]
               (assoc-in res [group artifact extension classifier version]
                         (cond-> {}
                           (and
                            (empty? dirs)
+                           (str/blank? jar)
                            (not= resolved-version version)) (assoc :resolved-version resolved-version)
                           (not (str/blank? sha1)) (assoc :sha1 sha1)
                           (not (empty? dirs)) (assoc :dirs dirs)
+                          (not (str/blank? jar)) (assoc :jar jar)
                           (not (empty? dependencies)) (assoc :dependencies dependencies))))
             {} download-infos)))
 
