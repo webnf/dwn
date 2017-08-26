@@ -34,7 +34,7 @@
                    (handle [_ sig] (thunk signal)))))
 
 (defn -main [cfg-server]
-  (let [server (io/file cfg-server)]
+  (let [server (.getAbsoluteFile (io/file cfg-server))]
     (when (.mkdirs (.getParentFile server))
       (log/info "Created socket directory" (.getParent server)))
     (when (.delete server)

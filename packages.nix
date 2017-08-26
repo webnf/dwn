@@ -1,6 +1,7 @@
 { newScope, dwnConfig, clojureLib }:
 let
   callPackage = newScope thisns;
+  mkUnits = callPackage ./src/systemd/gen.nix { };
   thisns = clojureLib // rec {
     inherit dwnConfig callPackage;
     inherit (dwnConfig) devMode;
@@ -23,5 +24,20 @@ let
       aether = callPackage ./deps.aether {};
     };
     juds = callPackage ./juds.nix {};
+    sysTD = let
+        launcher = dwn.meta.dwn.launchers.boot;
+        socket = "${dwnConfig.varDirectory}/dwn.socket";
+    in mkUnits {
+      services = {
+        dwn = {
+          description = "`dwn` clojure runner";
+          serviceConfig = {
+            Type="simple";
+            ExecStart="${launcher} ${socket}";
+            ExecPostStart="/bin/sh -c 'while [ ! -S ${socket} ]; do sleep 0.2; done'";
+          };
+        };
+      };
+    };
   };
 in thisns
