@@ -2,7 +2,7 @@
   :java-source-paths [ "src/jvm" ]
   :source-paths [ "src/clj" "deps.aether/src" "deps.expander/src" "nix.aether/src" "nix.data/src" ]
   :dependencies
-  [[org.clojure/clojure "1.9.0-alpha16"]
+  [[org.clojure/clojure "1.9.0-beta2"]
    [org.clojure/test.check "0.9.0"]
    [org.clojure/tools.logging "0.3.1"]
    [com.stuartsierra/component "0.3.2"]

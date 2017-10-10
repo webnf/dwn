@@ -1,4 +1,7 @@
 (ns webnf.dwn.deps.aether
+  "This program discovers a maven dependency graph from a sequence of
+  root dependencies. It discovers the full graph, including dependency
+  circles and conflicting dependencies."
   (:import
    java.nio.file.Files
    java.nio.file.attribute.FileAttribute
@@ -15,31 +18,46 @@
   {"central" "http://repo1.maven.org/maven2"
    "clojars" "https://clojars.org/repo"})
 
-(defn temp-local-repo []
+;; Utilities
+
+(defn temp-local-repo
+  "Create a temporary maven directory, that is GC'd on process termination"
+  []
   (-> (Files/createTempDirectory "m2-" (into-array FileAttribute []))
       .toFile (doto .deleteOnExit)
       cons/local-repository))
 
-(defn memoize-singular [f]
+(defn memoize-singular
+  "A more meticular memoize, which runs the expensive computation at most once"
+  [f]
   (let [memo (atom {})]
     (fn [& args]
       (if-let [v (get @memo args)]
         @v
         @(get (swap! memo (fn [m]
                             (let [prev-delay (get m args)]
+                              ;; This check needs to happen, in addition to the double reference,
+                              ;; since we run file downloads in parallel
                               (if (nil? prev-delay)
                                 (assoc m args (delay (apply f args)))
                                 m))))
               args)))))
 
-(defn coordinate [art]
+;; Constructors for representative clojure data structures from maven objects
+
+(defn coordinate
+  "Parse full artifact coordinate [~group ~artifact ~extension ~classifier ~version]"
+  [art]
   [(.getGroupId art)
    (.getArtifactId art)
    (.getExtension art)
    (.getClassifier art)
    (.getVersion art)])
 
-(defn short-coordinate [art]
+(defn short-coordinate
+  "Parse shortened down version of artifact coordinate, as allowed by applicable defaults [(= ~group ~artifact) (= ~extension \"jar\") (= ~classifier \"\")]
+  Extreme case: [~group-artifact ~version]"
+  [art]
   (let [g (.getGroupId art)
         a (.getArtifactId art)
         e (.getExtension art)
@@ -52,7 +70,9 @@
       (when (not (str/blank? c)) [c])
       [v]))))
 
-(defn exclusion [excl]
+(defn exclusion
+  "Parse exclusion: [~group-artifact] or [~group ~artifact] or [~group-artifact ~options] or [~group ~artifact ~options]"
+  [excl]
   (let [g (.getGroupId excl)
         a (.getArtifactId excl)
         e (.getExtension excl)
