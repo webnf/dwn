@@ -18,8 +18,10 @@ let
     nrepl = callProject ./nrepl-project.nix {
       inherit (dwn.meta.dwn) providedVersions;
     };
-    depsExpander = callPackage ./deps.expander {};
-    depsAether = callPackage ./deps.aether {};
+    deps = {
+      expander = callPackage ./deps.expander {};
+      aether = callPackage ./deps.aether {};
+    };
     juds = callPackage ./juds.nix {};
   };
 in thisns

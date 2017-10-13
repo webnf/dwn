@@ -123,22 +123,33 @@ let callPackage = newScope thisns;
                              , ... }:
     lib.concatLists (map (mvnResolve mavenRepos) (expandDependencies args));
 
-  generateClosureRepo = { dependencies ? []
-                        , mavenRepos ? defaultMavenRepos
-                        , fixedVersions ? []
-                        , overlayRepo ? {}
-                        , ... }:
-    aetherDownload mavenRepos (dependencies ++ fixedVersions) overlayRepo;
+  closureRepoGenerator = { dependencies ? []
+                         , mavenRepos ? defaultMavenRepos
+                         , fixedVersions ? []
+                         , overlayRepo ? {}
+                         , ... }:
+    aetherDownloader mavenRepos (dependencies ++ fixedVersions) overlayRepo;
 
-  aetherDownload = repos: deps: overlay: runCommand "repo.edn" {
-    ednRepos = toEdn repos;
-    ednDeps = toEdn deps;
-    ednOverlay = toEdn overlay;
-    runner = callPackage ../../../deps.aether { };
-  } ''
+  aetherDownloader = repos: deps: overlay: writeScript "repo.edn.sh" ''
     #!/bin/sh
-    ## set -xv
-    exec $runner $out "$ednDeps" "$ednRepos" "$ednOverlay"
+    if [ -z "$1" ]; then
+      echo "$0 <filename.out.edn>"
+      exit 1
+    fi
+    launcher="${callPackage ../../../deps.aether { }}"
+    ednDeps=$(cat <<EDNDEPS
+    ${toEdn deps}
+    EDNDEPS
+    )
+    ednRepos=$(cat <<EDNREPOS
+    ${toEdn repos}
+    EDNREPOS
+    )
+    ednOverlay=$(cat <<EDNOVERLAY
+    ${toEdn overlay}
+    EDNOVERLAY
+    )
+    exec "$launcher" "$1" "$ednDeps" "$ednRepos" "$ednOverlay"
   '';
   depsExpander = repo: deps: fixedVersions: providedVersions: runCommand "deps.nix" {
     inherit repo;
@@ -236,7 +247,7 @@ let callPackage = newScope thisns;
         }] ++ expandDependencies args);
       };
       launcherScripts = lib.attrValues launchers;
-      closureRepo = generateClosureRepo args;
+      closureRepoGenerator = closureRepoGenerator args;
       buildCommand = ''
         mkdir -p $out/bin $out/share/dwn/classpath
         for l in $launcherScripts; do

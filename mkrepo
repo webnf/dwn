@@ -1,3 +1,0 @@
-#!/bin/sh -e
-
-exec ./gen-repo.sh dwn repo.edn

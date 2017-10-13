@@ -45,5 +45,5 @@ project {
       };
     };
   };
-  closureRepo = ./nrepl-repo.edn;
+  closureRepo = ./nrepl.repo.edn;
 }

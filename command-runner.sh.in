@@ -1,3 +1,0 @@
-#!/bin/sh
-
-@socat@/bin/socat -t 16 -,ignoreeof tcp-connect:@host@:@port@

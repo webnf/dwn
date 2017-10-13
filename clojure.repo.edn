@@ -1,0 +1,8 @@
+{"org.clojure"
+ {"spec.alpha"
+  {"jar"
+   {""
+    {"0.1.134" {:sha1 "2d5e5b9ceb88dc73608d0b7e41b55c5d12556c32"}}}},
+  "core.specs.alpha"
+  {"jar"
+   {"" {"0.1.24" {:sha1 "2637e33f693f51267f04e63f2acfb5d182e7bf56"}}}}}}

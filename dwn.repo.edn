@@ -4,35 +4,26 @@
    {""
     {"1.9.0-CUSTOM"
      {:jar
-      "/nix/store/dqc4qq8qncv6lyfh8blr1zmvc0l47ljl-clojure-1.9.0-alpha16-CUSTOM.jar",
+      "/nix/store/ahnnlym8q1h725y06alccfchkzmhnxyr-clojure-1.9.0-beta2-CUSTOM.jar",
       :dependencies
       [["org.clojure"
         "spec.alpha"
-        "0.1.94"
+        "0.1.134"
         {"exclusions" [["org.clojure" "clojure"]]}]
        ["org.clojure"
         "core.specs.alpha"
-        "0.1.10"
+        "0.1.24"
         {"exclusions"
          [["org.clojure" "clojure"] ["org.clojure" "spec.alpha"]]}]]},
-     "1.9.0-alpha15"
-     {:sha1 "d239fa707e1545ca63a9135defea7ad9c7f36504"},
      "1.7.0" {:sha1 "4953eb1ffa4adca22760c9324c9c26d2038c392a"},
      "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"}}}},
   "spec.alpha"
   {"jar"
    {""
-    {"0.1.94"
-     {:sha1 "4cf90613157c002e793f97e15189bfa7a27c1d5e",
-      :dependencies [["org.clojure" "clojure" "1.9.0-alpha15"]]}}}},
+    {"0.1.134" {:sha1 "2d5e5b9ceb88dc73608d0b7e41b55c5d12556c32"}}}},
   "core.specs.alpha"
   {"jar"
-   {""
-    {"0.1.10"
-     {:sha1 "eab5ba816694a82017c1264a03e81a34a37d273d",
-      :dependencies
-      [["org.clojure" "spec.alpha" "0.1.94"]
-       ["org.clojure" "clojure" "1.9.0-alpha15"]]}}}},
+   {"" {"0.1.24" {:sha1 "2637e33f693f51267f04e63f2acfb5d182e7bf56"}}}},
   "test.check"
   {"jar"
    {""
@@ -111,4 +102,4 @@
    {""
     {"CUSTOM"
      {:dirs
-      ["/nix/store/zr69vcv2wrzlyxb49pxdj8z9g0mdcbbj-juds-0.95/lib"]}}}}}}
+      ["/nix/store/ahln9nlygs5nsrqqg1ylilg3n5v5sb5h-juds-0.95/lib"]}}}}}}

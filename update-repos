@@ -1,0 +1,10 @@
+#!/bin/sh -e
+./gen-repo.sh deps.aether deps.aether/bootstrap-repo.next.edn
+( cd deps.aether
+  mv bootstrap-repo.next.edn bootstrap-repo.edn
+  cp deps.nix deps.bootstrap.nix
+)
+./gen-repo.sh clojure clojure.repo.edn
+
+./gen-repo.sh dwn dwn.repo.edn
+./gen-repo.sh nrepl nrepl.repo.edn

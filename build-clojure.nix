@@ -1,14 +1,15 @@
-{ stdenv, fetchFromGitHub, ant, jdk, generateClosureRepo, expandDependencies, mvnResolve, renderClasspath, defaultMavenRepos
+{ stdenv, lib, fetchFromGitHub, ant, jdk
+, closureRepoGenerator, expandDependencies, mvnResolve, renderClasspath, defaultMavenRepos
 , mavenRepos ? defaultMavenRepos
-, lib }:
+}:
 let
   dependencies = [
-    [ "org.clojure" "spec.alpha" "0.1.94" {
+    [ "org.clojure" "spec.alpha" "0.1.134" {
         exclusions = [
           [ "org.clojure" "clojure" ]
         ];
       } ]
-    [ "org.clojure" "core.specs.alpha" "0.1.10" {
+    [ "org.clojure" "core.specs.alpha" "0.1.24" {
         exclusions = [
           [ "org.clojure" "clojure" ]
           [ "org.clojure" "spec.alpha" ]
@@ -16,17 +17,18 @@ let
       } ]
   ];
 jarfile = stdenv.mkDerivation rec {
-  rev = "clojure-1.9.0-alpha16";
+  rev = "clojure-1.9.0-beta2";
   name = "${rev}-CUSTOM.jar";
   builtName = "${rev}.jar";
   src = fetchFromGitHub {
     owner = "clojure";
     repo = "clojure";
     inherit rev;
-    sha256 = "1gsx9741sq1ghp4lj9kjivfzal23f55a16wyxrdalm213vx3xbrl";
+    sha256 = "0v6gkdzrcb9pvfqhnipzqf9q81y8m3gnvm87cwz5cvlhr6791br9";
   };
   patches = [ ./compile-gte-mtime.patch ];
-  closureRepo = generateClosureRepo {
+  closureRepo = ./clojure.repo.edn;
+  passthru.closureRepoGenerator = closureRepoGenerator {
     inherit dependencies mavenRepos;
   };
   classpath = renderClasspath (lib.concatLists (
@@ -48,7 +50,7 @@ jarfile = stdenv.mkDerivation rec {
   '';
   meta.dwn = {
     repoEntry = {
-      resolvedVersion = "1.9.0-alpha16-CUSTOM";
+      resolvedVersion = "1.9.0-beta2-CUSTOM";
       jar = jarfile;
       inherit dependencies;
     };

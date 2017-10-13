@@ -34,6 +34,6 @@ project rec {
     "org.clojure"."clojure"."jar".""."1.9.0-CUSTOM" = clojure.meta.dwn.repoEntry;
   };
 
-  closureRepo = ./repo.edn;
+  closureRepo = ./dwn.repo.edn;
 
 }
