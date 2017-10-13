@@ -18,6 +18,14 @@
                           ;; (.printStackTrace e)
                           (log/error e "System error"))))
 
+(defn run-component! [sys component-key input-stream output-stream component]
+  (with-open [ir (io/reader input-stram)
+              ow (io/writer output-stream)]
+    (if (contains? sys component-key)
+      (do (println "ERROR component-key:" component-key "already used. Please stop it before deploying this.")
+          sys)
+      (binding [*out* ow *in* ir]))))
+
 (defn update! [in-stream out-stream]
   (let [cfg (config-read in-stream)]
     (log/info "Updating config\n"
