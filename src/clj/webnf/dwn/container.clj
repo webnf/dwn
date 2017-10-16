@@ -37,13 +37,31 @@
                                ["setSecurityManager"
                                 "exitVM"])))
 
+(defn dir-url [path]
+  (when-not (.isDirectory (io/file path))
+    (log/warn "Classpath directory" path "not found"))
+  (io/as-url (str "file:" path (when-not (str/ends-with? path "/") "/"))))
+
+(defn jar-url [path]
+  (when-not (.isFile (io/file path))
+    (log/warn "Classpath jar" path "not found"))
+  (io/as-url (str "file:" path)))
+
+(defn classpath-entry [[type [group artifact _ modifier version src]]]
+  [[group artifact modifier]
+   [version (case type
+              :source-dirs (mapv dir-url src)
+              :jar-file    [(jar-url src)])]])
+
+(defn entry-urls [_ [_ urls]] urls)
+
 (defrecord Container [name classpath parent class-loader security-manager thread-group]
   cmp/Lifecycle
   (start [this]
     (if class-loader
       this
       (assoc this :class-loader
-             (url-classloader (mapcat :urls classpath) parent))))
+             (url-classloader (mapcat entry-urls classpath) parent))))
   (stop [this]
     (if class-loader
       (do (jvm/kill-container! this)
@@ -60,55 +78,55 @@
       (do (cmp/stop prev)
           (cmp/start this)))))
 
-(s/def ::container
-  (s/keys :req-un [::classpath]
-          :opt-un [::name ::parent ::security-manager ::thread-group]))
+(s/def ::container-config
+  (s/keys :req-un [::loaded-artifacts ::parent-loader ::provided-versions]))
 
-(s/def ::name string?)
-(s/def ::classpath
-  (s/coll-of ::classpath-entry))
-(s/def ::classpath-entry
-  (s/or :source-dirs (s/keys :req-un [:webnf.jvm.maven/name ::version ::source-dirs])
-        :jar-file    (s/keys :req-un [:webnf.jvm.maven/name ::version ::jar-file])))
-(s/def :webnf.jvm.maven/name qualified-symbol?)
+(s/def ::loaded-artifacts (s/coll-of ::artifact-descriptor))
+(s/def ::parent-loader (config-ref #(instance? ClassLoader %)))
+(s/def ::provided-versions (s/coll-of ::artifact-descriptor))
+(s/def ::artifact-descriptor
+  (s/or :source-dirs (s/tuple ::group ::artifact #{"dirs"} ::modifier ::version ::dir-list)
+        :jar-file    (s/tuple ::group ::artifact #{"jar"} ::modifier ::version ::jar)))
+(s/def ::dir-list (s/coll-of string?))
+(s/def ::jar string?)
+(s/def ::group string?)
+(s/def ::artifact string?)
+(s/def ::modifier string?)
 (s/def ::version string?)
-(s/def ::source-dirs (s/coll-of string?))
-(s/def ::jar-file string?)
-(s/def ::parent (config-ref ::jvm/class-loader))
-(s/def ::security-manager (config-ref ::jvm/security-manager))
-(s/def ::thread-group (config-ref ::jvm/thread-group))
-
-(defn dir-url [path]
-  (when-not (.isDirectory (io/file path))
-    (log/warn "Classpath directory" path "not found"))
-  (io/as-url (str "file:" path (when-not (str/ends-with? path "/") "/"))))
-
-(defn jar-url [path]
-  (when-not (.isFile (io/file path))
-    (log/warn "Classpath jar" path "not found"))
-  (io/as-url (str "file:" path)))
-
-(defn classpath-entry [[type {:keys [name version source-dirs jar-file] :as cfg}]]
-  (assoc cfg :urls
-         (case type
-           :source-dirs (map dir-url source-dirs)
-           :jar-file [(jar-url jar-file)])))
 
 (defn container [cfg]
-  (let [{:keys [name classpath parent security-manager thread-group]
-         :or {name (gensym "container-")
-              parent [:inst {:class-loader base-loader}]
-              security-manager [:inst default-security-manager]
-              thread-group [:inst (wjt/thread-group (str (gensym (str name "-tg-")))
-                                                    wjt/logging-ueh)]}
-         :as res}
-        (s/conform ::container cfg)]
+  (let [{:keys [loaded-artifacts parent-loader provided-versions] :as res}
+        (s/conform ::container-config cfg)]
     (if (s/invalid? res)
-      (throw (ex-info "Invalid container config" (s/explain-data ::container cfg)))
-      (let [[p' m'] (pass-or-require parent :parent)
-            [sm' m''] (pass-or-require  security-manager :security-manager)
-            [tg' m'''] (pass-or-require thread-group :thread-group)]
-        (Container. name (map classpath-entry classpath)
-                    p' nil sm' tg'
-                    {::cmp/dependencies (into {} (concat m' m'' m'''))}
+      (throw (ex-info "Invalid container config" (s/explain-data ::container-config cfg)))
+      (fn [name]
+        ;; TODO check provided path
+        (Container. name
+                    (map classpath-entry loaded-artifacts)
+                    nil nil nil nil
+                    {::cmp/dependencies {:parent parent-loader}}
                     nil)))))
+
+#_(defn container [cfg]
+    (let [{:keys [name classpath parent security-manager thread-group]
+           :or {name (gensym "container-")
+                parent [:inst {:class-loader base-loader}]
+                security-manager [:inst default-security-manager]
+                thread-group [:inst (wjt/thread-group (str (gensym (str name "-tg-")))
+                                                      wjt/logging-ueh)]}
+           :as res}
+          (s/conform ::container cfg)]
+      (if (s/invalid? res)
+        (throw (ex-info "Invalid container config" (s/explain-data ::container cfg)))
+        (let [[p' m'] (pass-or-require parent :parent)
+              [sm' m''] (pass-or-require  security-manager :security-manager)
+              [tg' m'''] (pass-or-require thread-group :thread-group)]
+          (Container. name (map classpath-entry classpath)
+                      p' nil sm' tg'
+                      {::cmp/dependencies (into {} (concat m' m'' m'''))}
+                      nil)))))
+
+(comment
+
+
+  )

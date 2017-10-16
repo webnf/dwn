@@ -4,30 +4,15 @@
    [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [webnf.jvm :refer [eval-in-container]]
-   (webnf.dwn [config :refer [config-read]]
+   (webnf.dwn [config :as config]
               [system :refer [update-from]])
    [com.stuartsierra.component :as cmp])
   (:import
    (sun.misc Signal SignalHandler)
    (com.etsy.net JUDS UnixDomainSocketServer)))
 
-(defonce system
-  (agent (cmp/system-map)
-         :error-handler (fn [a e]
-                          (.println System/err "System error")
-                          ;; (.printStackTrace e)
-                          (log/error e "System error"))))
-
-(defn run-component! [sys component-key input-stream output-stream component]
-  (with-open [ir (io/reader input-stram)
-              ow (io/writer output-stream)]
-    (if (contains? sys component-key)
-      (do (println "ERROR component-key:" component-key "already used. Please stop it before deploying this.")
-          sys)
-      (binding [*out* ow *in* ir]))))
-
 (defn update! [in-stream out-stream]
-  (let [cfg (config-read in-stream)]
+  (let [cfg (config/read (config/reader in-stream))]
     (log/info "Updating config\n"
               (with-out-str (pprint cfg)))
     (binding [*out* (io/writer out-stream)]

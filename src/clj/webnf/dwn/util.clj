@@ -13,8 +13,8 @@
                  ~@(when reload [:reload-all]))
         ~(wrap (list sym arg)))))
 
-(defn config-ref [spec]
-  (s/or :kw-ref qualified-keyword? :inst spec))
+(defn config-ref [pred]
+  qualified-keyword?)
 
 (defn pass-or-require [[type data] slot]
   (case type

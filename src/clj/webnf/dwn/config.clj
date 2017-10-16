@@ -1,4 +1,5 @@
 (ns webnf.dwn.config
+  (:refer-clojure :exclude [read])
   (:require [clojure.pprint :refer [pprint]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
@@ -13,6 +14,24 @@
             [clojure.string :as str]
             [webnf.dwn.util :refer [require-call-form config-ref]]
             [clojure.tools.logging :as log]))
+
+(def dwn-readers
+  {'webnf.dwn/container #'wdc/container
+   'webnf.dwn/component #'wdcmp/container-component
+   'webnf.dwn/ns-launcher #'wdcmp/launcher-component})
+
+(defn reader [input]
+  (java.io.PushbackReader. (io/reader input)))
+
+(def read
+  (comp
+   (partial apply cmp/system-map)
+   (partial apply concat)
+   #(-> % ;; FIXME check classloader compat here
+        (assoc-in [:webnf.dwn/app-loader :class-loader] wdc/app-loader)
+        (assoc-in [:webnf.dwn/base-loader :class-loader] wdc/base-loader))
+   (partial edn/read {:readers (merge default-data-readers
+                                      dwn-readers)})))
 
 (comment
   (defn- lazy-body [v-sym f-sym body]
@@ -46,24 +65,16 @@
          (letfn [~@(for [[f-sym init] inits]
                      (lazy-body (v-syms f-sym) f-sym (lazify [init])))]
            ~@(lazify body)))))
-  (llet [a (+ b 10)
-         b 1]
-        a)
+
+  (defmacro trace [& body]
+    `(do (println "TRACE" ~@(map pr-str body))
+         ~@body))
+  
+  (llet [a (trace (+ b 10))
+         b (trace 1)
+         c (trace "C")
+         d (trace (+ a b))
+         e (trace (+ b d))]
+        [a e])
   )
 
-(def dwn-readers
-  {'webnf.dwn/container #'wdc/container
-   'webnf.dwn/component #'wdcmp/container-component
-   'webnf.dwn/ns-launcher #'wdcmp/launcher-component})
-
-(def config-read
-  (comp
-   (partial apply cmp/system-map)
-   (partial apply concat)
-   #(-> % ;; FIXME check classloader compat here
-        (assoc-in [:webnf.dwn/app-loader :class-loader] wdc/app-loader)
-        (assoc-in [:webnf.dwn/base-loader :class-loader] wdc/base-loader))
-   (partial edn/read {:readers (merge default-data-readers
-                                      dwn-readers)})
-   #(java.io.PushbackReader. %)
-   io/reader))

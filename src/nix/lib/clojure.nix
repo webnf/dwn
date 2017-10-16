@@ -179,7 +179,7 @@ let callPackage = newScope thisns;
                       , providedVersions ? []
                       , ... }:
                       binder@{
-                        parentLoader ? keyword "dwn.base" "app-loader"
+                        parentLoader ? keyword "webnf.dwn" "app-loader"
                       , ...}:
   let containerName = keyword name "container"; in
   keyword-map ({
@@ -189,7 +189,7 @@ let callPackage = newScope thisns;
           dirs = artifactClasspath args;
         }] ++ expandDependencies args);
         parent-loader = parentLoader;
-        inherit providedVersions;
+        provided-versions = providedVersions;
       };
     } // lib.listToAttrs (projectNsLaunchers name containerName mainNs binder
                        ++ projectComponents name containerName components binder));

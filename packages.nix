@@ -1,4 +1,4 @@
-{ newScope, dwnConfig, clojureLib }:
+{ newScope, dwnConfig, clojureLib, lib, writeText }:
 let
   callPackage = newScope thisns;
   mkUnits = callPackage ./src/systemd/gen.nix { };
@@ -24,6 +24,12 @@ let
       aether = callPackage ./deps.aether {};
     };
     juds = callPackage ./juds.nix {};
+    descriptors = lib.listToAttrs (map (name:
+        lib.nameValuePair
+          name
+          (writeText name
+            (lib.getAttr name thisns).meta.dwn.descriptor))
+      [ "dwn" "nrepl" ]);
     sysTD = let
         launcher = dwn.meta.dwn.launchers.boot;
         socket = "${dwnConfig.varDirectory}/dwn.socket";

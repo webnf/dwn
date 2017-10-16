@@ -1,4 +1,5 @@
-{ pkgs, lib }: systemdConfig:
+{ pkgs, lib
+, scope ? "user" }: systemdConfig:
 let
   system =
   import <nixos/lib/eval-config.nix> {
@@ -21,4 +22,4 @@ let
     inherit pkgs lib;
   };
 in
-systemdLib.generateUnits "user" system.config.systemd.user.units [] []
+systemdLib.generateUnits scope system.config.systemd."${scope}".units [] []
