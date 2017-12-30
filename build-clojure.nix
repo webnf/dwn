@@ -4,7 +4,7 @@
 }:
 let
   dependencies = [
-    [ "org.clojure" "spec.alpha" "0.1.134" {
+    [ "org.clojure" "spec.alpha" "0.1.143" {
         exclusions = [
           [ "org.clojure" "clojure" ]
         ];
@@ -17,14 +17,14 @@ let
       } ]
   ];
 jarfile = stdenv.mkDerivation rec {
-  rev = "clojure-1.9.0-beta2";
+  rev = "clojure-1.9.0";
   name = "${rev}-CUSTOM.jar";
   builtName = "${rev}.jar";
   src = fetchFromGitHub {
     owner = "clojure";
     repo = "clojure";
     inherit rev;
-    sha256 = "0v6gkdzrcb9pvfqhnipzqf9q81y8m3gnvm87cwz5cvlhr6791br9";
+    sha256 = "0gwb9cz9fvi183angv1j3bjdxsm6aa7k7dz71q6y48sykyyjsfpc";
   };
   patches = [ ./compile-gte-mtime.patch ];
   closureRepo = ./clojure.repo.edn;
@@ -50,7 +50,7 @@ jarfile = stdenv.mkDerivation rec {
   '';
   meta.dwn = {
     repoEntry = {
-      resolvedVersion = "1.9.0-beta2-CUSTOM";
+      resolvedVersion = "1.9.0-CUSTOM";
       jar = jarfile;
       inherit dependencies;
     };
