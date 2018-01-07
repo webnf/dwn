@@ -3,8 +3,12 @@
 (shellBinder.mainLauncher rec {
   name = "aether-downloader";
   namespace = "webnf.dwn.deps.aether";
+  #jvmArgs = [
+  #  "-Xss8M"
+  #];
   classpath = classpathFor {
     name = "${name}-classpath";
+    devMode = false;
     cljSourceDirs = [ ./src ../nix.aether/src ];
     ## don't update ./deps.bootstrap.nix it will be copied from ./deps.nix
     dependencies = import ./deps.bootstrap.nix;

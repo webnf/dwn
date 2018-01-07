@@ -1,8 +1,11 @@
-{ callPackage }:
+{ callPackage
+, devMode ? false
+, varDirectory ? "/tmp/dwn.var"
+, clojureLib ? callPackage ./src/nix/lib {}
+}:
 callPackage ./packages.nix {
-  clojureLib = callPackage ./src/nix/lib {};
+  inherit clojureLib;
   dwnConfig = {
-    devMode = true;
-    varDirectory = "/tmp/dwn.var";
+    inherit devMode varDirectory;
   };
 }

@@ -9,10 +9,22 @@
   (:require [webnf.dwn.deps.aether.cons :as cons]
             ;; [webnf.nix.data :as data]
             [webnf.nix.aether :refer [coordinate-info]]
-            [clojure.pprint :refer [pprint]]
+            [clojure.pprint :as pp :refer [pprint]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]))
+
+(defmethod print-method ::literal [l ^java.io.Writer w] (.write w (str (first l))))
+
+(defn literal [s] ^{:type ::literal} [s])
+
+(defn pprint* [o]
+  (binding [pp/*print-pprint-dispatch*
+            (fn [o]
+              (if (= ::literal (:type (meta o)))
+                (.write *out* (str (first o)))
+                (pp/simple-dispatch o)))]
+    (pp/pprint o)))
 
 (def default-repositories
   {"central" "http://repo1.maven.org/maven2"
@@ -135,12 +147,14 @@
 (defn download-info [coord' {:as config :keys [overlay]}]
   (let [{:keys [group artifact extension classifier version]
          :as coord} (coordinate-info coord')]
-    (if-let [{:strs [sha1 dirs jar dependencies]} (get-in overlay [group artifact extension classifier version])]
+    (if-let [{:strs [sha1 dirs jar dependencies nix-expr]} (get-in overlay [group artifact extension classifier version])]
       {:sha1 sha1
        :dirs dirs
        :jar jar
        :coord coord
-       :dependencies dependencies}
+       :dependencies dependencies
+       :nix-expr nix-expr
+       :overlay true}
       (maven-download-info coord config))))
 
 (defn dependency-coordinate [dep]
@@ -166,18 +180,23 @@
 
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
-    (reduce (fn [res {:as dli :keys [resolved-version sha1 dirs jar dependencies]
+    (reduce (fn [res {:as dli :keys [resolved-version sha1 dirs jar dependencies nix-expr overlay]
                       {:keys [group artifact extension classifier version]} :coord}]
-              (assoc-in res [group artifact extension classifier version]
-                        (cond-> {}
-                          (and
-                           (empty? dirs)
-                           (str/blank? jar)
-                           (not= resolved-version version)) (assoc :resolved-version resolved-version)
-                          (not (str/blank? sha1)) (assoc :sha1 sha1)
-                          (not (empty? dirs)) (assoc :dirs dirs)
-                          (not (str/blank? jar)) (assoc :jar jar)
-                          (not (empty? dependencies)) (assoc :dependencies dependencies))))
+              (if overlay
+                res
+                (if (str/blank? nix-expr)
+                  (assoc-in res [group artifact extension classifier version]
+                            (cond-> {}
+                              (and
+                               (empty? dirs)
+                               (str/blank? jar)
+                               (not= resolved-version version)) (assoc :resolved-version resolved-version)
+                              (not (str/blank? sha1)) (assoc :sha1 sha1)
+                              (not (empty? dirs)) (assoc :dirs dirs)
+                              (not (str/blank? jar)) (assoc :jar jar)
+                              (not (empty? dependencies)) (assoc :dependencies dependencies)))
+                  (do (println "WARNING: deprecated use of :nix-expr")
+                      res))))
             {} download-infos)))
 
 (defn merge-aether-config [prev-config & {:as next-config}]
@@ -214,7 +233,7 @@
                                               [(str (gensym "repo")) r]))))]
     (with-open [o (io/writer repo-out-file)]
       (binding [*out* o]
-        (pprint repo)))
+        (pprint* repo)))
     (shutdown-agents)
     (System/exit 0)))
 

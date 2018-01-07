@@ -1,3 +1,3 @@
-#!/bin/sh -e
+#!/bin/sh -ex
 
-exec `nix-build --show-trace --no-out-link shell.nix -A $1.closureRepoGenerator` $2
+exec `nix-build --show-trace --no-out-link shell.nix -A $1.closureRepoGenerator` "$2"

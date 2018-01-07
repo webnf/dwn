@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/sh -ex
 ./gen-repo.sh deps.aether deps.aether/bootstrap-repo.next.edn
 ( cd deps.aether
   mv bootstrap-repo.next.edn bootstrap-repo.edn
@@ -8,3 +8,4 @@
 
 ./gen-repo.sh dwn dwn.repo.edn
 ./gen-repo.sh nrepl nrepl.repo.edn
+./gen-repo.sh leinReader lein.reader/repo.edn

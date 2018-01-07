@@ -19,6 +19,7 @@ let
     nrepl = callProject ./nrepl-project.nix {
       inherit (dwn.meta.dwn) providedVersions;
     };
+    leinReader = callProject ./lein.reader/project.nix { };
     deps = {
       expander = callPackage ./deps.expander {};
       aether = callPackage ./deps.aether {};

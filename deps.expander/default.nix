@@ -6,6 +6,7 @@ shellBinder.mainLauncher rec {
 
   classpath = classpathFor {
     name = "${name}-classpath";
+    devMode = false;
     cljSourceDirs = [ ./src ../nix.data/src ../nix.aether/src ];
     fixedDependencies = import ./deps.bootstrap.nix;
     aot = [ namespace ];
