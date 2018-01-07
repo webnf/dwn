@@ -31,13 +31,9 @@
 (def ^:dynamic *pprint* true)
 
 (defmacro fragment [frag]
-  `(let [indent# *indent*
-         pprint# *pprint*]
-     (reify NixExpr
-       (emit-expr [_]
-         (binding [*indent* indent#
-                   *pprint* pprint#]
-           (doall ~frag))))))
+  `(reify NixExpr
+     (emit-expr [_]
+       (doall ~frag))))
 
 (defmacro inc-indent [& body]
   `(binding [*indent* (cons "  " *indent*)]
@@ -54,7 +50,7 @@
   (fragment (emit-ppstr s)))
 
 (defn emit-path [p]
-  (str/replace (.getAbsolutePath (io/file p))
+  (str/replace (.getCanonicalPath (io/file p))
                #"[^a-zA-Z0-9/_\-.~]"
                (fn [s] (str "\\" s))))
 
@@ -87,6 +83,18 @@
    (apply concat (interpose [" "] (map emit-expr v)))
    ["]"]))
 
+(defn emit-hvec [v]
+  (if (empty? v)
+    ["[]"]
+    (concat
+     ["["]
+     (inc-indent
+      (mapcat #(concat (emit-nl)
+                       (emit-expr %))
+              v))
+     (emit-nl)
+     ["]"])))
+
 (defn emit-call [& exprs]
   (concat
    ["("]
@@ -97,6 +105,8 @@
   (fragment (emit-map v)))
 (defn as-vec [v]
   (fragment (emit-vec v)))
+(defn as-hvec [v]
+  (fragment (emit-hvec v)))
 (defn as-call [v]
   (fragment (emit-call v)))
 
@@ -108,7 +118,12 @@
           clojure.lang.ASeq
           (emit-expr [s] (apply emit-call s))
           String
-          (emit-expr [s] (emit-str s))))
+          (emit-expr [s] (emit-str s))
+          Number
+          (emit-expr [n]
+            [(str (bigdec n))])
+          nil
+          (emit-expr [_] ["null"])))
 
 (defn eprn [ss]
   (println (apply str ss)))
