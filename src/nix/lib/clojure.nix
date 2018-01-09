@@ -238,6 +238,19 @@ let callPackage = newScope thisns;
 
   mkConfig = optionsDecl: options: options; ## FIXME validate, fill defaults
 
+  subProjectOverlay = prjs:
+    lib.fold mergeRepos {}
+      (map (prj: with prj.passthru.dwn; {
+                   "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = {
+                     inherit dirs dependencies;
+                   };
+                 })
+           prjs);
+
+  subProjectFixedVersions = prjs:
+    (map (prj: with prj.passthru.dwn; [group artifact extension classifier version])
+         prjs);
+
   project = args0@{
               name
             , group ? name
@@ -252,12 +265,13 @@ let callPackage = newScope thisns;
             , mainNs ? {}
             , jvmArgs ? []
             , mavenRepos ? defaultMavenRepos
+            , subProjects ? []
             , ... }:
             { mainLauncher, ... }@binder:
     let
       args = args0 // {
-        #fixedVersions = fixedVersions ++ [["org.clojure" "clojure" "1.9.0"]];
-        #overlayRepo = (mergeRepos overlayRepo { "org.clojure"."clojure"."jar".""."1.9.0" = clojureCustom.dwn; });
+        overlayRepo = mergeRepos (subProjectOverlay subProjects) overlayRepo;
+        fixedVersions = fixedVersions ++ subProjectFixedVersions subProjects;
       };
       classpath = classpathFor args;
       launchers = lib.mapAttrs (
@@ -272,16 +286,18 @@ let callPackage = newScope thisns;
     in stdenv.mkDerivation {
       inherit classpath descriptor;
       name = "${name}-${version}";
-      passthru.dwn = {
-        artifact = name;
-        inherit group extension classifier version;
-        inherit launchers;
-        inherit mainNs jvmArgs mavenRepos;
-        inherit dependencies fixedVersions providedVersions closureRepo;
-        expandedDependencies = expandDependencies args;
-        dirs = if extension == "dirs" then artifactClasspath args else null;
-        jar = if extension == "jar" then throw "Not implemented: ${extension}" else null;
-        classes = classesFor args;
+      passthru = lib.recursiveUpdate passthru {
+        dwn = {
+          artifact = name;
+          inherit group extension classifier version;
+          inherit launchers subProjects;
+          inherit mainNs jvmArgs mavenRepos;
+          inherit dependencies fixedVersions providedVersions closureRepo;
+          expandedDependencies = expandDependencies args;
+          dirs = if extension == "dirs" then artifactClasspath args else null;
+          jar = if extension == "jar" then throw "Not implemented: ${extension}" else null;
+          classes = classesFor args;
+        };
       };
       meta.dwn = (lib.warn "Deprecated usage of <project>.meta.dwn ; use <project>.dwn instead" {
         inherit launchers descriptor;
