@@ -125,7 +125,7 @@ let callPackage = newScope thisns;
     let expDep = depsExpander
            closureRepo dependencies fixedVersions providedVersions overlayRepo; in
     if isNull fixedDependencies
-    then import (builtins.trace (toString expDep) expDep)
+    then import expDep #(builtins.trace (toString expDep) expDep)
     else fixedDependencies;
 
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos
@@ -317,10 +317,8 @@ let callPackage = newScope thisns;
           local target=$targetOrig
           local cnt=0
           while [ -L $target ]; do
-            echo "$target exists"
             target=$targetOrig-$cnt
             cnt=$(( cnt + 1 ))
-            echo "Trying with $target"
           done
           ln -s $c $target
         done
@@ -382,7 +380,8 @@ stripHash() {
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];
     tag = if classifier == "" then "" else "-" + classifier;
     mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}${tag}.${extension}";
-  in map mvnPath mavenRepos;
+  in # builtins.trace "DOWNLOADING '${group}' '${name}' '${extension}' '${classifier}' '${version}' '${resolvedVersion}'"
+       (map mvnPath mavenRepos);
 
   renderClasspath = classpath: lib.concatStringsSep ":" classpath;
 
