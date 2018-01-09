@@ -17,8 +17,8 @@
         a (name artifact)]
     [g a]))
 
-(defn coord [[artifact version & {:as props :keys [exclusions scope]}]]
-  (let [p (dissoc props :exclusions :scope)]
+(defn coord [[artifact version & {:as props :keys [exclusions scope extension classifier]}]]
+  (let [p (dissoc props :exclusions :scope :extension :classifier)]
     (when-not (empty? p)
       (warn "Don't know how to emit props %s" (pr-str p))))
   (let [g (or (namespace artifact)
@@ -27,7 +27,10 @@
         p (cond-> {}
             exclusions (assoc "exclusions" (mapv exclusion exclusions))
             scope      (assoc "scope" scope))]
-    (cond-> [g a "jar" "" version]
+    (cond-> [g a
+             (or extension "jar")
+             (or classifier "")
+             version]
       (not (empty? p)) (conj p))))
 
 (def path nix-data/path)
@@ -48,13 +51,20 @@
   (reduce (key-selector prj #(nix-data/as-hvec (mapv coord %)))
           r coord-keys))
 
-(defn canonical-path [p]
-  (.getCanonicalPath (io/file p)))
+(defn canonical-path [^java.io.File f]
+  (.getCanonicalPath f))
+
+(defn file-exists? [^java.io.File f]
+  (.exists f))
 
 (defn select-paths [r prj & path-keys]
   (reduce (key-selector prj #(nix-data/as-hvec
                               (into []
                                     (comp
+                                     (map io/file)
+                                     ;; we cannot access files during nix build,
+                                     ;; due to access control
+                                     ;; (filter file-exists?)
                                      (map canonical-path)
                                      dedupe-all
                                      (map path))
@@ -72,19 +82,24 @@
       m)))
 
 (defn -main [& args']
-  (let [[project-clj op & args] args']
+  (let [[project-clj base-dir op & args] args']
     ;; (apply println "Hello, got" args)
     (assert (.isFile (io/file (str project-clj))) (pr-str project-clj))
     (assert (= "pr-deps" op) (pr-str op))
     (assert (= nil args) (pr-str args))
     (-> (prj/read-raw project-clj)
+        (assoc :root (io/file base-dir))
         (prj/project-with-profiles)
         (prj/init-profiles [:default])
         (as-> #__ prj
           (-> {}
               (select-coords prj :dependencies :plugins)
               (select-paths prj :source-paths :resource-paths :java-source-paths)
-              (assoc :aot (mapv name (:aot prj)))))
+              (assoc :aot (mapv name (:aot prj)))
+              (assoc
+               :group   (:group prj)
+               :name    (:name prj)
+               :version (:version prj))))
         (rename-keys
          :source-paths      :cljSourceDirs
          :resource-paths    :resourceDirs

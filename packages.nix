@@ -5,11 +5,13 @@ let
   thisns = clojureLib // rec {
     inherit dwnConfig callPackage;
     inherit (dwnConfig) devMode;
+    inherit (leiningenLib) fromLein;
 
     callProject = project: args:
       (callPackage project args) (dwnConfig.binder or clojureLib.shellBinder);
 
     clojure = callPackage ./build-clojure.nix { };
+    leiningenLib = callPackage ./src/nix/lib/leiningen.nix {};
 
     dwn = callProject ./project.nix { };
     dwnSystemd = callPackage ./src/systemd {
@@ -19,7 +21,7 @@ let
     nrepl = callProject ./nrepl-project.nix {
       inherit (dwn.meta.dwn) providedVersions;
     };
-    leinReader = callProject ./lein.reader/project.nix { };
+    leinReader = callPackage ./lein.reader/project.nix { devMode = false; };
     deps = {
       expander = callPackage ./deps.expander {};
       aether = callPackage ./deps.aether {};

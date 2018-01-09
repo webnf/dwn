@@ -21,7 +21,6 @@ let callPackage = newScope thisns;
                         https://clojars.org/repo ];
   dwn = callPackage ./dwn.nix {};
   edn = callPackage ./edn.nix {};
-  leiningen = callPackage ./leiningen.nix {};
 
   inherit (edn) asEdn toEdn toEdnPP;
   inherit (edn.syntax) tagged hash-map keyword-map list vector set symbol keyword string int bool nil;
