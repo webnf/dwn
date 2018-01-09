@@ -151,7 +151,7 @@ let callPackage = newScope thisns;
       echo "$0 <filename.out.edn>"
       exit 1
     fi
-    launcher="${callPackage ../../../deps.aether { }}"
+    launcher="${callPackage ../../../deps.aether { devMode = false; }}"
     ednDeps=$(cat <<EDNDEPS
     ${toEdn deps}
     EDNDEPS
@@ -172,7 +172,7 @@ let callPackage = newScope thisns;
     ednFixedVersions = toEdn fixedVersions;
     ednProvidedVersions = toEdn providedVersions;
     ednOverlayRepo = toEdn overlayRepo;
-    launcher = callPackage ../../../deps.expander { };
+    launcher = callPackage ../../../deps.expander { devMode = false; };
   } ''
     #!/bin/sh
     ## set -xv

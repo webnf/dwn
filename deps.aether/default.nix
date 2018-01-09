@@ -1,4 +1,4 @@
-{ classpathFor, shellBinder, closureRepoGenerator }:
+{ classpathFor, shellBinder, closureRepoGenerator, devMode }:
 
 (shellBinder.mainLauncher rec {
   name = "aether-downloader";
@@ -8,7 +8,7 @@
   #];
   classpath = classpathFor {
     name = "${name}-classpath";
-    devMode = false;
+    inherit devMode;
     cljSourceDirs = [ ./src ../nix.aether/src ];
     ## don't update ./deps.bootstrap.nix it will be copied from ./deps.nix
     dependencies = import ./deps.bootstrap.nix;

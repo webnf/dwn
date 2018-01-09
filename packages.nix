@@ -23,8 +23,8 @@ let
     };
     leinReader = callPackage ./lein.reader/project.nix { devMode = false; };
     deps = {
-      expander = callPackage ./deps.expander {};
-      aether = callPackage ./deps.aether {};
+      expander = callPackage ./deps.expander { devMode = false; };
+      aether = callPackage ./deps.aether { devMode = false; };
     };
     juds = callPackage ./juds.nix {};
     descriptors = lib.listToAttrs (map (name:

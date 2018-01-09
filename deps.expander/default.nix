@@ -1,4 +1,4 @@
-{ lib, classpathFor, shellBinder, mvnResolve, defaultMavenRepos }:
+{ lib, classpathFor, shellBinder, mvnResolve, defaultMavenRepos, devMode }:
 
 shellBinder.mainLauncher rec {
   name = "dependency-expander";
@@ -6,7 +6,7 @@ shellBinder.mainLauncher rec {
 
   classpath = classpathFor {
     name = "${name}-classpath";
-    devMode = false;
+    inherit devMode;
     cljSourceDirs = [ ./src ../nix.data/src ../nix.aether/src ];
     fixedDependencies = import ./deps.bootstrap.nix;
     aot = [ namespace ];
