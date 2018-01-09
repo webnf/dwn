@@ -18,7 +18,7 @@ let
   ];
 jarfile = stdenv.mkDerivation rec {
   rev = "clojure-1.9.0";
-  name = "${rev}-CUSTOM.jar";
+  name = "${rev}-DWN.jar";
   builtName = "${rev}.jar";
   src = fetchFromGitHub {
     owner = "clojure";
@@ -48,12 +48,27 @@ jarfile = stdenv.mkDerivation rec {
   installPhase = ''
     cp $builtName $out
   '';
-  meta.dwn = {
+  passthru.dwn = {
+    group = "org.clojure";
+    artifact = "clojure";
+    version = "1.9.0";
+    resolvedVersion = "1.9.0-DWN";
+    extension = "jar";
+    classifier = "";
+    jar = jarfile;
+    inherit dependencies;
+    expandedDependencies = dependencies;
+
+  };
+  meta.dwn = (lib.warn "Deprecated usage of clojure.meta.dwn ; use clojure.dwn instead" {
+    group = "org.clojure";
+    name = "clojure";
+    version = "1.9.0-DWN";
     repoEntry = {
-      resolvedVersion = "1.9.0-CUSTOM";
+      resolvedVersion = "1.9.0-DWN";
       jar = jarfile;
       inherit dependencies;
     };
-  };
+  });
 };
 in jarfile
