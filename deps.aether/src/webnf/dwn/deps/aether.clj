@@ -178,7 +178,11 @@
       (cons res (mapcat deref thunks))))))
 
 (defn expand-download-infos
-  ([coordinates conf] (mapcat #(expand-download-info % conf) coordinates)))
+  ([coordinates conf]
+   (->> coordinates
+        (mapv #(future (expand-download-info % conf)))
+        (map deref)
+        (apply concat))))
 
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
