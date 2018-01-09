@@ -352,12 +352,13 @@ let callPackage = newScope thisns;
     else if "jar" == lib.elemAt coordinate 2
          && isNull sha1 then
       if isNull jar then throw "Jar file for ${toString coordinate} not found" else [ jar ]
-    else [ (fetchurl {
+    else [ ((fetchurl {
       name = "${name}-${version}.${extension}";
       urls = mavenMirrors mavenRepos group name extension classifier version
                           (if isNull resolved-version then version else resolved-version);
       inherit sha1;
-    }) ];
+            # prevent nix-daemon from downloading maven artifacts from the nix cache
+    }) // { preferLocalBuild = true; }) ];
 
   mavenMirrors = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];
