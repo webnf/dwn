@@ -1,11 +1,17 @@
-{ callPackage
+{ jdk, newScope
 , devMode ? false
 , varDirectory ? "/tmp/dwn.var"
-, clojureLib ? callPackage ./src/nix/lib {}
+, clojureLib ? null
 }:
-callPackage ./packages.nix {
-  inherit clojureLib;
-  dwnConfig = {
-    inherit devMode varDirectory;
-  };
-}
+let callPackage = newScope thisns;
+    thisns = { inherit callPackage; } // { # clojureLib // {
+      inherit jdk;
+      dwnConfig = {
+        inherit devMode varDirectory;
+      };
+      clojureLib = if isNull clojureLib then
+          callPackage ./src/nix/lib {}
+        else
+          clojureLib;
+    };
+in callPackage ./packages.nix { }
