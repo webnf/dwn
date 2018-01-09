@@ -340,12 +340,13 @@ let callPackage = newScope thisns;
     then toString dir
     else copyPathToStore dir;
 
-  mvnResolve = mavenRepos: { resolved-version ? null, coordinate, sha1 ? null, dirs ? null, jar ? null, ... }:
-    let version = lib.elemAt coordinate 4;
-        classifier = lib.elemAt coordinate 3;
-        extension = lib.elemAt coordinate 2;
-        name    = lib.elemAt coordinate 1;
-        group   = lib.elemAt coordinate 0;
+  mvnResolve = mavenRepos: { resolved-coordinate ? coordinate, resolved-base-version ? null, coordinate, sha1 ? null, dirs ? null, jar ? null, ... }:
+    let version = lib.elemAt resolved-coordinate 4;
+        baseVersion = if isNull resolved-base-version then version else resolved-base-version;
+        classifier = lib.elemAt resolved-coordinate 3;
+        extension = lib.elemAt resolved-coordinate 2;
+        name    = lib.elemAt resolved-coordinate 1;
+        group   = lib.elemAt resolved-coordinate 0;
     in
     if "dirs" == lib.elemAt coordinate 2 then
       if isNull dirs then throw "Dirs for ${toString coordinate} not found" else dirs
@@ -354,8 +355,7 @@ let callPackage = newScope thisns;
       if isNull jar then throw "Jar file for ${toString coordinate} not found" else [ jar ]
     else [ ((fetchurl {
       name = "${name}-${version}.${extension}";
-      urls = mavenMirrors mavenRepos group name extension classifier version
-                          (if isNull resolved-version then version else resolved-version);
+      urls = mavenMirrors mavenRepos group name extension classifier baseVersion version;
       inherit sha1;
             # prevent nix-daemon from downloading maven artifacts from the nix cache
     }) // { preferLocalBuild = true; }) ];

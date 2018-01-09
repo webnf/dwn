@@ -14,9 +14,12 @@
    org.eclipse.aether.artifact.DefaultArtifact
    (org.eclipse.aether.collection CollectRequest)
    (org.eclipse.aether.metadata Metadata Metadata$Nature DefaultMetadata)
-   org.eclipse.aether.resolution.VersionResult
-   org.eclipse.aether.resolution.VersionRequest
-   org.eclipse.aether.resolution.VersionResolutionException
+   (org.eclipse.aether.resolution VersionResult
+                                  VersionRequest
+                                  VersionResolutionException
+                                  ArtifactRequest
+                                  ArtifactResult
+                                  ArtifactResolutionException)
    (org.eclipse.aether.repository RemoteRepository Proxy ArtifactRepository Authentication
                                   RepositoryPolicy LocalRepository RemoteRepository
                                   MirrorSelector RemoteRepository$Builder)
@@ -66,7 +69,7 @@
   (release [_ wagon])
   (lookup [_ role-hint]
     (when-let [f (get @wagon-factories role-hint)]
-      (try 
+      (try
         (f)
         (catch Exception e
           (st/print-cause-trace e)
@@ -189,6 +192,9 @@
 
 (defn version-resolution [art {:keys [system session repositories] :as conf}]
   (.resolveVersion system session (VersionRequest. (artifact art) repositories nil)))
+
+(defn artifact-resolution [art {:keys [system session repositories]}]
+  (.resolveArtifact system session (ArtifactRequest. (artifact art) repositories nil)))
 
 (defc metadata Metadata [art]
   (let [a (artifact art)]

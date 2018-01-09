@@ -75,12 +75,14 @@
         e (.getExtension art)
         c (.getClassifier art)
         v (.getVersion art)]
-    (vec
-     (concat
-      (if (= g a) [a] [g a])
-      (when (not= "jar" e) [e])
-      (when (not (str/blank? c)) [c])
-      [v]))))
+    (let [has-classifier (not (str/blank? c))
+          has-extension (or has-classifier (not= "jar" e))]
+      (vec
+       (concat
+        (if (= g a) [a] [g a])
+        (when has-extension [e])
+        (when has-classifier [c])
+        [v])))))
 
 (defn exclusion
   "Parse exclusion: [~group-artifact] or [~group ~artifact] or [~group-artifact ~options] or [~group ~artifact ~options]"
@@ -118,16 +120,17 @@
 (defn maven-download-info [coord' {:as config}]
   (let [coord (coordinate-info coord')
         art (cons/artifact coord)
-        rv (.getVersion (or (cons/version-resolution art config)
-                            art))
-        rart (-> (coordinate art)
-                 coordinate-info
-                 (assoc 4 rv)
-                 cons/artifact)
-        desc (cons/artifact-descriptor rart config)
+        desc (cons/artifact-descriptor
+              (let [vrr (cons/version-resolution art config)]
+                (-> art coordinate coordinate-info
+                    (cond-> #__
+                      vrr (assoc :version (.getVersion vrr)))
+                    cons/artifact))
+              config)
+        rart (.getArtifact desc)
         res {:coord coord
-             :resolved-version rv
-             :snapshot (.isSnapshot art)}]
+             :resolved-coord (coordinate-info (coordinate rart))
+             :resolved-base-version (.getBaseVersion rart)}]
     (if-let [layout (try (cons/repository-layout (.getRepository desc) config)
                          (catch Exception e
                            (println "ERROR" "no download info" (coordinate rart) (.getRepository desc))))]
@@ -148,16 +151,20 @@
 
 (defn download-info [coord' {:as config :keys [overlay]}]
   (let [{:keys [group artifact extension classifier version]
-         :as coord} (coordinate-info coord')]
-    (if-let [{:strs [sha1 dirs jar dependencies nix-expr]} (get-in overlay [group artifact extension classifier version])]
-      {:sha1 sha1
-       :dirs dirs
-       :jar jar
-       :coord coord
-       :dependencies dependencies
-       :nix-expr nix-expr
-       :overlay true}
-      (maven-download-info coord config))))
+         :as coord} (coordinate-info coord')
+        res (if-let [{:strs [sha1 dirs jar dependencies nix-expr resolvedCoord resolvedBaseVersion]}
+                     (get-in overlay [group artifact extension classifier version])]
+              {:sha1 sha1
+               :dirs dirs
+               :jar jar
+               :coord coord
+               :dependencies dependencies
+               :nix-expr nix-expr
+               :overlay true
+               :resolved-coord (or resolvedCoord coord)
+               :resolved-base-version (or resolvedBaseVersion version)}
+              (maven-download-info coord config))]
+    res))
 
 (defn dependency-coordinate [dep]
   (coordinate (.getArtifact (cons/dependency (coordinate-info dep)))))
@@ -184,19 +191,19 @@
         (map deref)
         (apply concat))))
 
+(def coord-vec (juxt :group :artifact :extension :classifier :version))
+
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
-    (reduce (fn [res {:as dli :keys [resolved-version sha1 dirs jar dependencies nix-expr overlay]
-                      {:keys [group artifact extension classifier version]} :coord}]
+    (reduce (fn [res {:as dli :keys [resolved-coord resolved-base-version sha1 dirs jar dependencies nix-expr overlay]
+                      {:as coord :keys [group artifact extension classifier version]} :coord}]
               (if overlay
                 res
                 (if (str/blank? nix-expr)
                   (assoc-in res [group artifact extension classifier version]
                             (cond-> {}
-                              (and
-                               (empty? dirs)
-                               (str/blank? jar)
-                               (not= resolved-version version)) (assoc :resolved-version resolved-version)
+                              (not= resolved-coord coord)  (assoc :resolved-coord (coord-vec resolved-coord))
+                              (not= resolved-base-version (:version coord)) (assoc :resolved-base-version resolved-base-version)
                               (not (str/blank? sha1)) (assoc :sha1 sha1)
                               (not (empty? dirs)) (assoc :dirs dirs)
                               (not (str/blank? jar)) (assoc :jar jar)
