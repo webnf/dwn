@@ -120,7 +120,7 @@ let callPackage = newScope thisns;
                        , fixedVersions ? []
                        , providedVersions ? []
                        , fixedDependencies ? null # bootstrap hack
-                       , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.nix;` to project `${name}`"
+                       , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
                        , ... }:
     let expDep = depsExpander
            closureRepo dependencies fixedVersions providedVersions overlayRepo; in
@@ -325,23 +325,6 @@ let callPackage = newScope thisns;
         echo "$descriptor" > $out/share/dwn.edn
       '';
     };
-
-
-    /*
-
-stripHash() {
-    local strippedName
-    # On separate line for `set -e`
-    strippedName="$(basename "$1")"
-    if echo "$strippedName" | grep -q '^[a-z0-9]\{32\}-'; then
-        echo "$strippedName" | cut -c34-
-    else
-        echo "$strippedName"
-    fi
-}
-
-
-    */
 
   combinePathes = name: pathes: runCommand name { inherit pathes; } ''
     mkdir -p out
