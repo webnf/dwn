@@ -117,11 +117,16 @@
           (emit-expr [m] (emit-map m))
           clojure.lang.ASeq
           (emit-expr [s] (apply emit-call s))
+          #_clojure.lang.APersistentSet
+          #_(emit-expr [s] (emit-map {:type "HashSet"
+                                      :entries (as-vec s)}))
           String
           (emit-expr [s] (emit-str s))
           Number
           (emit-expr [n]
             [(str (bigdec n))])
+          Boolean
+          (emit-expr [b] [(str b)])
           nil
           (emit-expr [_] ["null"])))
 
