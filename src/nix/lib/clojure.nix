@@ -265,8 +265,9 @@ let callPackage = newScope thisns;
             , jvmArgs ? []
             , mavenRepos ? defaultMavenRepos
             , subProjects ? []
+            , binder ? shellBinder
+            , passthru ? {}
             , ... }:
-            { mainLauncher, ... }@binder:
     let
       args = args0 // {
         overlayRepo = mergeRepos (subProjectOverlay subProjects) overlayRepo;
@@ -275,7 +276,7 @@ let callPackage = newScope thisns;
       classpath = classpathFor args;
       launchers = lib.mapAttrs (
           launcherName: nsName:
-            mainLauncher {
+            binder.mainLauncher {
               inherit classpath jvmArgs;
               name = launcherName;
               namespace = nsName;

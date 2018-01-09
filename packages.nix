@@ -8,7 +8,9 @@ let
     inherit (leiningenLib) fromLein;
 
     callProject = project: args:
-      (callPackage project args) (dwnConfig.binder or clojureLib.shellBinder);
+      # (callPackage project args) (dwnConfig.binder or clojureLib.shellBinder);
+      lib.warn "DEPRECATED usage of callProject, just use callPackage"
+               (callPackage project args);
 
     clojure = callPackage ./build-clojure.nix { };
     leiningenLib = callPackage ./src/nix/lib/leiningen.nix {};
