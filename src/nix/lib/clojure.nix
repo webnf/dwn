@@ -111,7 +111,7 @@ let callPackage = newScope thisns;
     , ...
   }:   (map (sourceDir devMode) cljSourceDirs)
     ++ (classesFor args)
-    ++ resourceDirs;
+    ++ (map (sourceDir devMode) resourceDirs);
 
   classpathFor = args: artifactClasspath args ++ dependencyClasspath args;
 
