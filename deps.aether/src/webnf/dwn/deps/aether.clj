@@ -138,7 +138,9 @@
                          (.getChecksums layout rart false loc))]
         (assoc res
                :dependencies (get-dependencies desc #{} config)
-               :sha1 (try (slurp (str base "/" cs-loc))
+               :sha1 (try (subs (slurp (str base "/" cs-loc))
+                                ;; Fix sha sums with extra characters
+                                0 40)
                           (catch Exception e
                             (println "ERROR" "couldn't fetch sha-1" base cs-loc)
                             nil))))
