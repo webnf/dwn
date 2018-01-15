@@ -129,7 +129,7 @@
               config)
         rart (.getArtifact desc)
         res {:coord coord
-             :resolved-coord (coordinate-info (coordinate rart))
+             :resolved-coordinate (coordinate-info (coordinate rart))
              :resolved-base-version (.getBaseVersion rart)}]
     (if-let [layout (try (cons/repository-layout (.getRepository desc) config)
                          (catch Exception e
@@ -152,7 +152,7 @@
 (defn download-info [coord' {:as config :keys [overlay]}]
   (let [{:keys [group artifact extension classifier version]
          :as coord} (coordinate-info coord')
-        res (if-let [{:strs [sha1 dirs jar dependencies nix-expr resolvedCoord resolvedBaseVersion]}
+        res (if-let [{:strs [sha1 dirs jar dependencies nix-expr resolved-coordinate resolved-base-version]}
                      (get-in overlay [group artifact extension classifier version])]
               {:sha1 sha1
                :dirs dirs
@@ -161,8 +161,8 @@
                :dependencies dependencies
                :nix-expr nix-expr
                :overlay true
-               :resolved-coord (or resolvedCoord coord)
-               :resolved-base-version (or resolvedBaseVersion version)}
+               :resolved-coordinate (or resolved-coordinate coord)
+               :resolved-base-version (or resolved-base-version version)}
               (maven-download-info coord config))]
     res))
 
@@ -195,14 +195,14 @@
 
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
-    (reduce (fn [res {:as dli :keys [resolved-coord resolved-base-version sha1 dirs jar dependencies nix-expr overlay]
+    (reduce (fn [res {:as dli :keys [resolved-coordinate resolved-base-version sha1 dirs jar dependencies nix-expr overlay]
                       {:as coord :keys [group artifact extension classifier version]} :coord}]
               (if overlay
                 res
                 (if (str/blank? nix-expr)
                   (assoc-in res [group artifact extension classifier version]
                             (cond-> {}
-                              (not= resolved-coord coord)  (assoc :resolved-coord (coord-vec resolved-coord))
+                              (not= resolved-coordinate coord)  (assoc :resolved-coordinate (coord-vec resolved-coordinate))
                               (not= resolved-base-version (:version coord)) (assoc :resolved-base-version resolved-base-version)
                               (not (str/blank? sha1)) (assoc :sha1 sha1)
                               (not (empty? dirs)) (assoc :dirs dirs)
