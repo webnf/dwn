@@ -109,8 +109,8 @@ let callPackage = newScope thisns;
     , devMode ? false
     , ...
   }:   (map (sourceDir devMode) cljSourceDirs)
-    ++ (classesFor args)
-    ++ (map (sourceDir devMode) resourceDirs);
+    ++ (map (sourceDir devMode) resourceDirs)
+    ++ (classesFor args);
 
   classpathFor = args: artifactClasspath args ++ dependencyClasspath args;
 
@@ -123,9 +123,15 @@ let callPackage = newScope thisns;
                        , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
                        , ... }:
     let expDep = depsExpander
-           closureRepo dependencies fixedVersions providedVersions overlayRepo; in
+           closureRepo dependencies fixedVersions providedVersions overlayRepo;
+        result = map ({ coordinate, ... }@desc:
+          if lib.hasAttrByPath coordinate overlayRepo
+          then lib.getAttrFromPath coordinate overlayRepo
+          else desc
+        ) (import expDep);
+    in
     if isNull fixedDependencies
-    then import expDep #(builtins.trace (toString expDep) expDep)
+    then result # (builtins.trace (toString result) import result)
     else fixedDependencies;
 
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos
@@ -143,7 +149,7 @@ let callPackage = newScope thisns;
     aetherDownloader
       mavenRepos
       (dependencies ++ fixedVersions)
-      overlayRepo;
+      (filterDirs overlayRepo);
 
   aetherDownloader = repos: deps: overlay: writeScript "repo.edn.sh" ''
     #!/bin/sh
@@ -171,7 +177,7 @@ let callPackage = newScope thisns;
     ednDeps = toEdn deps;
     ednFixedVersions = toEdn fixedVersions;
     ednProvidedVersions = toEdn providedVersions;
-    ednOverlayRepo = toEdn overlayRepo;
+    ednOverlayRepo = toEdn (filterDirs overlayRepo);
     launcher = callPackage ../../../deps.expander { devMode = false; };
   } ''
     #!/bin/sh
@@ -237,18 +243,44 @@ let callPackage = newScope thisns;
 
   mkConfig = optionsDecl: options: options; ## FIXME validate, fill defaults
 
-  subProjectOverlay = prjs:
+  subProjectOverlay = {
+        subProjects ? []
+      , fixedVersions ? []
+      , overlayRepo ? {}
+      , closureRepo ? null
+      , ...}:
+    let result =
     lib.fold mergeRepos {}
-      (map (prj: with prj.passthru.dwn; {
+      (map (prj: let oprj = (prj.overrideProject (_: {
+                              inherit closureRepo fixedVersions;
+                              overlayRepo = mergeRepos overlayRepo result;
+                            }));
+                     inherit (oprj.dwn) group artifact extension classifier version;
+                 in {
                    "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = {
-                     inherit dirs dependencies;
+                     inherit (oprj.dwn) dependencies dirs group artifact coordinate;
+                     inherit (oprj) overrideProject;
                    };
                  })
-           prjs);
+           subProjects);
+    in result;
 
   subProjectFixedVersions = prjs:
-    (map (prj: with prj.passthru.dwn; [group artifact extension classifier version])
+    (map (prj: with prj.dwn;
+                 [group artifact extension classifier version])
          prjs);
+
+  mapRepoVals = f: repo:
+    let mapVals = depth: vals:
+      if depth > 0 then
+        lib.mapAttrs (_: v: mapVals (depth - 1) v) vals
+      else
+        f vals;
+    in
+      mapVals 5 repo;
+
+  filterDirs = overlayRepo:
+    mapRepoVals (desc: builtins.removeAttrs desc [ "dirs" "overrideProject" ]) overlayRepo;
 
   project = args0@{
               name
@@ -267,10 +299,14 @@ let callPackage = newScope thisns;
             , subProjects ? []
             , binder ? shellBinder
             , passthru ? {}
+            , cljSourceDirs ? []
+            , javaSourceDirs ? []
+            , resourceDirs ? []
             , ... }:
     let
+      spo = subProjectOverlay args;
       args = args0 // {
-        overlayRepo = mergeRepos (subProjectOverlay subProjects) overlayRepo;
+        overlayRepo = mergeRepos spo overlayRepo;
         fixedVersions = fixedVersions ++ subProjectFixedVersions subProjects;
       };
       classpath = classpathFor args;
@@ -286,19 +322,24 @@ let callPackage = newScope thisns;
     in stdenv.mkDerivation {
       inherit classpath descriptor;
       name = "${name}-${version}";
-      passthru = lib.recursiveUpdate passthru {
+      passthru = lib.recursiveUpdate {
         dwn = {
           artifact = name;
+          coordinate = [ group name extension classifier version ];
           inherit group extension classifier version;
           inherit launchers subProjects;
           inherit mainNs jvmArgs mavenRepos;
-          inherit dependencies fixedVersions providedVersions closureRepo;
+          inherit dependencies providedVersions closureRepo;
+          inherit cljSourceDirs javaSourceDirs resourceDirs;
           expandedDependencies = expandDependencies args;
+          subProjectOverlay = spo;
+          inherit (args) overlayRepo fixedVersions;
           dirs = if extension == "dirs" then artifactClasspath args else null;
           jar = if extension == "jar" then throw "Not implemented: ${extension}" else null;
           classes = classesFor args;
         };
-      };
+        overrideProject = overrideFn: project (args // (overrideFn args));
+      } passthru;
       meta.dwn = (lib.warn "Deprecated usage of <project>.meta.dwn ; use <project>.dwn instead" {
         inherit launchers descriptor;
         providedVersions = map (artifactDescriptor mavenRepos) ([{
@@ -341,25 +382,46 @@ let callPackage = newScope thisns;
     then toString dir
     else copyPathToStore dir;
 
-  mvnResolve = mavenRepos: { resolved-coordinate ? coordinate, resolved-base-version ? null, coordinate, sha1 ? null, dirs ? null, jar ? null, ... }:
-    let version = lib.elemAt resolved-coordinate 4;
-        baseVersion = if isNull resolved-base-version then version else resolved-base-version;
-        classifier = lib.elemAt resolved-coordinate 3;
-        extension = lib.elemAt resolved-coordinate 2;
-        name    = lib.elemAt resolved-coordinate 1;
-        group   = lib.elemAt resolved-coordinate 0;
+  unwrapCoord = f: coordinate:
+    let
+      group = lib.elemAt coordinate 0;
+      name = lib.elemAt coordinate 1;
+      extension = lib.elemAt coordinate 2;
+      classifier = lib.elemAt coordinate 3;
+      version = lib.elemAt coordinate 4;
     in
-    if "dirs" == lib.elemAt coordinate 2 then
-      if isNull dirs then throw "Dirs for ${toString coordinate} not found" else dirs
-    else if "jar" == lib.elemAt coordinate 2
-         && isNull sha1 then
-      if isNull jar then throw "Jar file for ${toString coordinate} not found" else [ jar ]
-    else [ ((fetchurl {
-      name = "${name}-${version}.${extension}";
-      urls = mavenMirrors mavenRepos group name extension classifier baseVersion version;
-      inherit sha1;
-            # prevent nix-daemon from downloading maven artifacts from the nix cache
-    }) // { preferLocalBuild = true; }) ];
+      f group name extension classifier version;
+
+  getRepoCoord = default: repo: unwrapCoord (getRepo default repo);
+
+  getRepo = default: repo: g: n: e: c: v: repo."${g}"."${n}"."${e}"."${c}"."${v}" or default;
+
+  mvnResolve =
+        mavenRepos:
+        { resolved-coordinate ? coordinate
+        , resolved-base-version ? null
+        , coordinate
+        , sha1 ? null
+        , dirs ? null
+        , jar ? null
+        , ... }:
+    let resF = group: name: extension: classifier: version:
+             let
+               baseVersion = if isNull resolved-base-version then version else resolved-base-version;
+             in
+               if "dirs" == extension then
+                 if isNull dirs then throw "Dirs for ${toString coordinate} not found" else dirs
+               else if "jar" == extension
+                    && isNull sha1 then
+                 if isNull jar then throw "Jar file for ${toString coordinate} not found" else [ jar ]
+               else [ ((fetchurl {
+                          name = "${name}-${version}.${extension}";
+                          urls = mavenMirrors mavenRepos group name extension classifier baseVersion version;
+                          inherit sha1;
+                                # prevent nix-daemon from downloading maven artifacts from the nix cache
+                 })  // { preferLocalBuild = true; }) ];
+    in
+      unwrapCoord resF coordinate;
 
   mavenMirrors = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
     dotToSlash = lib.replaceStrings [ "." ] [ "/" ];

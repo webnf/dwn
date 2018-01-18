@@ -90,7 +90,7 @@
     (-> (prj/read-raw project-clj)
         (assoc :root (io/file base-dir))
         (prj/project-with-profiles)
-        (prj/init-profiles [:default])
+        (prj/init-profiles [:base :system :user :provided :dev])
         (as-> #__ prj
           (-> {}
               (select-coords prj :dependencies :plugins)

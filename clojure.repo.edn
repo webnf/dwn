@@ -2,7 +2,14 @@
  {"spec.alpha"
   {"jar"
    {""
-    {"0.1.143" {:sha1 "54057fc4330a7b439127effafa92d1bfeefc23f5"}}}},
+    {"0.1.143"
+     {:resolved-coordinate
+      ["org.clojure" "spec.alpha" "jar" "" "0.1.143"],
+      :sha1 "54057fc4330a7b439127effafa92d1bfeefc23f5"}}}},
   "core.specs.alpha"
   {"jar"
-   {"" {"0.1.24" {:sha1 "2637e33f693f51267f04e63f2acfb5d182e7bf56"}}}}}}
+   {""
+    {"0.1.24"
+     {:resolved-coordinate
+      ["org.clojure" "core.specs.alpha" "jar" "" "0.1.24"],
+      :sha1 "2637e33f693f51267f04e63f2acfb5d182e7bf56"}}}}}}

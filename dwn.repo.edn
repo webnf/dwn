@@ -1,15 +1,5 @@
 {"org.clojure"
- {"clojure"
-  {"jar"
-   {""
-    {"1.9.0"
-     {:sha1 "09ee19f88152373323b8af7be35de5aa6c0c4b2b",
-      :dependencies
-      [["org.clojure" "spec.alpha" "0.1.143"]
-       ["org.clojure" "core.specs.alpha" "0.1.24"]]},
-     "1.7.0" {:sha1 "4953eb1ffa4adca22760c9324c9c26d2038c392a"},
-     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"}}}},
-  "spec.alpha"
+ {"spec.alpha"
   {"jar"
    {""
     {"0.1.143" {:sha1 "54057fc4330a7b439127effafa92d1bfeefc23f5"}}}},
@@ -22,6 +12,11 @@
     {"0.9.0"
      {:sha1 "79046cb8a9a61d6702b3a758b967bf410287c8fd",
       :dependencies [["org.clojure" "clojure" "1.7.0"]]}}}},
+  "clojure"
+  {"jar"
+   {""
+    {"1.7.0" {:sha1 "4953eb1ffa4adca22760c9324c9c26d2038c392a"},
+     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"}}}},
   "tools.logging"
   {"jar"
    {""

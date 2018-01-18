@@ -29,7 +29,7 @@ rec {
     getIn dependencies art;
 
   prewalkReduce = getChildren: f: root: acc:
-    lib.foldl (prewalkReduce getChildren) f (lib.traceCall2 "rfn" f acc root) (getChildren root);
+    lib.foldl (prewalkReduce getChildren) f (f acc root) (getChildren root);
 
   reduceDeps = cat: f: acc: root:
     prewalkReduce (artifactDependencies cat) f root acc;
