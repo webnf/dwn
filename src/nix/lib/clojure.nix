@@ -33,47 +33,11 @@ let callPackage = newScope thisns;
     classpathFor artifactClasspath dependencyClasspath;
   inherit (callPackage ./descriptor.nix {})
     projectDescriptor projectNsLaunchers projectComponents artifactDescriptor;
+  inherit (callPackage ./shell-binder.nix {}) renderClasspath shellBinder;
   inherit (callPackage ../../../deps.expander/lib.nix {}) depsExpander expandDependencies;
   inherit (callPackage ../../../deps.aether/lib.nix {}) aetherDownloader closureRepoGenerator;
 
   lib = lib';
-
-  shellBinder = rec {
-
-    classLauncher = { name, classpath, class, jvmArgs ? []
-                    , prefixArgs ? [], suffixArgs ? [], debug ? false }:
-      writeScript name ''
-        #!/bin/sh
-        ${if debug then "set -vx" else ""}
-        exec ${jdk.jre}/bin/java \
-          -cp ${renderClasspath classpath} \
-          ${toString jvmArgs} \
-          ${class} \
-          ${toString prefixArgs} \
-          "$@" ${toString suffixArgs}
-      '';
-
-    scriptLauncher = { name, classpath, codes, jvmArgs ? [], debug ? false }:
-      classLauncher {
-        inherit name classpath jvmArgs debug;
-        class = "clojure.main";
-        prefixArgs = [ "-e" ''
-          "$(cat <<CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
-          ${lib.concatStringsSep "\n\n;; ----\n\n" codes}
-          CLJ62d3c200-34d4-49e5-a64d-f6eaf59b4715
-          )"
-        '' ];
-      };
-
-    mainLauncher = { name, classpath, namespace, jvmArgs ? []
-                   , prefixArgs ? [], suffixArgs ? [], debug ? false }:
-      classLauncher {
-        inherit name classpath jvmArgs suffixArgs debug;
-        class = "clojure.main";
-        prefixArgs = [ "-m" namespace ] ++ prefixArgs;
-      };
-
-  };
 
   descriptorPaths = desc:
     let pkg = lib.elemAt desc 2;
@@ -154,8 +118,6 @@ let callPackage = newScope thisns;
     mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}${tag}.${extension}";
   in # builtins.trace "DOWNLOADING '${group}' '${name}' '${extension}' '${classifier}' '${version}' '${resolvedVersion}'"
        (map mvnPath mavenRepos);
-
-  renderClasspath = classpath: lib.concatStringsSep ":" classpath;
 
 };
 in thisns
