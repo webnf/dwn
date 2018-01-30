@@ -10,7 +10,7 @@ let callPackage = newScope thisns;
         inherit devMode varDirectory;
       };
       clojureLib = if isNull clojureLib then
-          callPackage ./src/nix/lib {}
+          callPackage ./src/nix/lib/default.nix {}
         else
           clojureLib;
     };
