@@ -31,6 +31,8 @@ let callPackage = newScope thisns;
   inherit (callPackage ./lib-project.nix {})
     sourceDir subProjectOverlay subProjectFixedVersions
     classpathFor artifactClasspath dependencyClasspath;
+  inherit (callPackage ./descriptor.nix {})
+    projectDescriptor projectNsLaunchers projectComponents artifactDescriptor;
   inherit (callPackage ../../../deps.expander/lib.nix {}) depsExpander expandDependencies;
   inherit (callPackage ../../../deps.aether/lib.nix {}) aetherDownloader closureRepoGenerator;
 
@@ -83,64 +85,6 @@ let callPackage = newScope thisns;
 
   mergeRepos = lib.recursiveUpdate;
   clojureCustom = callPackage ../../../build-clojure.nix {};
-
-  artifactDescriptor = mavenRepos: args@{ coordinate
-                                        , dirs ? null
-                                        , ...}:
-    coordinate ++ (if "dirs" == lib.elemAt coordinate 2
-      then [dirs]
-      else mvnResolve mavenRepos args
-    );
-
-  projectDescriptor = args@{
-                        name
-                      , group ? name
-                      , version ? "0-SNAPSHOT"
-                      , mainNs ? {}
-                      , components ? {}
-                      , mavenRepos ? defaultMavenRepos
-                      , providedVersions ? []
-                      , ... }:
-                      binder@{
-                        parentLoader ? keyword "webnf.dwn" "app-loader"
-                      , ...}:
-  let containerName = keyword name "container"; in
-  keyword-map ({
-      "${name}/container" = dwn.container {
-        loaded-artifacts = map (artifactDescriptor mavenRepos) ([{
-          coordinate = [ group name "dirs" "" version];
-          dirs = artifactClasspath args;
-        }] ++ expandDependencies args);
-        parent-loader = parentLoader;
-        provided-versions = providedVersions;
-      };
-    } // lib.listToAttrs (projectNsLaunchers name containerName mainNs binder
-                       ++ projectComponents name containerName components binder));
-
-  projectNsLaunchers = prjName: container: mainNs: { mainArgs ? {}, ... }:
-  lib.mapAttrsToList (
-      name: ns: {
-        name = "${prjName}/${name}";
-        value = dwn.ns-launcher {
-          inherit container;
-          main = symbol null ns;
-          args = mainArgs.${name} or [];
-        };
-      }
-  ) mainNs;
-
-  projectComponents = prjName: container: components: { componentConfig ? {}, ... }:
-  lib.mapAttrsToList (
-      name: { factory, options ? {} }: {
-        name = "${prjName}/${name}";
-        value = dwn.component {
-          inherit factory container;
-          config = mkConfig options componentConfig.${name} or {};
-        };
-      }
-  ) components;
-
-  mkConfig = optionsDecl: options: options; ## FIXME validate, fill defaults
 
   mapRepoVals = f: repo:
     let mapVals = depth: vals:
