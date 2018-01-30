@@ -27,7 +27,12 @@ let callPackage = newScope thisns;
   inherit (edn.syntax) tagged hash-map keyword-map list vector set symbol keyword string int bool nil;
   inherit (edn.data) get get-in eq nth nix-str nix-list extract;
 
-  inherit (callPackage ./compile.nix {}) jvmCompile cljCompile;
+  inherit (callPackage ./compile.nix {}) jvmCompile cljCompile classesFor;
+  inherit (callPackage ./lib-project.nix {})
+    sourceDir subProjectOverlay subProjectFixedVersions
+    classpathFor artifactClasspath dependencyClasspath;
+  inherit (callPackage ../../../deps.expander/lib.nix {}) depsExpander expandDependencies;
+  inherit (callPackage ../../../deps.aether/lib.nix {}) aetherDownloader closureRepoGenerator;
 
   lib = lib';
 
@@ -76,115 +81,8 @@ let callPackage = newScope thisns;
       then [ (lib.elemAt desc 5) ]
       else throw "Unknown packaging '${pkg}'";
 
-  classesFor = args@{
-      name
-    , cljSourceDirs ? []
-    , javaSourceDirs ? []
-    , resourceDirs ? []
-    , aot ? []
-    , compilerOptions ? {}
-    , providedVersions ? []
-    , ...
-  }: let
-    baseClasspath = resourceDirs ++ dependencyClasspath args ++ (
-      lib.concatLists (map descriptorPaths providedVersions)
-    );
-    javaClasses = if lib.length javaSourceDirs > 0
-      then [ (jvmCompile {
-        name = name + "-java-classes";
-        classpath = baseClasspath;
-        sources = javaSourceDirs;
-      }) ] else [];
-    cljClasses = if (lib.length cljSourceDirs > 0) && (lib.length aot > 0)
-      then [ (cljCompile {
-        name = name + "-clj-classes";
-        classpath = cljSourceDirs ++ javaSourceDirs ++ javaClasses ++ baseClasspath;
-        inherit aot;
-        options = compilerOptions;
-      }) ] else [];
-  in cljClasses ++ javaClasses;
-
-  artifactClasspath = args@{
-      cljSourceDirs ? []
-    , resourceDirs ? []
-    , devMode ? false
-    , ...
-  }:   (map (sourceDir devMode) cljSourceDirs)
-    ++ (map (sourceDir devMode) resourceDirs)
-    ++ (classesFor args);
-
-  classpathFor = args: artifactClasspath args ++ dependencyClasspath args;
-
-  expandDependencies = { name
-                       , dependencies ? []
-                       , overlayRepo ? {}
-                       , fixedVersions ? []
-                       , providedVersions ? []
-                       , fixedDependencies ? null # bootstrap hack
-                       , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
-                       , ... }:
-    let expDep = depsExpander
-           closureRepo dependencies fixedVersions providedVersions overlayRepo;
-        result = map ({ coordinate, ... }@desc:
-          if lib.hasAttrByPath coordinate overlayRepo
-          then lib.getAttrFromPath coordinate overlayRepo
-          else desc
-        ) (import expDep);
-    in
-    if isNull fixedDependencies
-    then result # (builtins.trace (toString result) import result)
-    else fixedDependencies;
-
-  dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos
-                             , ... }:
-    lib.concatLists (map (mvnResolve mavenRepos) (expandDependencies args));
-
   mergeRepos = lib.recursiveUpdate;
   clojureCustom = callPackage ../../../build-clojure.nix {};
-
-  closureRepoGenerator = { dependencies ? []
-                         , mavenRepos ? defaultMavenRepos
-                         , fixedVersions ? []
-                         , overlayRepo ? {}
-                         , ... }:
-    aetherDownloader
-      mavenRepos
-      (dependencies ++ fixedVersions)
-      (filterDirs overlayRepo);
-
-  aetherDownloader = repos: deps: overlay: writeScript "repo.edn.sh" ''
-    #!/bin/sh
-    if [ -z "$1" ]; then
-      echo "$0 <filename.out.edn>"
-      exit 1
-    fi
-    launcher="${callPackage ../../../deps.aether { devMode = false; }}"
-    ednDeps=$(cat <<EDNDEPS
-    ${toEdn deps}
-    EDNDEPS
-    )
-    ednRepos=$(cat <<EDNREPOS
-    ${toEdn repos}
-    EDNREPOS
-    )
-    ednOverlay=$(cat <<EDNOVERLAY
-    ${toEdn overlay}
-    EDNOVERLAY
-    )
-    exec "$launcher" "$1" "$ednDeps" "$ednRepos" "$ednOverlay"
-  '';
-  depsExpander = repo: deps: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
-    inherit repo;
-    ednDeps = toEdn deps;
-    ednFixedVersions = toEdn fixedVersions;
-    ednProvidedVersions = toEdn providedVersions;
-    ednOverlayRepo = toEdn (filterDirs overlayRepo);
-    launcher = callPackage ../../../deps.expander { devMode = false; };
-  } ''
-    #!/bin/sh
-    ## set -xv
-    exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions" "$ednProvidedVersions" "$ednOverlayRepo";
-  '';
 
   artifactDescriptor = mavenRepos: args@{ coordinate
                                         , dirs ? null
@@ -244,33 +142,6 @@ let callPackage = newScope thisns;
 
   mkConfig = optionsDecl: options: options; ## FIXME validate, fill defaults
 
-  subProjectOverlay = {
-        subProjects ? []
-      , fixedVersions ? []
-      , overlayRepo ? {}
-      , closureRepo ? null
-      , ...}:
-    let result =
-    lib.fold mergeRepos {}
-      (map (prj: let oprj = (prj.overrideProject (_: {
-                              inherit closureRepo fixedVersions;
-                              overlayRepo = mergeRepos overlayRepo result;
-                            }));
-                     inherit (oprj.dwn) group artifact extension classifier version;
-                 in {
-                   "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = {
-                     inherit (oprj.dwn) dependencies dirs group artifact coordinate;
-                     inherit (oprj) overrideProject;
-                   };
-                 })
-           subProjects);
-    in result;
-
-  subProjectFixedVersions = prjs:
-    (map (prj: with prj.dwn;
-                 [group artifact extension classifier version])
-         prjs);
-
   mapRepoVals = f: repo:
     let mapVals = depth: vals:
       if depth > 0 then
@@ -291,11 +162,6 @@ let callPackage = newScope thisns;
     done
     cp -R out $out
   '';
-
-  sourceDir = devMode: dir:
-    if devMode
-    then toString dir
-    else copyPathToStore dir;
 
   unwrapCoord = f: coordinate:
     let

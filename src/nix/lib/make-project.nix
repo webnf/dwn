@@ -13,7 +13,7 @@
 , defaultMavenRepos
 , shellBinder
 }:
-args0@{
+let project = args0@{
   name
 , group ? name
 , version ? "0-SNAPSHOT"
@@ -51,7 +51,7 @@ let
         }
     ) mainNs;
   descriptor = toEdnPP (projectDescriptor args binder);
-  project = stdenv.mkDerivation {
+in stdenv.mkDerivation {
     inherit classpath descriptor;
     name = "${name}-${version}";
     passthru = lib.recursiveUpdate {
