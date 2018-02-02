@@ -1,14 +1,14 @@
 { runCommand, callPackage, project, leinReader, toEdn, lib }:
 let filterPaths = lib.filter lib.pathExists; in
 rec {
-  fromLein = projectClj: let descriptor = (readDescriptor projectClj);
-                         in project ((lib.recursiveUpdate {
+  fromLein = projectClj: args: let descriptor = (readDescriptor projectClj);
+                         in project ((lib.recursiveUpdate (lib.recursiveUpdate {
                            passthru.dwn = {
                              inherit descriptor projectClj;
                              projectCljOrig = toString projectClj;
                            };
                            devMode = true;
-                         } descriptor) // {
+                         } descriptor) args) // {
                            cljSourceDirs = filterPaths descriptor.cljSourceDirs;
                            jvmSourceDirs = filterPaths descriptor.jvmSourceDirs;
                            resourceDirs = filterPaths descriptor.resourceDirs;
