@@ -31,15 +31,17 @@ Now, the `dwn` command should be in your `$PATH`.
 
 ## Usage
 
-You need a `project.nix` file. Most easily, this can be written by delegating to a Leiningen Project:
+You need a `project.nix` file. Most easily, this can be written by delegating to a Leiningen project:
 
 ```nix
-{ fromLein, devMode ? false }:
+{ fromLein }:
 fromLein ./project.clj {
-  inherit devMode;
-  repo = ./project.repo.edn;
+  devMode = false;
+  closureRepo = ./project.repo.edn;
 }
 ```
+
+You can try the following commands with the `example/leiningen` project.
 
 With the `project.nix` file in place, you need to generate a
 repository file for the project. That file holds all the `sha1`s for
@@ -57,6 +59,13 @@ dwn build ./project.nix
 
 This generates `./result` with a classpath for your project, along
 with shell launchers for your main namespaces.
+
+It is idiomatic, to run your project like this:
+```sh
+$(dwn build ./project.nix --no-out-link)/bin/main
+```
+That command will rebuild your project before running it, if changed.
+
 
 # Dev Notes
 
