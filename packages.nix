@@ -35,6 +35,7 @@ let
           (writeText name
             (lib.getAttr name thisns).meta.dwn.descriptor))
       [ "dwn" "nrepl" ]);
+    dwnTool = callPackage ./dwn-tool.nix {};
     sysTD = let
         launcher = dwn.meta.dwn.launchers.boot;
         socket = "${dwnConfig.varDirectory}/dwn.socket";
