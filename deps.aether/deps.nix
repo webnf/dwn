@@ -1,5 +1,5 @@
 [["org.clojure" "clojure" "1.9.0"]
- ["webnf.deps" "logback" "0.2.0-alpha2"]
+ ["webnf.deps" "logback" "0.2.0-alpha4"]
  ["org.apache.maven" "maven-aether-provider" "3.3.9"]
  ["org.eclipse.aether" "aether-transport-file" "1.1.0"]
  ["org.eclipse.aether" "aether-transport-wagon" "1.1.0"]

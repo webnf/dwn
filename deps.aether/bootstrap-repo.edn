@@ -15,26 +15,26 @@
  {"slf4j-api"
   {"jar"
    {""
-    {"1.7.22" {:sha1 "a1c83373863cec7ae8d89dc1c5722d8cb6ec0309"},
-     "1.7.24" {:sha1 "3f6b4bd4f8dbe8d4bea06d107a3826469b85c3e9"}}}},
+    {"1.7.25" {:sha1 "da76ca59f6a57ee3102f8f9bd9cee742973efa8a"},
+     "1.7.22" {:sha1 "a1c83373863cec7ae8d89dc1c5722d8cb6ec0309"}}}},
   "log4j-over-slf4j"
   {"jar"
    {""
-    {"1.7.24"
-     {:sha1 "6ab46c51a3848286a0db3ba7b22037b3834c3c44",
-      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}},
+    {"1.7.25"
+     {:sha1 "a87bb47468f47ee7aabbd54f93e133d4215769c3",
+      :dependencies [["org.slf4j" "slf4j-api" "1.7.25"]]}}}},
   "jcl-over-slf4j"
   {"jar"
    {""
-    {"1.7.24"
-     {:sha1 "e6a8629079856a2aa7862c6327ccf6dd1988d7fc",
-      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}},
+    {"1.7.25"
+     {:sha1 "f8c32b13ff142a513eeb5b6330b1588dcb2c0461",
+      :dependencies [["org.slf4j" "slf4j-api" "1.7.25"]]}}}},
   "jul-to-slf4j"
   {"jar"
    {""
-    {"1.7.24"
-     {:sha1 "25a2be668cb2ad1d05d76c0773df73b4b53617fd",
-      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}}},
+    {"1.7.25"
+     {:sha1 "0af5364cd6679bfffb114f0dec8a157aaa283b76",
+      :dependencies [["org.slf4j" "slf4j-api" "1.7.25"]]}}}}},
  "org.eclipse.aether"
  {"aether-api"
   {"jar"
@@ -109,14 +109,14 @@
  {"logback-classic"
   {"jar"
    {""
-    {"1.2.1"
-     {:sha1 "706a8b8206ead3683ec639dd270d11fd948fbb0e",
+    {"1.2.3"
+     {:sha1 "7c4f3c474fb2c041d8028740440937705ebb473a",
       :dependencies
-      [["ch.qos.logback" "logback-core" "1.2.1"]
-       ["org.slf4j" "slf4j-api" "1.7.22"]]}}}},
+      [["ch.qos.logback" "logback-core" "1.2.3"]
+       ["org.slf4j" "slf4j-api" "1.7.25"]]}}}},
   "logback-core"
   {"jar"
-   {"" {"1.2.1" {:sha1 "0378913dfc3c6c71e7e2a2853eff2c3e8ac27599"}}}}},
+   {"" {"1.2.3" {:sha1 "864344400c3d4d92dfeb0a305dc87d953677c03c"}}}}},
  "junit"
  {"junit"
   {"jar"
@@ -404,14 +404,14 @@
  {"logback"
   {"jar"
    {""
-    {"0.2.0-alpha2"
-     {:sha1 "435e8d61aebcb6ea86b2b27b298188514585c80e",
+    {"0.2.0-alpha4"
+     {:sha1 "f0fddc4d36698e319ad6619d4ac737e3c96fa191",
       :dependencies
-      [["ch.qos.logback" "logback-classic" "1.2.1"]
-       ["org.slf4j" "slf4j-api" "1.7.24"]
-       ["org.slf4j" "log4j-over-slf4j" "1.7.24"]
-       ["org.slf4j" "jcl-over-slf4j" "1.7.24"]
-       ["org.slf4j" "jul-to-slf4j" "1.7.24"]]}}}}},
+      [["ch.qos.logback" "logback-classic" "1.2.3"]
+       ["org.slf4j" "slf4j-api" "1.7.25"]
+       ["org.slf4j" "log4j-over-slf4j" "1.7.25"]
+       ["org.slf4j" "jcl-over-slf4j" "1.7.25"]
+       ["org.slf4j" "jul-to-slf4j" "1.7.25"]]}}}}},
  "net.java.dev.jna"
  {"jna"
   {"jar"
