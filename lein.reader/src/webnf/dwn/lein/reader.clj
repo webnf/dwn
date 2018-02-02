@@ -81,6 +81,11 @@
              nxt)
       m)))
 
+(defn get-main-ns [prj]
+  (into {}
+        (map (fn [main]))
+        (:main prj)))
+
 (defn -main [& args']
   (let [[project-clj base-dir op & args] args']
     ;; (apply println "Hello, got" args)
@@ -99,7 +104,8 @@
               (assoc
                :group   (:group prj)
                :name    (:name prj)
-               :version (:version prj))))
+               :version (:version prj))
+              (cond-> (:main prj) (assoc :mainNs {:main (str (:main prj))}))))
         (rename-keys
          :source-paths      :cljSourceDirs
          :resource-paths    :resourceDirs
