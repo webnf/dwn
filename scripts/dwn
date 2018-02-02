@@ -1,0 +1,11 @@
+#!/bin/sh -e
+
+OP="$1"
+binary="@scriptBase@/dwn-$OP"
+if [ -f "$binary" ]; then
+    shift
+    exec "$binary" "$@"
+else
+    echo "USAGE: $(basename $0) gen-repo | build [...]" >&2
+    exit 2
+fi

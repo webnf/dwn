@@ -4,6 +4,9 @@
   mv bootstrap-repo.next.edn bootstrap-repo.edn
   cp deps.nix deps.bootstrap.nix
 )
+( cd deps.expander
+  ./update.sh
+)
 ./gen-repo.sh clojure clojure.repo.edn
 
 ./gen-repo.sh dwn dwn.repo.edn

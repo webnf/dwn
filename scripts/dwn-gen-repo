@@ -1,0 +1,8 @@
+#!/bin/sh -e
+
+REPO_BUILDER=$(@nixBuild@ --no-out-link --show-trace \
+                @callPackage@ -A closureRepoGenerator \
+                --arg devMode true \
+                --arg package "$@")
+set -x
+exec $REPO_BUILDER project.repo.edn
