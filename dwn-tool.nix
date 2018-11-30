@@ -1,4 +1,4 @@
-{ lib, runCommand, nix, nix-repl, zsh }:
+{ lib, runCommand, nix, }:
 
 runCommand "dwn" {
   scriptFolder = ./scripts;
@@ -13,6 +13,4 @@ runCommand "dwn" {
     substituteAll "$s" "$target"
     chmod +x "$target"
   done
-  ln -s ${zsh}/bin/zsh $scriptBase/dwn-zsh
-  ln -s ${nix-repl}/bin/nix-repl $scriptBase/dwn-nix-repl
 ''
