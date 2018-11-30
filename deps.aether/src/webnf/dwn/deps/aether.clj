@@ -260,15 +260,15 @@
                            "/tmp/repo.edn")]
     (binding [*out* o]
       (clojure.pprint/pprint
-       (repo-for [["org.clojure" "clojure" "1.9.0-alpha14"]
-                  ["org.apache.maven" "maven-aether-provider" "3.3.9"]
-                  ["org.eclipse.aether" "aether-transport-file" "1.1.0"]
-                  ["org.eclipse.aether" "aether-transport-wagon" "1.1.0"]
-                  ["org.eclipse.aether" "aether-connector-basic" "1.1.0"]
-                  ["org.eclipse.aether" "aether-impl" "1.1.0"]
-                  ["org.apache.maven.wagon" "wagon-provider-api" "2.10"]
-                  ["org.apache.maven.wagon" "wagon-http" "2.10"]
-                  ["org.apache.maven.wagon" "wagon-ssh" "2.10"]]
+       (repo-for [["org.clojure" "clojure" "1.9.0"]
+                  ["org.apache.maven" "maven-resolver-provider" "3.6.0"]
+                  ["org.apache.maven.resolver" "maven-resolver-transport-file" "1.3.1"]
+                  ["org.apache.maven.resolver" "maven-resolver-transport-wagon" "1.3.1"]
+                  ["org.apache.maven.resolver" "maven-resolver-connector-basic" "1.3.1"]
+                  ["org.apache.maven.resolver" "maven-resolver-impl" "1.3.1"]
+                  ["org.apache.maven.wagon" "wagon-provider-api" "3.2.0"]
+                  ["org.apache.maven.wagon" "wagon-http" "3.2.0"]
+                  ["org.apache.maven.wagon" "wagon-ssh" "3.2.0"]]
                  cfg))))
 
   (with-open [o (io/writer #_"/home/herwig/checkout/webnf/dwn/deps.aether/bootstrap-repo.edn"
