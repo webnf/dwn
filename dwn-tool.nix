@@ -1,9 +1,10 @@
-{ lib, runCommand, nix, nix-repl, zsh }:
+{ lib, runCommand, nix, zsh }:
 
 runCommand "dwn" {
   scriptFolder = ./scripts;
-  nixBuild = "${nix}/bin/nix-build";
+  inherit nix;
   callPackage = "${./.}/call-package.nix";
+  shell = "${zsh}/bin/zsh";
 } ''
   scriptBase=$out/bin
   mkdir -p $scriptBase
@@ -14,5 +15,5 @@ runCommand "dwn" {
     chmod +x "$target"
   done
   ln -s ${zsh}/bin/zsh $scriptBase/dwn-zsh
-  ln -s ${nix-repl}/bin/nix-repl $scriptBase/dwn-nix-repl
+  ln -s ${nix}/bin/nix $scriptBase/dwn-nix
 ''

@@ -1,0 +1,3 @@
+#!@shell@
+
+exec @nix@/bin/nix repl "$@"

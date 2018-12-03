@@ -1,6 +1,6 @@
-#!/bin/sh -e
+#!@shell@ -e
 
-REPO_BUILDER=$(@nixBuild@ --no-out-link --show-trace \
+REPO_BUILDER=$(@nix@/bin/nix-build --no-out-link --show-trace \
                 @callPackage@ -A closureRepoGenerator \
                 --arg devMode true \
                 --arg package "$@")
