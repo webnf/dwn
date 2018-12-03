@@ -2,10 +2,10 @@
  {"spec.alpha"
   {"jar"
    {""
-    {"0.1.143" {:sha1 "54057fc4330a7b439127effafa92d1bfeefc23f5"}}}},
+    {"0.2.176" {:sha1 "cd2d5b03d2ff95a958cb075201b89d28a7dea626"}}}},
   "core.specs.alpha"
   {"jar"
-   {"" {"0.1.24" {:sha1 "2637e33f693f51267f04e63f2acfb5d182e7bf56"}}}},
+   {"" {"0.2.44" {:sha1 "6027ceb1d1ae70a6a3fb1a8da2144632fa688604"}}}},
   "test.check"
   {"jar"
    {""
