@@ -66,6 +66,21 @@ $(dwn build ./project.nix --no-out-link)/bin/main
 ```
 That command will rebuild your project before running it, if changed.
 
+## Advanced usage
+
+For lack of a leiningen descriptor, or if you need to do something
+that's not supported by the leiningen descriptor reader, you can
+override any option to dwn's native project descriptor. See
+`src/nix/lib/make-project.nix`. E.g. to use custom repositories:
+
+```nix
+{ fromLein, defaultMavenRepos }:
+fromLein ./project.clj {
+  devMode = false;
+  closureRepo = ./project.repo.edn;
+  mavenRepos = defaultMavenRepos ++ [ https://maven.repository.redhat.com/ga/ ];
+}
+```
 
 # Dev Notes
 
