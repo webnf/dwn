@@ -9,7 +9,7 @@ runCommand "dwn" {
   scriptBase=$out/bin
   mkdir -p $scriptBase
   export scriptBase callPackage nixBuild
-  for s in "$scriptFolder"/*; do # */ hello emacs
+  for s in "$scriptFolder"/*; do
     target="$scriptBase/$(basename $s)"
     substituteAll "$s" "$target"
     chmod +x "$target"

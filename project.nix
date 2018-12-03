@@ -19,7 +19,7 @@ project rec {
   };
 
   dependencies = [
-    ["org.clojure" "clojure" "1.9.0-CUSTOM"]
+    ["org.clojure" "clojure" "CUSTOM"]
     ["org.clojure" "test.check" "0.9.0"]
     ["org.clojure" "tools.logging" "0.3.1"]
     ["com.stuartsierra" "component" "0.3.2"]
@@ -28,10 +28,11 @@ project rec {
   ];
 
   overlayRepo = {
-    "webnf"."juds"."dirs".""."CUSTOM" = {
-      dirs = [ "${juds}/lib" ];
-    };
-    "org.clojure"."clojure"."jar".""."1.9.0-CUSTOM" = clojure.meta.dwn.repoEntry;
+   "webnf"."juds"."dirs".""."CUSTOM" = {
+     coordinate = [ "webnf" "juds" "dirs" "" "CUSTOM" ];
+     dirs = [ "${juds}/lib" ];
+   };
+   "org.clojure"."clojure"."jar".""."CUSTOM" = clojure.dwn;
   };
 
   closureRepo = ./dwn.repo.edn;

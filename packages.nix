@@ -12,7 +12,7 @@ let
       lib.warn "DEPRECATED usage of callProject, just use callPackage"
                (callPackage project args);
 
-    clojure = callPackage ./build-clojure.nix { };
+    clojure = clojureLib.clojureCustom;
     leiningenLib = callPackage ./src/nix/lib/leiningen.nix {};
 
     dwn = callPackage ./project.nix { };

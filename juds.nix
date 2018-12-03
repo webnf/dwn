@@ -1,15 +1,15 @@
 { stdenv, jdk, fetchFromGitHub, fetchurl, autoconf }:
 let
 
-  version = "0.95";
+  version = "0.96-alpha";
 
 in stdenv.mkDerivation {
   name = "juds-${version}";
   src = fetchFromGitHub {
     owner = "mcfunley";
     repo = "juds";
-    rev = "3334ede781240fd52cbc06fdc84243a73c88ea95";
-    sha256 = "0kizlvdax6jwnzvr6y4zfvgqxp6b02isr1bcijnmqhzs6kcdkvjg";
+    rev = "6621191ce0edded2cb7e8bdcac1985d17c054924";
+    sha256 = "1dsmgh2r0pl5ca490fwkdh9kdlvgjy3r28wkyc8gra877z0pi28m";
   };
   nativeBuildInputs = [ jdk ];
   buildInputs = [ <nixpkgs/pkgs/build-support/setup-hooks/separate-debug-info.sh> ];

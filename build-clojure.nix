@@ -4,71 +4,60 @@
 }:
 let
   dependencies = [
-    [ "org.clojure" "spec.alpha" "0.1.143" {
+    [ "org.clojure" "spec.alpha" "0.2.176" {
         exclusions = [
           [ "org.clojure" "clojure" ]
         ];
       } ]
-    [ "org.clojure" "core.specs.alpha" "0.1.24" {
+    [ "org.clojure" "core.specs.alpha" "0.2.44" {
         exclusions = [
           [ "org.clojure" "clojure" ]
           [ "org.clojure" "spec.alpha" ]
         ];
       } ]
   ];
-jarfile = stdenv.mkDerivation rec {
-  rev = "clojure-1.9.0";
-  name = "${rev}-DWN.jar";
-  builtName = "${rev}.jar";
-  src = fetchFromGitHub {
-    owner = "clojure";
-    repo = "clojure";
-    inherit rev;
-    sha256 = "0gwb9cz9fvi183angv1j3bjdxsm6aa7k7dz71q6y48sykyyjsfpc";
-  };
-  patches = [ ./compile-gte-mtime.patch ];
-  closureRepo = ./clojure.repo.edn;
-  passthru.closureRepoGenerator = closureRepoGenerator {
-    inherit dependencies mavenRepos;
-  };
-  classpath = renderClasspath (lib.concatLists (
-    map (mvnResolve mavenRepos)
-        (expandDependencies {
-          name = "clojure";
-          inherit dependencies closureRepo;
-         })
-  ));
-  nativeBuildInputs = [ ant jdk ];
-  configurePhase = ''
-    echo "maven.compile.classpath=$classpath" > maven-classpath.properties
-  '';
-  buildPhase = ''
-    ant jar
-  '';
-  installPhase = ''
-    cp $builtName $out
-  '';
-  passthru.dwn = {
-    group = "org.clojure";
-    artifact = "clojure";
-    version = "1.9.0";
-    resolvedVersion = "1.9.0-DWN";
-    extension = "jar";
-    classifier = "";
-    jar = jarfile;
-    inherit dependencies;
-    expandedDependencies = dependencies;
-
-  };
-  meta.dwn = (lib.warn "Deprecated usage of clojure.meta.dwn ; use clojure.dwn instead" {
-    group = "org.clojure";
-    name = "clojure";
-    version = "1.9.0-DWN";
-    repoEntry = {
-      resolvedVersion = "1.9.0-DWN";
-      jar = jarfile;
-      inherit dependencies;
+  version = "1.10.0-RC2";
+  jarfile = stdenv.mkDerivation rec {
+    rev = "clojure-${version}";
+    name = "${rev}-DWN.jar";
+    builtName = "${rev}.jar";
+    src = fetchFromGitHub {
+      owner = "clojure";
+      repo = "clojure";
+      inherit rev;
+      sha256 = "00bsn41nnkrq6p7jfxg8z1zqqppbrpv09ki5gv35jb0iw67mdl0m";
     };
-  });
-};
+    patches = [ ./compile-gte-mtime.patch ];
+    closureRepo = ./clojure.repo.edn;
+    passthru.closureRepoGenerator = closureRepoGenerator {
+      inherit dependencies mavenRepos;
+    };
+    classpath = renderClasspath (lib.concatLists (
+      map (mvnResolve mavenRepos)
+          (expandDependencies {
+            name = "clojure";
+            inherit dependencies closureRepo;
+           })
+    ));
+    nativeBuildInputs = [ ant jdk ];
+    configurePhase = ''
+      echo "maven.compile.classpath=$classpath" > maven-classpath.properties
+    '';
+    buildPhase = ''
+      ant jar
+    '';
+    installPhase = ''
+      cp $builtName $out
+    '';
+    passthru.dwn = {
+      group = "org.clojure";
+      artifact = "clojure";
+      resolvedVersion = "${version}-DWN";
+      extension = "jar";
+      classifier = "";
+      jar = jarfile;
+      inherit version dependencies;
+      expandedDependencies = dependencies;
+    };
+  };
 in jarfile
