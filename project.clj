@@ -1,8 +1,9 @@
 (defproject webnf/dwn "0-SNAPSHOT"
   :java-source-paths [ "src/jvm" ]
   :source-paths [ "src/clj" "deps.aether/src" "deps.expander/src" "nix.aether/src" "nix.data/src" ]
+  :plugins [[cider/cider-nrepl "0.19.0"]]
   :dependencies
-  [[org.clojure/clojure "1.9.0-beta2"]
+  [[org.clojure/clojure "1.10.0"]
    [org.clojure/test.check "0.9.0"]
    [org.clojure/tools.logging "0.3.1"]
    [com.stuartsierra/component "0.3.2"]
