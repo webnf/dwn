@@ -166,8 +166,8 @@
   (Exclusion. group artifact classifier extension))
 
 (defc artifact Artifact
-  [coord]
-  (DefaultArtifact. (coordinate-string coord)))
+  [{:keys [group artifact extension classifier version]}]
+  (DefaultArtifact. group artifact classifier extension version))
 
 (def gvs (GenericVersionScheme.))
 

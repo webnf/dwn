@@ -272,4 +272,22 @@
 
   (expand-download-info ["org.eclipse.aether" "aether-impl" "1.1.0"] cfg)
 
+  (expand-download-info ["amazonica" "0.3.139"] cfg)
+
+  (def r (repo-for [["amazonica" "0.3.139"]]
+                   cfg))
+
+  (with-open [o (io/writer #_"/home/herwig/checkout/webnf/dwn/deps.aether/bootstrap-repo.edn"
+                           "/tmp/repo.edn")]
+    (binding [*out* o
+              *print-length* false]
+      (clojure.pprint/pprint
+       r)))
+
+  (cons/artifact {:group "com.amazonaws"
+                  :artifact "aws-java-sdk-cloudwatch"
+                  :extension "jar"
+                  :classifier ""
+                  :version "[1.11.115, 2.0.0)"})
+
   )
