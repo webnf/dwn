@@ -14,18 +14,6 @@
             [clojure.edn :as edn]
             [clojure.string :as str]))
 
-(defmethod print-method ::literal [l ^java.io.Writer w] (.write w (str (first l))))
-
-(defn literal [s] ^{:type ::literal} [s])
-
-(defn pprint* [o]
-  (binding [pp/*print-pprint-dispatch*
-            (fn [o]
-              (if (= ::literal (:type (meta o)))
-                (.write *out* (str (first o)))
-                (pp/simple-dispatch o)))]
-    (pp/pprint o)))
-
 (def default-repositories
   {"central" "http://repo1.maven.org/maven2"
    "clojars" "https://clojars.org/repo"})
@@ -246,7 +234,7 @@
                                               [(str (gensym "repo")) r]))))]
     (with-open [o (io/writer repo-out-file)]
       (binding [*out* o]
-        (pprint* repo)))
+        (pprint repo)))
     (shutdown-agents)
     (System/exit 0)))
 
