@@ -1,3 +1,6 @@
 #!@shell@
 
-exec @nix@/bin/nix-build --show-trace @callPackage@ --arg devMode true --arg package "$@"
+PKG=$(readlink -e "$1")
+shift
+
+exec @nix@/bin/nix-build --show-trace @callPackage@ --arg devMode true --arg package "$PKG" "$@"

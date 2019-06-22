@@ -6,12 +6,8 @@
 
 rec {
 
-  aetherDownloader = repos: deps: overlay: writeScript "repo.edn.sh" ''
+  aetherDownloader = repoFile: repos: deps: overlay: writeScript "repo.edn.sh" ''
     #!/bin/sh
-    if [ -z "$1" ]; then
-      echo "$0 <filename.out.edn>"
-      exit 1
-    fi
     launcher="${callPackage ./default.nix { devMode = false; }}"
     ednDeps=$(cat <<EDNDEPS
     ${toEdn deps}
@@ -25,15 +21,17 @@ rec {
     ${toEdn overlay}
     EDNOVERLAY
     )
-    exec "$launcher" "$1" "$ednDeps" "$ednRepos" "$ednOverlay"
+    exec "$launcher" "${repoFile}" "$ednDeps" "$ednRepos" "$ednOverlay"
   '';
 
   closureRepoGenerator = { dependencies ? []
                          , mavenRepos ? defaultMavenRepos
                          , fixedVersions ? []
                          , overlayRepo ? {}
+                         , closureRepo
                          , ... }:
     aetherDownloader
+      (toString closureRepo)
       mavenRepos
       (dependencies ++ fixedVersions)
       (filterDirs overlayRepo);

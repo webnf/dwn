@@ -1,8 +1,7 @@
-#!@shell@ -e
+#!@shell@
 
 REPO_BUILDER=$(@nix@/bin/nix-build --no-out-link --show-trace \
                 @callPackage@ -A closureRepoGenerator \
                 --arg devMode true \
-                --arg package "$@")
-set -x
-exec $REPO_BUILDER project.repo.edn
+                --arg package "$(readlink -e "$1")")
+exec $REPO_BUILDER
