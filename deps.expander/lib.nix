@@ -1,5 +1,5 @@
 { lib, runCommand, callPackage
-, toEdn
+, toEdn, subProjectOverlay
 , filterDirs
 }:
 rec {
@@ -25,11 +25,19 @@ rec {
                        , fixedDependencies ? null # bootstrap hack
                        , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
                        , ... }:
-    let expDep = depsExpander
-           closureRepo dependencies fixedVersions providedVersions overlayRepo;
+    let dependencies' = map (d:
+            if builtins.isList d then d
+            else with d.dwn; [group artifact extension classifier version]
+          ) dependencies;
+        overlayRepo' = subProjectOverlay {
+          subProjects = lib.filter (d: ! builtins.isList d) dependencies;
+          inherit overlayRepo closureRepo fixedVersions;
+        };
+        expDep = depsExpander
+           closureRepo dependencies' fixedVersions providedVersions overlayRepo';
         result = map ({ coordinate, ... }@desc:
-          if lib.hasAttrByPath coordinate overlayRepo
-          then lib.getAttrFromPath coordinate overlayRepo
+          if lib.hasAttrByPath coordinate overlayRepo'
+          then lib.getAttrFromPath coordinate overlayRepo'
           else desc
         ) (import expDep);
     in

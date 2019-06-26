@@ -16,7 +16,7 @@ let
         ];
       } ]
   ];
-  version = "1.10.0-RC2";
+  version = "1.10.1";
   jarfile = stdenv.mkDerivation rec {
     rev = "clojure-${version}";
     name = "${rev}-DWN.jar";
@@ -25,7 +25,7 @@ let
       owner = "clojure";
       repo = "clojure";
       inherit rev;
-      sha256 = "00bsn41nnkrq6p7jfxg8z1zqqppbrpv09ki5gv35jb0iw67mdl0m";
+      sha256 = "0769zr58cgi0fpg02dlr82qr2apc09dg05j2bg3dg9a8xac5n1dz";
     };
     patches = [ ./compile-gte-mtime.patch ];
     closureRepo = ./clojure.repo.edn;
