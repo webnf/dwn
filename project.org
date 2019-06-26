@@ -1,0 +1,34 @@
+* Tasks
+** Features
+*** Introduce full projects for data libraries, for byte-code sharing
+*** Introduce a "Workspace" abstraction
+    This is similar to `newScope`, but for projects. A scope for
+    implicit/default project attributes.
+**** TODO investigate in how var the existing newScope would suffice
+     - Currently in a callProject
+       - devMode is not propagated and should not be
+       - fixedVersions are not propagated automatically, but are unified by deps.expander
+
+     Should the fixedVersions mechanism (thus deps.expander) be moved
+     into nix, so that the propagate-callPackage - mechanism can be
+     generalized?
+
+     Probably yes. Do we need that for proper workspaces?
+***** Use Case
+      - Default repo and fixed dependencies for patched clojure
+        If overridden (in a workspace), this should _not_ trigger
+        re-compilation of dwn (or any other parent workspaces)
+      - Default settings
+        - devMode
+        - aot depending on mainNs and devMode
+        These are currently not well-served and need explicit passing.
+
+      If this was to be served by a regular newScope, how can
+      dependencies be "lifted" into it?
+
+      Each project can carry overrideScope, to be lifted into a new
+      workspace. This would be facilitated, by having callPackage pass
+      a selfPkgFn, which is the project-package + overrides, but not
+      applied to callPackage.
+
+ 

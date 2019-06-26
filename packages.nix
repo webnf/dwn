@@ -1,7 +1,8 @@
 { newScope, dwnConfig, clojureLib, lib, writeText }:
 let
-  callPackage = newScope thisns;
   mkUnits = callPackage ./src/systemd/gen.nix { };
+
+  callPackage = newScope thisns;
   thisns = clojureLib // rec {
     inherit dwnConfig callPackage;
     inherit (dwnConfig) devMode;
@@ -20,10 +21,9 @@ let
       dwnLauncher = dwn.meta.dwn.launchers.boot;
       inherit (dwnConfig) varDirectory;
     };
-    nrepl = callPackage ./nrepl-project.nix {
-      inherit (dwn.meta.dwn) providedVersions;
-    };
+    nrepl = callPackage ./nrepl-project.nix { devMode = false; };
     leinReader = callPackage ./lein.reader/project.nix { devMode = false; };
+    mvnReader = callPackage ./mvn.reader/project.nix { devMode = false; };
     deps = {
       expander = callPackage ./deps.expander { devMode = false; };
       aether = callPackage ./deps.aether { devMode = false; };
