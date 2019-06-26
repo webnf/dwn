@@ -3,7 +3,7 @@
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [com.stuartsierra.component :as cmp]
-   [clojure.tools.nrepl.server :as nrepl]))
+   [nrepl.server :as nrepl]))
 
 (defn start-server [host port middleware]
   (apply nrepl/start-server

@@ -33,9 +33,13 @@ let project = args0@{
 , cljSourceDirs ? []
 , javaSourceDirs ? []
 , resourceDirs ? []
+, plugins ? []
 , ... }:
-
-let
+if [] != plugins then
+  project ((builtins.head plugins).pluginInit (args0 // {
+    plugins = builtins.tail plugins;
+  }))
+else let
   spo = subProjectOverlay args;
   args = args0 // {
     overlayRepo = mergeRepos spo overlayRepo;
