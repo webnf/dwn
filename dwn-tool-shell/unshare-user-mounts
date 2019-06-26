@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -evx
+
+SETUP="$1"; shift
+UID=$(id -u)
+GID=$(id -g)
+exec unshare -rmU -- sh -evxc "
+$SETUP
+exec ./revertuid $UID $GID $@
+"
