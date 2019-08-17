@@ -1,7 +1,7 @@
 { project, symbol, lib, devMode
 , providedVersions ? []}:
 
-let prj = project {
+project {
   group = "webnf.dwn";
   name = "nrepl";
   version = "0.0.1";
@@ -47,23 +47,25 @@ let prj = project {
     };
   };
   closureRepo = ./nrepl.repo.edn;
-}; in prj // {
-  pluginInit = attrs: attrs // {
-    dependencies = attrs.dependencies or [] ++ [ prj ];
-    initForms = (attrs.initForms or [])
-      ++ lib.optional (attrs.startNrepl or attrs.devMode or devMode) ''
-        (do
-        (ns webnf.dwn.nrepl.entry
-          :require [webnf.dwn.nrepl])
-        (def server
-         (webnf.dwn.nrepl/nrepl
-          {:host "localhost"
-           :port 1337
-           :middleware []
-           :enable-cider true}))
-        (future (com.stuartsierra.component/start server))
-        (in-ns 'user)
-        )
-      '';
-  };
 }
+
+# ; in prj // {
+#   pluginInit = attrs: attrs // {
+#     dependencies = attrs.dependencies or [] ++ [ prj ];
+#     initForms = (attrs.initForms or [])
+#       ++ lib.optional (attrs.startNrepl or attrs.devMode or devMode) ''
+#         (do
+#         (ns webnf.dwn.nrepl.entry
+#           :require [webnf.dwn.nrepl])
+#         (def server
+#          (webnf.dwn.nrepl/nrepl
+#           {:host "localhost"
+#            :port 1337
+#            :middleware []
+#            :enable-cider true}))
+#         (future (com.stuartsierra.component/start server))
+#         (in-ns 'user)
+#         )
+#       '';
+#   };
+# }

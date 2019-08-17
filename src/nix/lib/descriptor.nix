@@ -44,7 +44,7 @@ rec {
         name = "${prjName}/${name}";
         value = dwn.ns-launcher {
           inherit container;
-          main = symbol null ns;
+          main = if builtins.isAttrs ns then ns else symbol null ns;
           args = mainArgs.${name} or [];
         };
       }

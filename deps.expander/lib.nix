@@ -1,6 +1,6 @@
 { lib, runCommand, callPackage
 , toEdn, subProjectOverlay
-, filterDirs
+, filterDirs, mergeRepos
 }:
 rec {
 
@@ -29,10 +29,10 @@ rec {
             if builtins.isList d then d
             else with d.dwn; [group artifact extension classifier version]
           ) dependencies;
-        overlayRepo' = subProjectOverlay {
+        overlayRepo' = mergeRepos overlayRepo (subProjectOverlay {
           subProjects = lib.filter (d: ! builtins.isList d) dependencies;
           inherit overlayRepo closureRepo fixedVersions;
-        };
+        });
         expDep = depsExpander
            closureRepo dependencies' fixedVersions providedVersions overlayRepo';
         result = map ({ coordinate, ... }@desc:

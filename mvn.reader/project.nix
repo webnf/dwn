@@ -17,7 +17,7 @@ project rec {
   ];
   aot = lib.optionals (!devMode) [ "webnf.dwn.mvn.reader" ];
   mainNs.mvn2nix = "webnf.dwn.mvn.reader";
-  plugins = [(callPackage ../nrepl-project.nix { devMode = false; })];
+  plugins = [ ../nrepl-plugin.nix ];
 
   closureRepo = ./repo.edn;
 

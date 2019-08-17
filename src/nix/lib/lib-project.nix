@@ -20,7 +20,7 @@ rec {
       , closureRepo ? null
       , ...}:
     let result =
-    lib.fold mergeRepos {}
+    lib.foldl mergeRepos {}
       (map (prj: let oprj = (prj.overrideProject (_: {
                               inherit closureRepo fixedVersions;
                               overlayRepo = mergeRepos overlayRepo result;

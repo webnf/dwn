@@ -12,6 +12,7 @@
 , closureRepoGenerator
 , defaultMavenRepos
 , shellBinder
+, callPackage
 }:
 let project = args0@{
   name
@@ -35,11 +36,12 @@ let project = args0@{
 , resourceDirs ? []
 , plugins ? []
 , ... }:
-if [] != plugins then
-  project ((builtins.head plugins).pluginInit (args0 // {
-    plugins = builtins.tail plugins;
-  }))
-else let
+# if [] != plugins then
+#   project ((builtins.head plugins).pluginInit (args0 // {
+#     plugins = builtins.tail plugins;
+#   }))
+# else
+let
   spo = subProjectOverlay args;
   args = args0 // {
     overlayRepo = mergeRepos spo overlayRepo;
@@ -47,15 +49,16 @@ else let
   };
   classpath = classpathFor args;
   launchers = lib.mapAttrs (
-      launcherName: nsName:
-        binder.mainLauncher {
-          inherit classpath jvmArgs;
-          name = launcherName;
-          namespace = nsName;
-        }
-    ) mainNs;
+    launcherName: desc:
+    binder.mainLauncher ({
+      inherit classpath jvmArgs;
+      name = launcherName;
+    } // (if builtins.isAttrs desc then desc else {
+      namespace = desc;
+    }))
+  ) mainNs;
   descriptor = toEdnPP (projectDescriptor args binder);
-in stdenv.mkDerivation {
+  baseProject = stdenv.mkDerivation {
     inherit classpath descriptor;
     name = "${name}-${version}";
     passthru = lib.recursiveUpdate {
@@ -103,4 +106,7 @@ in stdenv.mkDerivation {
       echo "$descriptor" > $out/share/dwn.edn
     '';
   };
+in lib.foldl ( prj: plugin:
+  (callPackage plugin {}) (prj.overrideProject (_: { plugins = []; }))
+) baseProject plugins;
 in project

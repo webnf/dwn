@@ -14,10 +14,10 @@ rec {
         ${if debug then "set -vx" else ""}
         exec ${jdk.jre}/bin/java \
           -cp ${renderClasspath classpath} \
-          ${toString jvmArgs} \
+          ${lib.escapeShellArgs jvmArgs} \
           ${class} \
-          ${toString prefixArgs} \
-          "$@" ${toString suffixArgs}
+          ${lib.escapeShellArgs prefixArgs} \
+          "$@" ${lib.escapeShellArgs suffixArgs}
       '';
 
     scriptLauncher = { name, classpath, codes, jvmArgs ? [], debug ? false }:

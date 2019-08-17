@@ -1,5 +1,6 @@
 (ns webnf.dwn.nrepl
   (:require
+   [clojure.edn :as edn]
    [clojure.spec.alpha :as s]
    [clojure.tools.logging :as log]
    [com.stuartsierra.component :as cmp]
@@ -42,9 +43,13 @@
     (if (= ::s/invalid c)
       (throw (ex-info "Invalid NREPL configuration" (s/explain-data ::nrepl-config conf)))
       (map->Nrepl
-       (cond-> c
+       (cond-> conf
          enable-cider (update :middleware
                               (fn [mv]
                                 (require 'cider.nrepl)
                                 (-> (mapv resolve (eval 'cider.nrepl/cider-middleware))
                                     (into mv)))))))))
+
+(defn -main [conf]
+  (cmp/start
+   (nrepl (edn/read-string conf))))

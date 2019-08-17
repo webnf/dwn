@@ -23,7 +23,7 @@ let
     };
     nrepl = callPackage ./nrepl-project.nix { devMode = false; };
     leinReader = callPackage ./lein.reader/project.nix { devMode = false; };
-    mvnReader = callPackage ./mvn.reader/project.nix { devMode = false; };
+    mvnReader = callPackage ./mvn.reader/project.nix { devMode = true; };
     deps = {
       expander = callPackage ./deps.expander { devMode = false; };
       aether = callPackage ./deps.aether { devMode = false; };
