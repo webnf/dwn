@@ -1,21 +1,14 @@
-{ stdenv, lib, fetchFromGitHub, ant, jdk
+{ stdenv, lib, fetchFromGitHub, ant, jdk, writeScript, nix, mvnReader
 , closureRepoGenerator, expandDependencies, mvnResolve, renderClasspath, defaultMavenRepos
 , mavenRepos ? defaultMavenRepos
 }:
 let
-  dependencies = [
-    [ "org.clojure" "spec.alpha" "0.2.176" {
-        exclusions = [
-          [ "org.clojure" "clojure" ]
-        ];
-      } ]
-    [ "org.clojure" "core.specs.alpha" "0.2.44" {
-        exclusions = [
-          [ "org.clojure" "clojure" ]
-          [ "org.clojure" "spec.alpha" ]
-        ];
-      } ]
-  ];
+  dependencies1 = import ./dependencies.nix;
+  dependencies = map (d: d ++ [{
+    exclusions = [
+      [ "org.clojure" "clojure" ]
+    ] ++ (map (lib.take 2) dependencies1);
+  }]) dependencies1;
   version = "1.10.1";
   jarfile = stdenv.mkDerivation rec {
     rev = "clojure-${version}";
@@ -30,7 +23,7 @@ let
     patches = [ ./compile-gte-mtime.patch ];
     closureRepo = ./clojure.repo.edn;
     passthru.closureRepoGenerator = closureRepoGenerator {
-      inherit dependencies mavenRepos;
+      inherit dependencies mavenRepos closureRepo;
     };
     classpath = renderClasspath (lib.concatLists (
       map (mvnResolve mavenRepos)
@@ -59,5 +52,10 @@ let
       inherit version dependencies;
       expandedDependencies = dependencies;
     };
+    passthru.dependencyUpdater = writeScript "clojure-dependency-updater" ''
+      #!${stdenv.shell} -e
+      exec ${mvnReader}/bin/mvn2nix pr-compile-deps https://repo1.maven.org/maven2/org/clojure/clojure/${version}/clojure-${version}.pom > ${toString ./dependencies.nix}
+    '';
+
   };
 in jarfile

@@ -17,7 +17,7 @@
   (let [e (.getExclusions dep)
         s (.getScope dep)
         p (cond-> {}
-            (seq e) (assoc "exclusions" (map exclusion e))
+            (seq e) (assoc "exclusions" (mapv exclusion e))
             s       (assoc "scope" s))]
     (cond-> [(.getGroupId dep)
              (.getArtifactId dep)
@@ -29,7 +29,7 @@
 (defn plugin [plug]
   (let [d (.getDependencies plug)
         p (cond-> {}
-            (seq d) (assoc "dependencies" (map coord d)))]
+            (seq d) (assoc "dependencies" (mapv coord d)))]
     (cond-> [(.getGroupId plug)
              (.getArtifactId plug)
              (.getVersion plug)]
@@ -41,8 +41,8 @@
     {:group (.getGroupId model)
      :name (.getArtifactId model)
      :version (.getVersion model)
-     :build {:plugins (map plugin (.getPlugins build))}
-     :dependencies (map coord (.getDependencies model))}))
+     :build {:plugins (mapv plugin (.getPlugins build))}
+     :dependencies (mapv coord (.getDependencies model))}))
 
 (comment
 
@@ -56,5 +56,10 @@
 (defn warn [fmt & args]
   (.println *err* (str "WARNING: " (apply format fmt args))))
 
-(defn -main [& args]
-  (warn "%s %s: unsure how to respond" "mvn2nix" args))
+(defn -main [& [op path :as  args]]
+  (case op
+    "pr-compile-deps" (->> path info :dependencies
+                           (filterv (fn [[_ _ _ _ _ {:strs [scope]}]]
+                                      (nil? scope)))
+                           nix-data/nixprn)
+    (warn "%s %s: unsure how to respond" "mvn2nix" args)))

@@ -23,5 +23,6 @@
   closureRepoGenerator = closureRepoGenerator {
     ## UPDATE DEPENDENCIES in ./deps.nix
     dependencies = import ./deps.nix;
+    closureRepo = ./bootstrap-repo.next.edn;
   };
 }

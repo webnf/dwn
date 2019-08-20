@@ -42,7 +42,7 @@ let callPackage = newScope thisns;
 
   lib = lib';
 
-  clojureCustom = callPackage ../../../build-clojure.nix {};
+  clojureCustom = callPackage ../../../clojure {};
 
   combinePathes = name: pathes: runCommand name { inherit pathes; } ''
     mkdir -p out

@@ -13,6 +13,7 @@ REPO_GEN_EXPR="$(cat <<EOF
  .callPackage ../deps.aether/lib.nix {})
 .closureRepoGenerator {
   dependencies = $deps;
+  closureRepo = $TMPREPO;
 }
 EOF
 )"
@@ -26,7 +27,7 @@ EOF
 
 GEN=$(nix-build --no-out-link --show-trace -E "$REPO_GEN_EXPR")
 
-$GEN $TMPREPO
+$GEN
 
 EXPANDED_DEPS=$(nix-build --no-out-link --show-trace -E "$DEPS_EXPAND_EXPR")
 
