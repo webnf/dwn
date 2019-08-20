@@ -88,6 +88,8 @@ let
     });
     launcherScripts = lib.attrValues launchers;
     closureRepoGenerator = closureRepoGenerator args;
+
+    ## DEPRECATED moved to <dwn/base-module.nix>
     buildCommand = ''
       mkdir -p $out/bin $out/share/dwn/classpath
       for l in $launcherScripts; do

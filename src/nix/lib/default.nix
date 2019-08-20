@@ -47,7 +47,7 @@ let callPackage = newScope thisns;
   combinePathes = name: pathes: runCommand name { inherit pathes; } ''
     mkdir -p out
     for p in $pathes; do
-      cp -nR $p/${"*"} out
+      cp -nR $p/* out
       chmod -R +w out
     done
     cp -R out $out
