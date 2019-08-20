@@ -1,4 +1,4 @@
-{ newScope, dwnConfig, clojureLib, lib, writeText }:
+{ newScope, dwnConfig, clojureLib, lib, writeText, pkgs }:
 let
   mkUnits = callPackage ./src/systemd/gen.nix { };
 
@@ -12,6 +12,18 @@ let
       # (callPackage project args) (dwnConfig.binder or clojureLib.shellBinder);
       lib.warn "DEPRECATED usage of callProject, just use callPackage"
                (callPackage project args);
+
+    instantiate = config: callPackage ({ lib, pkgs, config }:
+      (lib.evalModules {
+        modules = import ./module-list.nix ++ [{
+          config._module.args.pkgs = pkgs;
+          config.dwn = config;
+        }];
+      }).config.result
+    ) {
+      inherit config;
+      pkgs = pkgs // thisns;
+    };
 
     clojure = callPackage ./clojure { inherit mvnReader; };
     leiningenLib = callPackage ./src/nix/lib/leiningen.nix {};
