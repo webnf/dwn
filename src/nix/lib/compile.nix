@@ -40,6 +40,7 @@ rec {
       '';
     in command options;
 
+  ## DEPRECATED
   classesFor = args@{
       name
     , cljSourceDirs ? []

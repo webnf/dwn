@@ -4,6 +4,7 @@ with lib;
 let
   paths = types.listOf (types.either types.path types.package);
   sourceDir = if config.dwn.dev then toString else lib.id;
+  sourceDirs = map sourceDir config.dwn.clj.sourceDirectories;
 in
 
 {
@@ -15,20 +16,21 @@ in
         Source roots for clojure compilation
       '';
     };
-    compileClasspath = mkOption {
-      default = [ pkgs.clojure.dwn.jar ];
-      type = paths;
-      description = ''
-        JVM compile classpath
-      '';
-    };
-    runtimeClasspath = mkOption {
-      default = config.dwn.clj.compileClasspath;
-      type = paths;
-      description = ''
-        JVM runtime classpath
-      '';
-    };
+    # compileClasspath = mkOption {
+    #   internal = true;
+    #   default = config.dwn.clj.compileClasspath;
+    #   type = paths;
+    #   description = ''
+    #     JVM compile classpath
+    #   '';
+    # };
+    # runtimeClasspath = mkOption {
+    #   internal = true;
+    #   type = paths;
+    #   description = ''
+    #     JVM runtime classpath
+    #   '';
+    # };
     aot = mkOption {
       default = [];
       type = types.listOf types.string;
@@ -74,14 +76,16 @@ in
   };
 
   config = mkIf (0 != lib.length config.dwn.clj.sourceDirectories) {
+    dwn.mvn = {
+      dependencies = [ pkgs.clojure ];
+    };
     dwn.jvm.runtimeClasspath =
-      config.dwn.clj.runtimeClasspath
-      ++ (map sourceDir config.dwn.clj.sourceDirectories)
+      sourceDirs
       ++ (lib.optional (0 != lib.length config.dwn.clj.aot) (
         pkgs.cljCompile {
           name = config.dwn.name + "-clj-classes";
           inherit (config.dwn.clj) aot;
-          classpath = config.dwn.clj.compileClasspath;
+          classpath = sourceDirs ++ config.dwn.jvm.javaClasses ++ config.dwn.jvm.compileClasspath;
           options = {
             inherit (config.dwn.clj) warnOnReflection uncheckedMath disableLocalsClearing elideMeta directLinking;
           };
@@ -91,7 +95,7 @@ in
       if config.dwn.dev then
         (map toString config.dwn.clj.sourceDirectories)
         ++ [(pkgs.writeScriptBin "start-nrepl" ''
-           echo Start nrepl ${toString config.dwn.clj.sourceDirectories} ${toString config.dwn.clj.runtimeClasspath}
+           echo Start nrepl ${toString config.dwn.clj.sourceDirectories} ${toString config.dwn.jvm.runtimeClasspath}
         '')]
       else
         [];

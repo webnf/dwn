@@ -21,14 +21,17 @@ rec {
       , ...}:
     let result =
     lib.foldl mergeRepos {}
-      (map (prj: let oprj = (prj.overrideProject (_: {
+      (map (prj: let oprj = if prj ? overrideProject
+                            then (prj.overrideProject (_: {
                               inherit closureRepo fixedVersions;
                               overlayRepo = mergeRepos overlayRepo result;
-                            }));
+                            }))
+                            else prj;
                      inherit (oprj.dwn) group artifact extension classifier version;
                  in {
                    "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = {
-                     inherit (oprj.dwn) dependencies dirs group artifact coordinate;
+                     inherit (oprj.dwn) dependencies dirs jar group artifact;
+                     coordinate = [ group artifact extension classifier version ];
                      inherit (oprj) overrideProject;
                    };
                  })
@@ -53,5 +56,5 @@ rec {
 
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
     lib.concatLists (map (mvnResolve mavenRepos) (expandDependencies args));
-
+  
 }

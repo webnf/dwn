@@ -3,7 +3,7 @@ let
 
   version = "0.96-alpha";
 
-in stdenv.mkDerivation {
+  package = stdenv.mkDerivation {
   name = "juds-${version}";
   src = fetchFromGitHub {
     owner = "mcfunley";
@@ -34,4 +34,16 @@ in stdenv.mkDerivation {
 
     fixupPhase
   '';
+  };
+in package // {
+  dwn = {
+    group = "juds";
+    artifact = "juds";
+    extension = "dirs";
+    classifier = "";
+    dependencies = [];
+    jar = null;
+    inherit version;
+    dirs = [ "${package}/lib" ];
+  };
 }

@@ -57,8 +57,10 @@ let paths = types.listOf (types.either types.path types.package); in
     '';
   };
 
-  config.result = pkgs.buildEnv {
+  config.result = (pkgs.buildEnv {
     inherit (config.dwn) name paths;
+  }) // {
+    config = config.dwn;
   };
 
   # config.dwn.jvm.runtimeClasspath = (lib.optional (0 != lib.length config.dwn.jvm.sourceDirectories) (
