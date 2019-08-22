@@ -33,7 +33,13 @@ rec {
     aetherDownloader
       (toString closureRepo)
       mavenRepos
-      (dependencies ++ fixedVersions)
+      (lib.concatLists
+        (map
+          (dep:
+            if dep ? dwn.dependencies
+            then dep.dwn.dependencies
+            else [ dep ])
+          (dependencies ++ fixedVersions)))
       (filterDirs overlayRepo);
 
 }

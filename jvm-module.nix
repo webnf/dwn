@@ -3,13 +3,6 @@
 with lib;
 let
   paths = types.listOf (types.either types.path types.package);
-  dependencyT = mkOptionType rec {
-    name = "maven-dependency";
-    description = "Maven dependency coordinate";
-    ## TODO syntax check
-    check = v: builtins.isList v || builtins.isAttrs v;
-    merge = mergeEqualOption;
-  };
   subPath = path: drv: pkgs.runCommand (drv.name + "-" + lib.replaceStrings ["/"] ["_"] path) {
     inherit path;
   } ''
@@ -71,39 +64,7 @@ in
     };
   };
 
-  options.dwn.mvn = {
-    repos = mkOption {
-      default = [ http://repo1.maven.org/maven2
-                  https://clojars.org/repo ];
-      type = types.listOf (types.either types.path types.string);
-      description = ''
-        Maven repositories
-      '';
-    };
-    dependencies = mkOption {
-      default = [];
-      type = types.listOf dependencyT;
-      description = ''
-        Maven dependencies.
-      '';
-    };
-    repositoryFile = mkOption {
-      type = types.path;
-      description = ''
-        Path of closure file, generated with SHAs of dependency tree.
-      '';
-    };
-  };
-
   config.dwn.jvm = {
-    dependencyClasspath = lib.optionals
-      (0 != lib.length config.dwn.mvn.dependencies) (
-        pkgs.dependencyClasspath {
-          name = config.dwn.name + "-mvn-classpath";
-          mavenRepos = config.dwn.mvn.repos;
-          closureRepo = config.dwn.mvn.repositoryFile;
-          inherit (config.dwn.mvn) dependencies;
-        });
     compileClasspath = config.dwn.jvm.dependencyClasspath;
     javaClasses = lib.optional
       (0 != lib.length config.dwn.jvm.sourceDirectories) (

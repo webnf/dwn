@@ -16,12 +16,20 @@
   {"jar"
    {""
     {"1.7.0" {:sha1 "4953eb1ffa4adca22760c9324c9c26d2038c392a"},
-     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"}}}},
+     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"},
+     "1.10.1"
+     {:sha1 "a1e6b92ce9b1bfc5d181867a45da8a38a6077662",
+      :dependencies
+      [["org.clojure" "spec.alpha" "0.2.176"]
+       ["org.clojure" "core.specs.alpha" "0.2.44"]]}}}},
   "tools.logging"
   {"jar"
    {""
     {"0.3.1"
      {:sha1 "d8342cb0b6825cd12115cc1a9ccef988484478b2",
+      :dependencies [["org.clojure" "clojure" "1.4.0"]]},
+     "0.4.1"
+     {:sha1 "991bebc6e3633b85091ae929d62c116a2584aee7",
       :dependencies [["org.clojure" "clojure" "1.4.0"]]}}}}},
  "com.stuartsierra"
  {"component"
@@ -29,6 +37,11 @@
    {""
     {"0.3.2"
      {:sha1 "356fcceba88787671bd08c5cd788ef3541cce6ca",
+      :dependencies
+      [["com.stuartsierra" "dependency" "0.2.0"]
+       ["org.clojure" "clojure" "1.7.0"]]},
+     "0.4.0"
+     {:sha1 "b57093504a7917b65b6366a399c048443b4e9aad",
       :dependencies
       [["com.stuartsierra" "dependency" "0.2.0"]
        ["org.clojure" "clojure" "1.7.0"]]}}}},
@@ -82,4 +95,29 @@
    {""
     {"1.7.24"
      {:sha1 "25a2be668cb2ad1d05d76c0773df73b4b53617fd",
-      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}}}}
+      :dependencies [["org.slf4j" "slf4j-api" "1.7.24"]]}}}}},
+ "cider"
+ {"cider-nrepl"
+  {"jar"
+   {""
+    {"0.21.1"
+     {:sha1 "ff8cf21b9799b7d19f7a10195cfec30321414754",
+      :dependencies
+      [["nrepl"
+        "0.6.0"
+        {"exclusions" [["org.clojure" "clojure"]]}]]}}}}},
+ "nrepl"
+ {"nrepl"
+  {"jar"
+   {""
+    {"0.6.0" {:sha1 "365ab4540d3b2447ff1ec08e63ae1f00489de601"},
+     "0.4.4"
+     {:sha1 "2522f7f1b4bab169a2540406eb3eb71f7d6e3003",
+      :dependencies [["org.clojure" "tools.logging" "0.4.1"]]}}}}},
+ "refactor-nrepl"
+ {"refactor-nrepl"
+  {"jar"
+   {""
+    {"2.4.0"
+     {:sha1 "710bc8d8ac88023f06c5f00e917e64f1ea91d5de",
+      :dependencies [["nrepl" "0.4.4"]]}}}}}}

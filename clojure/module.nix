@@ -76,13 +76,5 @@ in
           };
         }
       ));
-    dwn.paths =
-      if config.dwn.dev then
-        (map toString config.dwn.clj.sourceDirectories)
-        ++ [(pkgs.writeScriptBin "start-nrepl" ''
-           echo Start nrepl ${toString config.dwn.clj.sourceDirectories} ${toString config.dwn.jvm.runtimeClasspath}
-        '')]
-      else
-        [];
   };
 }

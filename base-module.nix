@@ -26,6 +26,7 @@ let paths = types.listOf (types.either types.path types.package); in
         Derivations / paths of which to compose outputs
       '';
     };
+  };
 
   options.result = mkOption {
     type = types.package;
@@ -37,6 +38,6 @@ let paths = types.listOf (types.either types.path types.package); in
   config.result = (pkgs.buildEnv {
     inherit (config.dwn) name paths;
   }) // {
-    config = config.dwn;
+    inherit (config) dwn;
   };
 }
