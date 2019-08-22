@@ -43,6 +43,11 @@ in
           Jvm runtime classpath
         '';
     };
+    runtimeArgs = mkOption {
+      default = [];
+      type = types.listOf types.string;
+      description = "Extra JVM args";
+    };
     compileClasspath = mkOption {
       default = [];
       type = paths;

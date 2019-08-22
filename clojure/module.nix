@@ -3,12 +3,32 @@
 with lib;
 let
   paths = types.listOf (types.either types.path types.package);
+  subPath = path: drv: pkgs.runCommand (drv.name + "-" + lib.replaceStrings ["/"] ["_"] path) {
+    inherit path;
+  } ''
+    mkdir -p $out/$(dirname $path)
+    ln -s ${drv} $out/$path
+  '';
   sourceDir = if config.dwn.dev then toString else lib.id;
-  sourceDirs = map sourceDir config.dwn.clj.sourceDirectories;
 in
 
 {
   options.dwn.clj = {
+    main = mkOption {
+      type = types.attrsOf (types.submodule {
+        options = {
+          namespace = mkOption {
+            type = types.string;
+            description = "Clojure namespace to launch";
+          };
+          prefixArgs = mkOption {
+            default = [];
+            type = types.listOf types.string;
+            description = "Prefix arguments for -main function";
+          };
+        };
+      });
+    };
     sourceDirectories = mkOption {
       default = [];
       type = types.listOf types.path;
@@ -65,16 +85,25 @@ in
       dependencies = [ pkgs.clojure ];
     };
     dwn.jvm.runtimeClasspath =
-      sourceDirs
+      (map sourceDir config.dwn.clj.sourceDirectories)
       ++ (lib.optional (0 != lib.length config.dwn.clj.aot) (
         pkgs.cljCompile {
           name = config.dwn.name + "-clj-classes";
           inherit (config.dwn.clj) aot;
-          classpath = sourceDirs ++ config.dwn.jvm.javaClasses ++ config.dwn.jvm.compileClasspath;
+          classpath = config.dwn.clj.sourceDirectories ++ config.dwn.jvm.javaClasses ++ config.dwn.jvm.compileClasspath;
           options = {
             inherit (config.dwn.clj) warnOnReflection uncheckedMath disableLocalsClearing elideMeta directLinking;
           };
         }
       ));
+    dwn.paths = lib.mapAttrsToList
+      (name: { namespace, prefixArgs, ... }:
+        subPath "bin/${name}"
+          (pkgs.shellBinder.mainLauncher {
+            classpath = config.dwn.jvm.resultClasspath;
+            jvmArgs = config.dwn.jvm.runtimeArgs;
+            inherit name namespace prefixArgs;
+          }))
+      config.dwn.clj.main;
   };
 }

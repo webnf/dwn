@@ -1,6 +1,6 @@
 with import ./shell.nix;
 instantiate {
-  dev = false;
+  dev = true;
   clj = {
     aot = [ "webnf.dwn.boot" ];
     sourceDirectories = [

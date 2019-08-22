@@ -11,6 +11,8 @@
    (sun.misc Signal SignalHandler)
    (com.etsy.net JUDS UnixDomainSocketServer)))
 
+(declare system)
+
 (defn update! [in-stream out-stream]
   (let [cfg (config/read (config/reader in-stream))]
     (log/info "Updating config\n"

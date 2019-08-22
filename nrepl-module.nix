@@ -25,7 +25,7 @@ with lib;
         Nrepl middleware
       '';
     };
-    enableCider = mkOption {
+    enable-cider = mkOption {
       default = true;
       type = types.bool;
       description = ''
@@ -35,8 +35,15 @@ with lib;
   };
 
   config.dwn.mvn.dependencies = [(
-    pkgs.callPackage ./nrepl-project.nix {}
+    pkgs.callPackage ./nrepl-project.nix { devMode = false; }
   )];
+
+  config.dwn.clj.main = {
+    dwn-nrepl = {
+      namespace = "webnf.dwn.nrepl";
+      prefixArgs = [ ( pkgs.toEdnPP ( pkgs.keyword-map config.dwn.nrepl)) ];
+    };
+  };
   
   config.dwn.paths =
     if config.dwn.dev then
