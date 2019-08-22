@@ -13,8 +13,13 @@ let
 in
 
 {
+  imports = [
+    ../jvm-module.nix
+    ../systemd-module.nix
+  ];
   options.dwn.clj = {
     main = mkOption {
+      default = {};
       type = types.attrsOf (types.submodule {
         options = {
           namespace = mkOption {

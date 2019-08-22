@@ -13,9 +13,9 @@ let
       lib.warn "DEPRECATED usage of callProject, just use callPackage"
                (callPackage project args);
 
-    instantiate = config: callPackage ({ lib, pkgs, config }:
+    instantiateWith = moduleList: config: callPackage ({ lib, pkgs, config }:
       (lib.evalModules {
-        modules = import ./module-list.nix ++ [{
+        modules = moduleList ++ [{
           config._module.args.pkgs = pkgs;
           config.dwn = config;
         }];
@@ -25,6 +25,8 @@ let
       pkgs = pkgs // thisns;
     };
 
+    instantiate = instantiateWith (import ./module-list.nix);
+
     clojure = callPackage ./clojure { inherit mvnReader; };
     leiningenLib = callPackage ./src/nix/lib/leiningen.nix {};
 
@@ -33,7 +35,7 @@ let
       dwnLauncher = dwn.meta.dwn.launchers.boot;
       inherit (dwnConfig) varDirectory;
     };
-    nrepl = callPackage ./nrepl-project.nix { devMode = false; };
+    nrepl = instantiateWith [ ./clojure/module.nix ] (import ./nrepl/dwn.nix);
     leinReader = callPackage ./lein.reader/project.nix { devMode = false; };
     mvnReader = callPackage ./mvn.reader/project.nix { devMode = true; };
     deps = {

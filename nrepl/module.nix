@@ -34,9 +34,7 @@ with lib;
     };
   };
 
-  config.dwn.mvn.dependencies = [(
-    pkgs.callPackage ./nrepl-project.nix { devMode = false; }
-  )];
+  config.dwn.mvn.dependencies = [ pkgs.nrepl ];
 
   config.dwn.clj.main = {
     dwn-nrepl = {
@@ -44,13 +42,5 @@ with lib;
       prefixArgs = [ ( pkgs.toEdnPP ( pkgs.keyword-map config.dwn.nrepl)) ];
     };
   };
-  
-  config.dwn.paths =
-    if config.dwn.dev then
-      [(pkgs.writeScriptBin "start-nrepl" ''
-         echo Start nrepl '${pkgs.toEdnPP config.dwn.nrepl}'
-      '')]
-    else
-      [];
-  
+    
 }

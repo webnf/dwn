@@ -28,6 +28,9 @@ let
 in
 
 {
+  imports = [
+    ./mvn-module.nix
+  ];
   options.dwn.jvm = {
     sourceDirectories = mkOption {
       default = [];

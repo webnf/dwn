@@ -33,6 +33,10 @@ let
     systemdLib.generateUnits scope systemd.config.systemd."${scope}".units [] [];
 in
 {
+  imports = [
+    ./base-module.nix
+  ];
+
   options.dwn.systemd = mkOption {
     type = types.unspecified;
   };

@@ -18,8 +18,34 @@ let
 in
 
 {
+  imports = [
+    ./base-module.nix
+  ];
 
   options.dwn.mvn = {
+    group = mkOption {
+      type = types.string;
+      default = config.dwn.mvn.artifact;
+      description = "Maven group";
+    };
+    artifact = mkOption {
+      type = types.string;
+      description = "Maven artifact";
+    };
+    version = mkOption {
+      type = types.string;
+      description = "Maven version";
+    };
+    extension = mkOption {
+      type = types.string;
+      default = "dirs";
+      description = "Maven packaging extension";
+    };
+    classifier = mkOption {
+      type = types.string;
+      default = "";
+      description = "Maven classifier";
+    };
     repos = mkOption {
       default = [ http://repo1.maven.org/maven2
                   https://clojars.org/repo ];
