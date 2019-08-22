@@ -117,9 +117,9 @@ in
                       ++ config.dwn.jvm.dependencyClasspath;
   };
   config.dwn.paths = [
-    (subPath "share/java"
-      (uniqifyingSymlinkJoin
-        (config.dwn.name + "-jvm-classpath")
-        config.dwn.jvm.resultClasspath))];
+    (uniqifyingSymlinkJoin
+      (config.dwn.name + "-jvm-classpath")
+      config.dwn.jvm.resultClasspath)
+  ];
   
 }

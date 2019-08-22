@@ -16,21 +16,6 @@ in
         Source roots for clojure compilation
       '';
     };
-    # compileClasspath = mkOption {
-    #   internal = true;
-    #   default = config.dwn.clj.compileClasspath;
-    #   type = paths;
-    #   description = ''
-    #     JVM compile classpath
-    #   '';
-    # };
-    # runtimeClasspath = mkOption {
-    #   internal = true;
-    #   type = paths;
-    #   description = ''
-    #     JVM runtime classpath
-    #   '';
-    # };
     aot = mkOption {
       default = [];
       type = types.listOf types.string;
