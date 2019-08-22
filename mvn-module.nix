@@ -62,7 +62,8 @@ in
       '';
     };
     repositoryFile = mkOption {
-      type = types.path;
+      default = null;
+      type = types.nullOr types.path;
       description = ''
         Path of closure file, generated with SHAs of dependency tree.
       '';
@@ -80,15 +81,15 @@ in
 
   config.dwn.jvm.dependencyClasspath =
     lib.optionals
-    (0 != lib.length config.dwn.mvn.dependencies)
+    (0 != lib.length config.dwn.mvn.dependencies && ! isNull config.dwn.mvn.repositoryFile)
     (pkgs.dependencyClasspath {
       name = config.dwn.name + "-mvn-classpath";
       mavenRepos = config.dwn.mvn.repos;
       closureRepo = config.dwn.mvn.repositoryFile;
       inherit (config.dwn.mvn) dependencies;
     });
-  config.dwn.paths = [
-    (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater)
-  ];
+  config.dwn.paths = lib.optional
+    config.dwn.dev
+    (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);
   
 }

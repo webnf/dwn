@@ -42,7 +42,9 @@ in
       '';
     };
     aot = mkOption {
-      default = [];
+      default = if config.dwn.optimize
+                then lib.mapAttrsToList (_: { namespace, ...}: namespace) config.dwn.clj.main
+                else [];
       type = types.listOf types.string;
       description = ''
         Clojure namespaces to AOT compile
@@ -63,21 +65,21 @@ in
       '';
     };
     disableLocalsClearing = mkOption {
-      default = config.dwn.dev;
+      default = config.dwn.dev && ! config.dwn.optimize;
       type = types.bool;
       description = ''
         Clojure compiler option `disable-locals-clearing`
       '';
     };
     directLinking = mkOption {
-      default = false;
+      default = config.dwn.optimize;
       type = types.bool;
       description = ''
         Clojure compiler option `direct-linking`
       '';
     };
     elideMeta = mkOption {
-      default = if config.dwn.dev then [] else [":line" ":file" ":doc" ":added"];
+      default = if config.dwn.optimize then [":line" ":file" ":doc" ":added"] else [];
       type = types.listOf types.string;
       description = ''
         Clojure compiler option `elide-meta`
@@ -117,9 +119,6 @@ in
         };
       })
       config.dwn.clj.main;
-    dwn.paths = lib.mapAttrsToList
-      (name: args:
-        subPath "bin/${name}" (binderFor name args))
-      config.dwn.clj.main;
-      };
-  }
+    dwn.binaries = lib.mapAttrs binderFor config.dwn.clj.main;
+  };
+}

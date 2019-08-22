@@ -13,19 +13,33 @@ let
       lib.warn "DEPRECATED usage of callProject, just use callPackage"
                (callPackage project args);
 
-    instantiateWith = moduleList: config: callPackage ({ lib, pkgs, config }:
+    instantiateWith = moduleList: config:
+      (instantiateWithBase moduleList { config.dwn = config; })
+      // {
+        overrideConfig = cfn:
+          instantiateWith moduleList (cfn config);
+      };
+    instantiate = instantiateWith (import ./module-list.nix);
+    instantiateWithBase = moduleList: module: callPackage ({ lib, pkgs }:
       (lib.evalModules {
         modules = moduleList ++ [{
           config._module.args.pkgs = pkgs;
-          config.dwn = config;
-        }];
+        } module];
       }).config.result
-    ) {
-      inherit config;
-      pkgs = pkgs // thisns;
-    };
+    ) { pkgs = pkgs // thisns; };
 
-    instantiate = instantiateWith (import ./module-list.nix);
+    instantiatePkg = pkg: instantiateWithBase
+      (import ./module-list.nix)
+      ({ config, pkgs, lib, ... }:
+        let expr = import pkg;
+            dwn = if builtins.isFunction expr
+                  then expr {
+                    inherit pkgs lib;
+                    config = config.dwn;
+                  }
+                  else expr;
+        in { inherit dwn; }
+      );
 
     clojure = callPackage ./clojure { inherit mvnReader; };
     leiningenLib = callPackage ./src/nix/lib/leiningen.nix {};
@@ -40,7 +54,9 @@ let
     mvnReader = callPackage ./mvn.reader/project.nix { devMode = true; };
     deps = {
       expander = callPackage ./deps.expander { devMode = false; };
+      expanderNg = instantiatePkg ./deps.expander/dwn.nix;
       aether = callPackage ./deps.aether { devMode = false; };
+      aetherNg = instantiatePkg ./deps.aether/dwn.nix;
     };
     juds = callPackage ./juds.nix {};
     descriptors = lib.listToAttrs (map (name:
