@@ -1,8 +1,9 @@
 [
   ./base-module.nix
+  ./systemd-module.nix
   ./mvn-module.nix
   ./jvm-module.nix
-  ./nrepl-module.nix
   ./clojure/module.nix
+  ./nrepl-module.nix
   ./clojurescript/module.nix
 ]

@@ -80,7 +80,14 @@ in
     };
   };
 
-  config = mkIf (0 != lib.length config.dwn.clj.sourceDirectories) {
+  config = let
+    binderFor = name: { namespace, prefixArgs, ... }:
+      pkgs.shellBinder.mainLauncher {
+        classpath = config.dwn.jvm.resultClasspath;
+        jvmArgs = config.dwn.jvm.runtimeArgs;
+        inherit name namespace prefixArgs;
+      };
+  in mkIf (0 != lib.length config.dwn.clj.sourceDirectories) {
     dwn.mvn = {
       dependencies = [ pkgs.clojure ];
     };
@@ -96,14 +103,18 @@ in
           };
         }
       ));
-    dwn.paths = lib.mapAttrsToList
-      (name: { namespace, prefixArgs, ... }:
-        subPath "bin/${name}"
-          (pkgs.shellBinder.mainLauncher {
-            classpath = config.dwn.jvm.resultClasspath;
-            jvmArgs = config.dwn.jvm.runtimeArgs;
-            inherit name namespace prefixArgs;
-          }))
+    dwn.systemd.services = lib.mapAttrs
+      (name: { namespace, prefixArgs, ... }@args: {
+        description = "${name}: clojure.main -m ${namespace} ${pkgs.toEdn prefixArgs} \"$@\"";
+        serviceConfig = {
+          Type="oneshot";
+          ExecStart="${(binderFor name args)}";
+        };
+      })
       config.dwn.clj.main;
-  };
-}
+    dwn.paths = lib.mapAttrsToList
+      (name: args:
+        subPath "bin/${name}" (binderFor name args))
+      config.dwn.clj.main;
+      };
+  }

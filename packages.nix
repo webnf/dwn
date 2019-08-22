@@ -4,7 +4,7 @@ let
 
   callPackage = newScope thisns;
   thisns = clojureLib // rec {
-    inherit dwnConfig callPackage;
+    inherit dwnConfig callPackage mkUnits;
     inherit (dwnConfig) devMode;
     inherit (leiningenLib) fromLein;
 
