@@ -35,6 +35,8 @@ let paths = types.listOf (types.either types.path types.package); in
     '';
   };
 
+  config.dwn.paths = [ pkgs.dwnTool ];
+
   config.result = (pkgs.buildEnv {
     inherit (config.dwn) name paths;
   }) // {
