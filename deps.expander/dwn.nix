@@ -26,8 +26,8 @@
                   else [ dep ])
           config.mvn.dependencies)))}
 
-      ${pkgs.deps.aetherNg.dwn.binaries.main} "$TMPREPO" "$DEPS" "$REPOS" "{}"
-      exec ${config.binaries.main} ${toString ./deps.next.nix} "$TMPREPO" "$DEPS" [] [] {}
+      ${pkgs.deps.aether.dwn.binaries.prefetch} "$TMPREPO" "$DEPS" "$REPOS" "{}"
+      exec ${config.binaries.expand} ${toString ./deps.next.nix} "$TMPREPO" "$DEPS" [] [] {}
     '';
   };
   jvm.dependencyClasspath =
@@ -37,6 +37,6 @@
         (import ./deps.bootstrap.nix));
   clj = {
     sourceDirectories = [ ./src ../nix.data/src ../nix.aether/src ];
-    main.main.namespace = "webnf.dwn.deps.expander";
+    main.expand.namespace = "webnf.dwn.deps.expander";
   };
 }

@@ -1,16 +1,17 @@
 { lib, runCommand, callPackage
 , toEdn, subProjectOverlay
 , filterDirs, mergeRepos
+, deps
 }:
 rec {
 
-  depsExpander = repo: deps: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
+  depsExpander = repo: dependencies: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
     inherit repo;
-    ednDeps = toEdn deps;
+    ednDeps = toEdn dependencies;
     ednFixedVersions = toEdn fixedVersions;
     ednProvidedVersions = toEdn providedVersions;
     ednOverlayRepo = toEdn (filterDirs overlayRepo);
-    launcher = callPackage ./default.nix { devMode = false; };
+    launcher = deps.expander.dwn.binaries.expand;
   } ''
     #!/bin/sh
     ## set -xv
@@ -26,9 +27,10 @@ rec {
                        , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
                        , ... }:
     let dependencies' = map (d:
-            if builtins.isList d then d
-            else with d.dwn; [group artifact extension classifier version]
-          ) dependencies;
+          #builtins.trace (if builtins.isAttrs d then d.name else d)
+          (if builtins.isList d then d
+           else with d.dwn; [group artifact extension classifier version])
+        ) dependencies;
         overlayRepo' = mergeRepos overlayRepo (subProjectOverlay {
           subProjects = lib.filter (d: ! builtins.isList d) dependencies;
           inherit overlayRepo closureRepo fixedVersions;

@@ -1,1 +1,3 @@
-(import <nixpkgs> {}).callPackage ./default.nix { devMode = true; }
+(import <nixpkgs> {
+  overlays = [ (import ./packages.nix) ];
+})

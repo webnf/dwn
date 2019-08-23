@@ -22,6 +22,6 @@
   };
   clj = {
     sourceDirectories = [ ./src ../nix.aether/src ];
-    main.main.namespace = "webnf.dwn.deps.aether";
+    main.prefetch.namespace = "webnf.dwn.deps.aether";
   };
 }

@@ -1,4 +1,4 @@
-{ stdenv, lib, fetchFromGitHub, ant, jdk, writeScript, nix, mvnReader
+{ stdenv, lib, fetchFromGitHub, ant, jdk, writeScript, nix #, mvnReader
 , closureRepoGenerator, expandDependencies, mvnResolve, renderClasspath, defaultMavenRepos
 , mavenRepos ? defaultMavenRepos
 }:
@@ -53,10 +53,10 @@ let
       expandedDependencies = dependencies;
     };
     passthru.overrideProject = _: jarfile; # clojure is compiled statically
-    passthru.dependencyUpdater = writeScript "clojure-dependency-updater" ''
-      #!${stdenv.shell} -e
-      exec ${mvnReader}/bin/mvn2nix pr-compile-deps https://repo1.maven.org/maven2/org/clojure/clojure/${version}/clojure-${version}.pom > ${toString ./dependencies.nix}
-    '';
+    # passthru.dependencyUpdater = writeScript "clojure-dependency-updater" ''
+    #   #!${stdenv.shell} -e
+    #   exec ${mvnReader}/bin/mvn2nix pr-compile-deps https://repo1.maven.org/maven2/org/clojure/clojure/${version}/clojure-${version}.pom > ${toString ./dependencies.nix}
+    # '';
 
   };
 in jarfile

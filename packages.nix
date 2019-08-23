@@ -1,85 +1,71 @@
-{ newScope, dwnConfig, clojureLib, lib, writeText, pkgs }:
+self: super:
 let
-  mkUnits = callPackage ./src/systemd/gen.nix { };
+  inherit (self) callPackage;
+in rec {
+  defaultMavenRepos = [ http://repo1.maven.org/maven2
+                        https://clojars.org/repo ];
 
-  callPackage = newScope thisns;
-  thisns = clojureLib // rec {
-    inherit dwnConfig callPackage mkUnits;
-    inherit (dwnConfig) devMode;
-    inherit (leiningenLib) fromLein;
+  edn = callPackage ./src/nix/lib/edn.nix {};
+  inherit (edn) asEdn toEdn toEdnPP;
+  inherit (edn.syntax) tagged hash-map keyword-map list vector set symbol keyword string int bool nil;
+  inherit (edn.data) get get-in eq nth nix-str nix-list extract;
 
-    callProject = project: args:
-      # (callPackage project args) (dwnConfig.binder or clojureLib.shellBinder);
-      lib.warn "DEPRECATED usage of callProject, just use callPackage"
-               (callPackage project args);
+  inherit (callPackage ./src/nix/lib/compile.nix {}) jvmCompile cljCompile classesFor;
+  inherit (callPackage ./src/nix/lib/lib-project.nix {})
+    sourceDir subProjectOverlay subProjectFixedVersions
+    classpathFor artifactClasspath dependencyClasspath;
+  inherit (callPackage ./src/nix/lib/descriptor.nix {})
+    projectDescriptor projectNsLaunchers projectComponents artifactDescriptor;
+  inherit (callPackage ./src/nix/lib/shell-binder.nix {}) renderClasspath shellBinder;
+  inherit (callPackage ./deps.expander/lib.nix {}) depsExpander expandDependencies;
+  inherit (callPackage ./deps.aether/lib.nix {}) aetherDownloader closureRepoGenerator;
+  inherit (callPackage ./src/nix/lib/repository.nix {})
+    mergeRepos descriptorPaths mapRepoVals filterDirs
+    mavenMirrors mvnResolve getRepo getRepoCoord unwrapCoord;
+  inherit (callPackage ./src/nix/lib/leiningen.nix {}) fromLein;
 
-    instantiateWith = moduleList: config:
-      (instantiateWithBase moduleList { config.dwn = config; })
-      // {
-        overrideConfig = cfn:
-          instantiateWith moduleList (cfn config);
-      };
-    instantiate = instantiateWith (import ./module-list.nix);
-    instantiateWithBase = moduleList: module: callPackage ({ lib, pkgs }:
-      (lib.evalModules {
-        modules = moduleList ++ [{
-          config._module.args.pkgs = pkgs;
-        } module];
-      }).config.result
-    ) { pkgs = pkgs // thisns; };
-
-    instantiatePkg = pkg: instantiateWithBase
-      (import ./module-list.nix)
-      ({ config, pkgs, lib, ... }:
-        let expr = import pkg;
-            dwn = if builtins.isFunction expr
-                  then expr {
-                    inherit pkgs lib;
-                    config = config.dwn;
-                  }
-                  else expr;
-        in { inherit dwn; }
-      );
-
-    clojure = callPackage ./clojure { inherit mvnReader; };
-    leiningenLib = callPackage ./src/nix/lib/leiningen.nix {};
-
-    dwn = callPackage ./project.nix { };
-    dwnSystemd = callPackage ./src/systemd {
-      dwnLauncher = dwn.meta.dwn.launchers.boot;
-      inherit (dwnConfig) varDirectory;
-    };
-    nrepl = instantiateWith [ ./clojure/module.nix ] (import ./nrepl/dwn.nix);
-    leinReader = callPackage ./lein.reader/project.nix { devMode = false; };
-    mvnReader = callPackage ./mvn.reader/project.nix { devMode = true; };
-    deps = {
-      expander = callPackage ./deps.expander { devMode = false; };
-      expanderNg = instantiatePkg ./deps.expander/dwn.nix;
-      aether = callPackage ./deps.aether { devMode = false; };
-      aetherNg = instantiatePkg ./deps.aether/dwn.nix;
-    };
-    juds = callPackage ./juds.nix {};
-    descriptors = lib.listToAttrs (map (name:
-        lib.nameValuePair
-          name
-          (writeText name
-            (lib.getAttr name thisns).meta.dwn.descriptor))
-      [ "dwn" "nrepl" ]);
-    dwnTool = callPackage ./dwn-tool.nix {};
-    sysTD = let
-        launcher = dwn.meta.dwn.launchers.boot;
-        socket = "${dwnConfig.varDirectory}/dwn.socket";
-    in mkUnits {
-      services = {
-        dwn = {
-          description = "`dwn` clojure runner";
-          serviceConfig = {
-            Type="simple";
-            ExecStart="${launcher} ${socket}";
-            ExecPostStart="/bin/sh -c 'while [ ! -S ${socket} ]; do sleep 0.2; done'";
-          };
-        };
-      };
-    };
+  clojure = callPackage ./clojure { };
+  deps = {
+    expander = instantiatePkg ./deps.expander/dwn.nix;
+    aether = instantiatePkg ./deps.aether/dwn.nix;
   };
-in thisns
+  dwn = instantiatePkg ./dwn.nix;
+  nrepl = instantiatePkg ./nrepl/dwn.nix;
+  lein.reader = callPackage ./lein.reader/project.nix { devMode = false; };
+  mvn.reader = callPackage ./mvn.reader/project.nix { devMode = true; };
+  juds = callPackage ./juds.nix {};
+  dwnTool = callPackage ./dwn-tool.nix {};
+
+  ## Module stuff
+  
+  instantiateWith = moduleList: config:
+    (instantiateWithBase moduleList { config.dwn = config; })
+    // {
+      overrideConfig = cfn:
+        instantiateWith moduleList (cfn config);
+    };
+  instantiateWithBase = moduleList: module: callPackage ({ lib, pkgs }:
+    (lib.evalModules {
+      modules = moduleList ++ [{
+        config._module.args.pkgs = pkgs;
+      } module];
+    }).config.result
+  ) { };
+
+  instantiatePkgWith = moduleList: pkg: instantiateWithBase
+    moduleList
+    ({ config, pkgs, lib, ... }:
+      let expr = import pkg;
+          dwn = if builtins.isFunction expr
+                then expr {
+                  inherit pkgs lib;
+                  config = config.dwn;
+                }
+                else expr;
+      in { inherit dwn; }
+    );
+
+  instantiate = instantiateWith [ ./clojure/module.nix ];
+  instantiatePkg = instantiatePkgWith [ ./clojure/module.nix ];
+
+}
