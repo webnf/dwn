@@ -1,0 +1,187 @@
+{"com.fasterxml.jackson.core"
+ {"jackson-core"
+  {"jar"
+   {"" {"2.8.7" {:sha1 "8b46f39c78476fb848c81a49fa807a9e9506dddd"}}}}},
+ "com.google.j2objc"
+ {"j2objc-annotations"
+  {"jar"
+   {"" {"1.1" {:sha1 "ed28ded51a8b1c6b112568def5f4b455e6809019"}}}}},
+ "org.hamcrest"
+ {"hamcrest-core"
+  {"jar"
+   {"" {"1.1" {:sha1 "860340562250678d1a344907ac75754e259cdb14"}}}}},
+ "com.google.protobuf"
+ {"protobuf-java"
+  {"jar"
+   {"" {"3.0.2" {:sha1 "ee55e8e697d10b6643d77bb1f686bac3b9ba8579"}}}}},
+ "org.mozilla"
+ {"rhino"
+  {"jar"
+   {"" {"1.7R5" {:sha1 "95f0003cea7ebf26aef5ed64c77c05fcd1ff9648"}}}}},
+ "com.cognitect"
+ {"transit-clj"
+  {"jar"
+   {""
+    {"0.8.309"
+     {:sha1 "24a39fe859effa9cdbb2c9f0e7e25856b41039ce",
+      :dependencies [["com.cognitect" "transit-java" "0.8.332"]]}}}},
+  "transit-java"
+  {"jar"
+   {""
+    {"0.8.332"
+     {:sha1 "f76e5dced124be411e246e61c33db10b3005b881",
+      :dependencies
+      [["com.fasterxml.jackson.core" "jackson-core" "2.8.7"]
+       ["org.msgpack" "msgpack" "0.6.12"]
+       ["commons-codec" "1.10"]]}}}}},
+ "com.google.errorprone"
+ {"error_prone_annotations"
+  {"jar"
+   {""
+    {"2.0.18" {:sha1 "5f65affce1684999e2f4024983835efc3504012e"},
+     "2.1.3" {:sha1 "39b109f2cd352b2d71b52a3b5a1a9850e1dc304b"}}}}},
+ "junit"
+ {"junit"
+  {"jar"
+   {""
+    {"4.10"
+     {:sha1 "e4f1766ce7404a08f45d859fb9c226fc9e41a861",
+      :dependencies [["org.hamcrest" "hamcrest-core" "1.1"]]}}}}},
+ "com.google.jsinterop"
+ {"jsinterop-annotations"
+  {"jar"
+   {"" {"1.0.0" {:sha1 "23c3a3c060ffe4817e67673cc8294e154b0a4a95"}}}}},
+ "com.google.code.findbugs"
+ {"jsr305"
+  {"jar"
+   {""
+    {"3.0.2" {:sha1 "25ea2e8b0c338a877313bd4672d3fe056ea78f0d"},
+     "3.0.1" {:sha1 "f7be08ec23c21485b9b5a1cf1654c2ec8c58168d"}}}}},
+ "org.checkerframework"
+ {"checker-qual"
+  {"jar"
+   {"" {"2.0.0" {:sha1 "518929596ee3249127502a8573b2e008e2d51ed3"}}}}},
+ "com.googlecode.json-simple"
+ {"json-simple"
+  {"jar"
+   {""
+    {"1.1.1"
+     {:sha1 "c9ad4a0850ab676c5c64461a05ca524cdfff59f1",
+      :dependencies [["junit" "4.10"]]}}}}},
+ "com.google.code.gson"
+ {"gson"
+  {"jar"
+   {"" {"2.7" {:sha1 "751f548c85fa49f330cecbb1875893f971b33c4e"}}}}},
+ "org.msgpack"
+ {"msgpack"
+  {"jar"
+   {""
+    {"0.6.12"
+     {:sha1 "6a0c88fe022993c490011c3dce7127b29f9a9b3b",
+      :dependencies
+      [["com.googlecode.json-simple"
+        "json-simple"
+        "1.1.1"
+        {"exclusions" [["junit"]]}]
+       ["org.javassist" "javassist" "3.18.1-GA"]]}}}}},
+ "args4j"
+ {"args4j"
+  {"jar"
+   {""
+    {"2.0.26" {:sha1 "01ebb18ebb3b379a74207d5af4ea7c8338ebd78b"}}}}},
+ "org.clojure"
+ {"clojurescript"
+  {"jar"
+   {""
+    {"1.10.520"
+     {:sha1 "a0e637ee383cfd62a1f790929210efb2e372a9ce",
+      :dependencies
+      [["org.clojure" "clojure" "1.8.0"]
+       ["com.google.javascript"
+        "closure-compiler-unshaded"
+        "v20180805"]
+       ["org.clojure" "google-closure-library" "0.0-20170809-b9c14c6b"]
+       ["org.clojure" "data.json" "0.2.6"]
+       ["org.mozilla" "rhino" "1.7R5"]
+       ["org.clojure" "tools.reader" "1.3.0"]
+       ["com.cognitect"
+        "transit-clj"
+        "0.8.309"
+        {"exclusions" [["org.clojure" "clojure"]]}]]}}}},
+  "clojure"
+  {"jar"
+   {""
+    {"1.8.0" {:sha1 "313066c972b6b00f390674bf0e9f732c07f205a4"},
+     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"},
+     "1.5.1" {:sha1 "e7e53da8bc4ac41fca95ccfacf84f9469dd3147f"}}}},
+  "google-closure-library"
+  {"jar"
+   {""
+    {"0.0-20170809-b9c14c6b"
+     {:sha1 "620e5075dd3d8f12742a47fc80eaf4c6682b4343",
+      :dependencies
+      [["org.clojure"
+        "google-closure-library-third-party"
+        "0.0-20170809-b9c14c6b"]]}}}},
+  "google-closure-library-third-party"
+  {"jar"
+   {""
+    {"0.0-20170809-b9c14c6b"
+     {:sha1 "3b04b25e2136e180a6163742b10be419e50f2253"}}}},
+  "data.json"
+  {"jar"
+   {""
+    {"0.2.6"
+     {:sha1 "ac3437a78d08f9db3dac7debe5a069edac282d95",
+      :dependencies [["org.clojure" "clojure" "1.4.0"]]}}}},
+  "tools.reader"
+  {"jar"
+   {""
+    {"1.3.0"
+     {:sha1 "78c597e8e9922dbdbdabb192f7a49c6ee74fa480",
+      :dependencies [["org.clojure" "clojure" "1.5.1"]]}}}}},
+ "com.google.javascript"
+ {"closure-compiler-unshaded"
+  {"jar"
+   {""
+    {"v20180805"
+     {:sha1 "e64e10e00ce86b0780dd2bd5e46d0f1c7e4e1062",
+      :dependencies
+      [["com.google.javascript" "closure-compiler-externs" "v20180805"]
+       ["args4j" "2.0.26"]
+       ["com.google.errorprone" "error_prone_annotations" "2.0.18"]
+       ["com.google.guava" "guava" "25.1-jre"]
+       ["com.google.protobuf" "protobuf-java" "3.0.2"]
+       ["com.google.code.gson" "gson" "2.7"]
+       ["com.google.code.findbugs" "jsr305" "3.0.1"]
+       ["com.google.jsinterop" "jsinterop-annotations" "1.0.0"]]}}}},
+  "closure-compiler-externs"
+  {"jar"
+   {""
+    {"v20180805"
+     {:sha1 "f05f289afd682f14ceb167ef5bcd01e1f7255a04"}}}}},
+ "com.google.guava"
+ {"guava"
+  {"jar"
+   {""
+    {"25.1-jre"
+     {:sha1 "6c57e4b22b44e89e548b5c9f70f0c45fe10fb0b4",
+      :dependencies
+      [["com.google.code.findbugs" "jsr305" "3.0.2"]
+       ["org.checkerframework" "checker-qual" "2.0.0"]
+       ["com.google.errorprone" "error_prone_annotations" "2.1.3"]
+       ["com.google.j2objc" "j2objc-annotations" "1.1"]
+       ["org.codehaus.mojo" "animal-sniffer-annotations" "1.14"]]}}}}},
+ "commons-codec"
+ {"commons-codec"
+  {"jar"
+   {"" {"1.10" {:sha1 "4b95f4897fa13f2cd904aee711aeafc0c5295cd8"}}}}},
+ "org.codehaus.mojo"
+ {"animal-sniffer-annotations"
+  {"jar"
+   {"" {"1.14" {:sha1 "775b7e22fb10026eed3f86e8dc556dfafe35f2d5"}}}}},
+ "org.javassist"
+ {"javassist"
+  {"jar"
+   {""
+    {"3.18.1-GA" {:sha1 "d9a09f7732226af26bf99f19e2cffe0ae219db5b"}}}}}}
