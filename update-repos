@@ -1,15 +1,6 @@
 #!/bin/sh -ex
-./gen-repo.sh deps.aether
-( cd deps.aether
-  mv bootstrap-repo.next.edn bootstrap-repo.edn
-  cp deps.nix deps.bootstrap.nix
-)
-( cd deps.expander
-  ./update.sh
-)
-$(nix-build --no-out-link shell.nix -A clojure.dependencyUpdater)
-./gen-repo.sh clojure
 
-./gen-repo.sh dwn
-./gen-repo.sh nrepl
-./gen-repo.sh leinReader
+for repo in deps.aether deps.expander clojure dwn nrepl lein.reader mvn.reader
+do
+    ./gen-repo.sh $repo
+done

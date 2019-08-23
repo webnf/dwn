@@ -27,10 +27,10 @@ rec {
                               overlayRepo = mergeRepos overlayRepo result;
                             }))
                             else prj;
-                     inherit (oprj.dwn) group artifact extension classifier version;
+                     inherit (oprj.dwn.mvn) group artifact extension classifier version;
                  in {
                    "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = {
-                     inherit (oprj.dwn) dependencies dirs jar group artifact;
+                     inherit (oprj.dwn.mvn) dependencies dirs jar group artifact;
                      coordinate = [ group artifact extension classifier version ];
                      inherit (oprj) overrideProject;
                    };

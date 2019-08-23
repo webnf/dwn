@@ -7,7 +7,6 @@
     artifact = "aether";
     version = "0.0.3";
     dependencies = [
-      ["org.clojure" "clojure" "1.10.1"]
       ["webnf.deps" "logback" "0.2.0-alpha4"]
       ["org.apache.maven" "maven-resolver-provider" "3.6.0"]
       ["org.apache.maven.resolver" "maven-resolver-transport-file" "1.3.1"]

@@ -36,7 +36,7 @@ let
   '';
   };
 in package // {
-  dwn = {
+  dwn.mvn = {
     group = "juds";
     artifact = "juds";
     extension = "dirs";

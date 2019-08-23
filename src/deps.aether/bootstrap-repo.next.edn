@@ -180,15 +180,7 @@
       [["com.jcraft" "jsch" "0.1.49"]
        ["com.jcraft" "jsch.agentproxy.core" "0.0.9"]]}}}}},
  "org.clojure"
- {"clojure"
-  {"jar"
-   {""
-    {"1.10.1"
-     {:sha1 "a1e6b92ce9b1bfc5d181867a45da8a38a6077662",
-      :dependencies
-      [["org.clojure" "spec.alpha" "0.2.176"]
-       ["org.clojure" "core.specs.alpha" "0.2.44"]]}}}},
-  "spec.alpha"
+ {"spec.alpha"
   {"jar"
    {""
     {"0.2.176"

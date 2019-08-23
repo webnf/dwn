@@ -27,9 +27,9 @@ rec {
                        , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
                        , ... }:
     let dependencies' = map (d:
-          #builtins.trace (if builtins.isAttrs d then d.name else d)
+          # builtins.trace (if builtins.isAttrs d then builtins.attrNames d.dwn.mvn else d)
           (if builtins.isList d then d
-           else with d.dwn; [group artifact extension classifier version])
+           else with d.dwn.mvn; [group artifact extension classifier version])
         ) dependencies;
         overlayRepo' = mergeRepos overlayRepo (subProjectOverlay {
           subProjects = lib.filter (d: ! builtins.isList d) dependencies;

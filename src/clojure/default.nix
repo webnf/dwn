@@ -22,9 +22,6 @@ let
     };
     patches = [ ./compile-gte-mtime.patch ];
     closureRepo = ./clojure.repo.edn;
-    passthru.closureRepoGenerator = closureRepoGenerator {
-      inherit dependencies mavenRepos closureRepo;
-    };
     classpath = renderClasspath (lib.concatLists (
       map (mvnResolve mavenRepos)
           (expandDependencies {
@@ -42,7 +39,7 @@ let
     installPhase = ''
       cp $builtName $out
     '';
-    passthru.dwn = {
+    passthru.dwn.mvn = {
       group = "org.clojure";
       artifact = "clojure";
       resolvedVersion = "${version}-DWN";
@@ -50,7 +47,9 @@ let
       classifier = "";
       jar = jarfile;
       inherit version dependencies;
-      expandedDependencies = dependencies;
+      repositoryUpdater = closureRepoGenerator {
+        inherit dependencies mavenRepos closureRepo;
+      };
     };
     passthru.overrideProject = _: jarfile; # clojure is compiled statically
     # passthru.dependencyUpdater = writeScript "clojure-dependency-updater" ''

@@ -1,27 +1,17 @@
 { lib, writeScript, callPackage
 , toEdn
 , defaultMavenRepos
-, filterDirs
+, filterDirs, deps
 }:
 
 rec {
 
-  aetherDownloader = repoFile: repos: deps: overlay: writeScript "repo.edn.sh" ''
+  aetherDownloader = repoFile: repos: dependencies: overlay: writeScript "repo.edn.sh" ''
     #!/bin/sh
-    launcher="${callPackage ./default.nix { devMode = false; }}"
-    ednDeps=$(cat <<EDNDEPS
-    ${toEdn deps}
-    EDNDEPS
-    )
-    ednRepos=$(cat <<EDNREPOS
-    ${toEdn repos}
-    EDNREPOS
-    )
-    ednOverlay=$(cat <<EDNOVERLAY
-    ${toEdn overlay}
-    EDNOVERLAY
-    )
-    exec "$launcher" "${repoFile}" "$ednDeps" "$ednRepos" "$ednOverlay"
+    exec ${deps.aether.dwn.binaries.prefetch} ${repoFile} \
+      ${lib.escapeShellArg (toEdn dependencies)} \
+      ${lib.escapeShellArg (toEdn repos)} \
+      ${lib.escapeShellArg (toEdn overlay)}
   '';
 
   closureRepoGenerator = { dependencies ? []
@@ -36,9 +26,9 @@ rec {
       (lib.concatLists
         (map
           (dep:
-            if dep ? dwn.dependencies
-            then dep.dwn.dependencies
-            else [ dep ])
+            if builtins.isList dep
+            then [ dep ]
+            else dep.dwn.mvn.dependencies)
           (dependencies ++ fixedVersions)))
       (filterDirs overlayRepo);
 
