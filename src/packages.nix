@@ -1,7 +1,6 @@
 self: super:
-let
-  inherit (self) callPackage;
-in rec {
+
+with self; {
   defaultMavenRepos = [ http://repo1.maven.org/maven2
                         https://clojars.org/repo ];
 
