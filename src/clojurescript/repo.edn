@@ -1,11 +1,76 @@
-{"com.fasterxml.jackson.core"
+{"nrepl"
+ {"nrepl"
+  {"jar"
+   {""
+    {"0.5.3"
+     {:sha1 "521dddf43eaae2ccc418ccf8e3188daf3f6dd71d",
+      :dependencies [["nrepl" "bencode" "1.0.0"]]}}}},
+  "bencode"
+  {"jar"
+   {""
+    {"1.0.0"
+     {:sha1 "f1031454d55f70bfb8567e14d79fa9361501ff00",
+      :dependencies [["org.clojure" "clojure" "1.8.0"]]}}}}},
+ "com.fasterxml.jackson.core"
  {"jackson-core"
   {"jar"
    {"" {"2.8.7" {:sha1 "8b46f39c78476fb848c81a49fa807a9e9506dddd"}}}}},
+ "ring"
+ {"ring-core"
+  {"jar"
+   {""
+    {"1.6.3"
+     {:sha1 "fba495dd5482721358bace48990787b77baab656",
+      :dependencies
+      [["org.clojure" "clojure" "1.5.1"]
+       ["ring" "ring-codec" "1.0.1"]
+       ["commons-io" "2.5"]
+       ["commons-fileupload" "1.3.3"]
+       ["clj-time" "0.11.0"]
+       ["crypto-random" "1.2.0"]
+       ["crypto-equality" "1.0.0"]]}}}},
+  "ring-codec"
+  {"jar"
+   {""
+    {"1.0.1"
+     {:sha1 "521dbb3c2dec06909072248785a5b040bfb378be",
+      :dependencies
+      [["org.clojure" "clojure" "1.3.0"] ["commons-codec" "1.6"]]}}}}},
+ "clj-stacktrace"
+ {"clj-stacktrace"
+  {"jar"
+   {""
+    {"0.2.8"
+     {:sha1 "b0654b98763199ee57182526465d823492d1cc3f",
+      :dependencies [["org.clojure" "clojure" "1.4.0"]]}}}}},
+ "commons-fileupload"
+ {"commons-fileupload"
+  {"jar"
+   {""
+    {"1.3.3"
+     {:sha1 "04ff14d809195b711fd6bcc87e6777f886730ca1",
+      :dependencies [["commons-io" "2.2"]]}}}}},
+ "crypto-random"
+ {"crypto-random"
+  {"jar"
+   {""
+    {"1.2.0"
+     {:sha1 "cd5ed1fa18919cc13f5ab5feabdff21cc4b0faf6",
+      :dependencies
+      [["org.clojure" "clojure" "1.2.1"] ["commons-codec" "1.6"]]}}}}},
  "com.google.j2objc"
  {"j2objc-annotations"
   {"jar"
    {"" {"1.1" {:sha1 "ed28ded51a8b1c6b112568def5f4b455e6809019"}}}}},
+ "co.deps"
+ {"ring-etag-middleware"
+  {"jar"
+   {""
+    {"0.2.0"
+     {:sha1 "433dea47dd5130359a12120534f37820b70e4b05",
+      :dependencies
+      [["org.clojure" "clojure" "1.8.0"]
+       ["ring" "ring-core" "1.6.3"]]}}}}},
  "org.hamcrest"
  {"hamcrest-core"
   {"jar"
@@ -18,13 +83,52 @@
  {"rhino"
   {"jar"
    {"" {"1.7R5" {:sha1 "95f0003cea7ebf26aef5ed64c77c05fcd1ff9648"}}}}},
+ "net.cgrand"
+ {"parsley"
+  {"jar"
+   {""
+    {"0.9.3"
+     {:sha1 "1a01b25ba7e1f671a73abf2c9c8317454c423ca6",
+      :dependencies
+      [["org.clojure" "clojure" "1.4.0"]
+       ["net.cgrand" "regex" "1.1.0"]]},
+     "0.9.2"
+     {:sha1 "41f8c11749f5f0b7b9493986faaf828926e15917",
+      :dependencies
+      [["org.clojure" "clojure" "1.4.0"]
+       ["net.cgrand" "regex" "1.1.0"]]}}}},
+  "regex"
+  {"jar"
+   {""
+    {"1.1.0"
+     {:sha1 "cb2f00de4557b69248278f5cb4c8d3c8d681cb9e",
+      :dependencies [["org.clojure" "clojure" "[1.2.0,)"]]}}}},
+  "sjacket"
+  {"jar"
+   {""
+    {"0.1.1"
+     {:sha1 "5bff0a93aad1c0393faa8b31e3dbbe7ce3fab3bf",
+      :dependencies
+      [["org.clojure" "clojure" "[1.3.0,)"]
+       ["net.cgrand" "regex" "1.1.0"]
+       ["net.cgrand" "parsley" "0.9.2"]]}}}}},
+ "crypto-equality"
+ {"crypto-equality"
+  {"jar"
+   {""
+    {"1.0.0"
+     {:sha1 "6728b7a444008fe576167fcadb92fea23bb17d42",
+      :dependencies [["org.clojure" "clojure" "1.2.1"]]}}}}},
  "com.cognitect"
  {"transit-clj"
   {"jar"
    {""
     {"0.8.309"
      {:sha1 "24a39fe859effa9cdbb2c9f0e7e25856b41039ce",
-      :dependencies [["com.cognitect" "transit-java" "0.8.332"]]}}}},
+      :dependencies [["com.cognitect" "transit-java" "0.8.332"]]},
+     "0.8.300"
+     {:sha1 "f521f8638d0fc00f144bd82e1aa7cd5109bbd00c",
+      :dependencies [["com.cognitect" "transit-java" "0.8.324"]]}}}},
   "transit-java"
   {"jar"
    {""
@@ -33,7 +137,17 @@
       :dependencies
       [["com.fasterxml.jackson.core" "jackson-core" "2.8.7"]
        ["org.msgpack" "msgpack" "0.6.12"]
+       ["commons-codec" "1.10"]]},
+     "0.8.324"
+     {:sha1 "fb91453cc43193adc87fe8140287cc4fc512e29f",
+      :dependencies
+      [["com.fasterxml.jackson.core" "jackson-core" "2.8.7"]
+       ["org.msgpack" "msgpack" "0.6.12"]
        ["commons-codec" "1.10"]]}}}}},
+ "http-kit"
+ {"http-kit"
+  {"jar"
+   {"" {"2.3.0" {:sha1 "e77d98866715de7f05887ebc3ecbbcd48bc749ed"}}}}},
  "com.google.errorprone"
  {"error_prone_annotations"
   {"jar"
@@ -51,16 +165,50 @@
  {"jsinterop-annotations"
   {"jar"
    {"" {"1.0.0" {:sha1 "23c3a3c060ffe4817e67673cc8294e154b0a4a95"}}}}},
+ "hawk"
+ {"hawk"
+  {"jar"
+   {""
+    {"0.2.11"
+     {:sha1 "f5d26a671528f2c975f0df2cc8bc4b9bd800208d",
+      :dependencies
+      [["org.clojure" "clojure" "1.8.0"]
+       ["net.incongru.watchservice"
+        "barbary-watchservice"
+        "1.0"]]}}}}},
+ "suspendable"
+ {"suspendable"
+  {"jar"
+   {""
+    {"0.1.1"
+     {:sha1 "05ebddfdc88b5eb5a35fd0ef410cf1825cd47ef1",
+      :dependencies
+      [["org.clojure" "clojure" "1.6.0"]
+       ["com.stuartsierra" "component" "0.2.3"]]}}}}},
  "com.google.code.findbugs"
  {"jsr305"
   {"jar"
    {""
     {"3.0.2" {:sha1 "25ea2e8b0c338a877313bd4672d3fe056ea78f0d"},
-     "3.0.1" {:sha1 "f7be08ec23c21485b9b5a1cf1654c2ec8c58168d"}}}}},
+     "3.0.1" {:sha1 "f7be08ec23c21485b9b5a1cf1654c2ec8c58168d"},
+     "1.3.9" {:sha1 "40719ea6961c0cb6afaeb6a921eaa1f6afd4cfdf"}}}}},
  "org.checkerframework"
  {"checker-qual"
   {"jar"
    {"" {"2.0.0" {:sha1 "518929596ee3249127502a8573b2e008e2d51ed3"}}}}},
+ "commons-io"
+ {"commons-io"
+  {"jar"
+   {""
+    {"2.5" {:sha1 "2852e6e05fbb95076fc091f6d1780f1f8fe35e0f"},
+     "2.2" {:sha1 "83b5b8a7ba1c08f9e8c8ff2373724e33d3c1e22a"}}}}},
+ "ring-cors"
+ {"ring-cors"
+  {"jar"
+   {""
+    {"0.1.12"
+     {:sha1 "ebef555b87d8c9a44286aa071366af1e6bde8672",
+      :dependencies [["org.clojure" "clojure" "1.9.0"]]}}}}},
  "com.googlecode.json-simple"
  {"json-simple"
   {"jar"
@@ -88,9 +236,107 @@
  {"args4j"
   {"jar"
    {""
-    {"2.0.26" {:sha1 "01ebb18ebb3b379a74207d5af4ea7c8338ebd78b"}}}}},
+    {"2.0.26" {:sha1 "01ebb18ebb3b379a74207d5af4ea7c8338ebd78b"},
+     "2.33" {:sha1 "bd87a75374a6d6523de82fef51fc3cfe9baf9fc9"}}}}},
+ "figwheel"
+ {"figwheel"
+  {"jar"
+   {""
+    {"0.5.19"
+     {:sha1 "eaedcf7e2c3faccc3915e27b5f0ca6062028e69e",
+      :dependencies
+      [["org.clojure" "clojure" "1.8.0"]
+       ["org.clojure"
+        "clojurescript"
+        "1.10.238"
+        {"exclusions" [["org.apache.ant" "ant"]]}]
+       ["org.clojure"
+        "core.async"
+        "0.4.474"
+        {"exclusions" [["org.clojure" "tools.reader"]]}]]}}}}},
  "org.clojure"
- {"clojurescript"
+ {"data.json"
+  {"jar"
+   {""
+    {"0.2.6"
+     {:sha1 "ac3437a78d08f9db3dac7debe5a069edac282d95",
+      :dependencies [["org.clojure" "clojure" "1.4.0"]]}}}},
+  "clojure"
+  {"jar"
+   {""
+    {"1.7.0" {:sha1 "4953eb1ffa4adca22760c9324c9c26d2038c392a"},
+     "1.9.0"
+     {:sha1 "09ee19f88152373323b8af7be35de5aa6c0c4b2b",
+      :dependencies
+      [["org.clojure" "spec.alpha" "0.1.143"]
+       ["org.clojure" "core.specs.alpha" "0.1.24"]]},
+     "[1.2.0,)" {},
+     "1.8.0" {:sha1 "313066c972b6b00f390674bf0e9f732c07f205a4"},
+     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"},
+     "1.3.0" {:sha1 "04830e76a9e8c029acb257a70c5cf30592e5a301"},
+     "1.2.1" {:sha1 "be088d20c078ce48d42afba05984f1ef7c02142b"},
+     "1.5.1" {:sha1 "e7e53da8bc4ac41fca95ccfacf84f9469dd3147f"},
+     "1.6.0" {:sha1 "1d95fb21562fa9d6df138a568ba5cab3e1dd3c98"},
+     "[1.3.0,)" {}}}},
+  "core.cache"
+  {"jar"
+   {""
+    {"0.6.5"
+     {:sha1 "82e7ab47bec2f7713817ff46c0150fc89ec20ff9",
+      :dependencies
+      [["org.clojure" "data.priority-map" "0.0.7"]
+       ["org.clojure" "clojure" "1.4.0"]]}}}},
+  "data.priority-map"
+  {"jar"
+   {""
+    {"0.0.7"
+     {:sha1 "ededdc5d68217ffa8d24ada18bae19c352b8521b",
+      :dependencies [["org.clojure" "clojure" "1.4.0"]]}}}},
+  "google-closure-library-third-party"
+  {"jar"
+   {""
+    {"0.0-20170809-b9c14c6b"
+     {:sha1 "3b04b25e2136e180a6163742b10be419e50f2253"}}}},
+  "tools.analyzer.jvm"
+  {"jar"
+   {""
+    {"0.7.0"
+     {:sha1 "51301d4c5320762cc287626b9e07d255fb9d3329",
+      :dependencies
+      [["org.clojure" "tools.analyzer" "0.6.9"]
+       ["org.clojure" "core.memoize" "0.5.9"]
+       ["org.ow2.asm" "asm-all" "4.2"]
+       ["org.clojure" "tools.reader" "1.0.0-beta4"]
+       ["org.clojure" "clojure" "1.5.1"]]}}}},
+  "tools.reader"
+  {"jar"
+   {""
+    {"1.3.0"
+     {:sha1 "78c597e8e9922dbdbdabb192f7a49c6ee74fa480",
+      :dependencies [["org.clojure" "clojure" "1.5.1"]]},
+     "1.3.0-alpha3"
+     {:sha1 "2b285d0d14c2c4be966849ca7cc51aae4445a305",
+      :dependencies [["org.clojure" "clojure" "1.5.1"]]},
+     "1.0.0-beta4"
+     {:sha1 "517ca01ba46f41bd67902836d024bcf717f25ef3",
+      :dependencies [["org.clojure" "clojure" "1.5.1"]]}}}},
+  "core.async"
+  {"jar"
+   {""
+    {"0.4.474"
+     {:sha1 "6887af0e03c4576855ea3dcda1c64947bef11569",
+      :dependencies
+      [["org.clojure" "tools.analyzer.jvm" "0.7.0"]
+       ["org.clojure" "clojure" "1.7.0"]]}}}},
+  "core.memoize"
+  {"jar"
+   {""
+    {"0.5.9"
+     {:sha1 "cb8bd16034be49ecb95eb29d06a314294949674a",
+      :dependencies
+      [["org.clojure" "core.cache" "0.6.5"]
+       ["org.clojure" "clojure" "1.4.0"]]}}}},
+  "clojurescript"
   {"jar"
    {""
     {"1.10.520"
@@ -107,13 +353,28 @@
        ["com.cognitect"
         "transit-clj"
         "0.8.309"
+        {"exclusions" [["org.clojure" "clojure"]]}]]},
+     "1.10.238"
+     {:sha1 "b87bc270254e6e57108ef0cae916aa8ad25fb11b",
+      :dependencies
+      [["org.clojure" "clojure" "1.8.0"]
+       ["com.google.javascript"
+        "closure-compiler-unshaded"
+        "v20180204"]
+       ["org.clojure" "google-closure-library" "0.0-20170809-b9c14c6b"]
+       ["org.clojure" "data.json" "0.2.6"]
+       ["org.mozilla" "rhino" "1.7R5"]
+       ["org.clojure" "tools.reader" "1.3.0-alpha3"]
+       ["com.cognitect"
+        "transit-clj"
+        "0.8.300"
         {"exclusions" [["org.clojure" "clojure"]]}]]}}}},
-  "clojure"
+  "tools.analyzer"
   {"jar"
    {""
-    {"1.8.0" {:sha1 "313066c972b6b00f390674bf0e9f732c07f205a4"},
-     "1.4.0" {:sha1 "867288bc07a6514e2e0b471c5be0bccd6c3a51f9"},
-     "1.5.1" {:sha1 "e7e53da8bc4ac41fca95ccfacf84f9469dd3147f"}}}},
+    {"0.6.9"
+     {:sha1 "d16179b3993357015b306c34f2694c69cff93eb1",
+      :dependencies [["org.clojure" "clojure" "1.5.1"]]}}}},
   "google-closure-library"
   {"jar"
    {""
@@ -123,23 +384,22 @@
       [["org.clojure"
         "google-closure-library-third-party"
         "0.0-20170809-b9c14c6b"]]}}}},
-  "google-closure-library-third-party"
+  "spec.alpha"
   {"jar"
    {""
-    {"0.0-20170809-b9c14c6b"
-     {:sha1 "3b04b25e2136e180a6163742b10be419e50f2253"}}}},
-  "data.json"
+    {"0.1.143" {:sha1 "54057fc4330a7b439127effafa92d1bfeefc23f5"},
+     "0.2.176"
+     {:resolved-coordinate
+      ["org.clojure" "spec.alpha" "jar" "" "0.2.176"],
+      :sha1 "cd2d5b03d2ff95a958cb075201b89d28a7dea626"}}}},
+  "core.specs.alpha"
   {"jar"
    {""
-    {"0.2.6"
-     {:sha1 "ac3437a78d08f9db3dac7debe5a069edac282d95",
-      :dependencies [["org.clojure" "clojure" "1.4.0"]]}}}},
-  "tools.reader"
-  {"jar"
-   {""
-    {"1.3.0"
-     {:sha1 "78c597e8e9922dbdbdabb192f7a49c6ee74fa480",
-      :dependencies [["org.clojure" "clojure" "1.5.1"]]}}}}},
+    {"0.1.24" {:sha1 "2637e33f693f51267f04e63f2acfb5d182e7bf56"},
+     "0.2.44"
+     {:resolved-coordinate
+      ["org.clojure" "core.specs.alpha" "jar" "" "0.2.44"],
+      :sha1 "6027ceb1d1ae70a6a3fb1a8da2144632fa688604"}}}}},
  "com.google.javascript"
  {"closure-compiler-unshaded"
   {"jar"
@@ -154,12 +414,24 @@
        ["com.google.protobuf" "protobuf-java" "3.0.2"]
        ["com.google.code.gson" "gson" "2.7"]
        ["com.google.code.findbugs" "jsr305" "3.0.1"]
+       ["com.google.jsinterop" "jsinterop-annotations" "1.0.0"]]},
+     "v20180204"
+     {:sha1 "6c4077e95a81f77664dee530a5120ee82534ed38",
+      :dependencies
+      [["com.google.javascript" "closure-compiler-externs" "v20180204"]
+       ["args4j" "2.33"]
+       ["com.google.errorprone" "error_prone_annotations" "2.0.18"]
+       ["com.google.guava" "guava" "22.0"]
+       ["com.google.protobuf" "protobuf-java" "3.0.2"]
+       ["com.google.code.gson" "gson" "2.7"]
+       ["com.google.code.findbugs" "jsr305" "3.0.1"]
        ["com.google.jsinterop" "jsinterop-annotations" "1.0.0"]]}}}},
   "closure-compiler-externs"
   {"jar"
    {""
-    {"v20180805"
-     {:sha1 "f05f289afd682f14ceb167ef5bcd01e1f7255a04"}}}}},
+    {"v20180805" {:sha1 "f05f289afd682f14ceb167ef5bcd01e1f7255a04"},
+     "v20180204"
+     {:sha1 "aa5b08784a407d67b9f346311b4103b9b537c83c"}}}}},
  "com.google.guava"
  {"guava"
   {"jar"
@@ -171,17 +443,135 @@
        ["org.checkerframework" "checker-qual" "2.0.0"]
        ["com.google.errorprone" "error_prone_annotations" "2.1.3"]
        ["com.google.j2objc" "j2objc-annotations" "1.1"]
+       ["org.codehaus.mojo" "animal-sniffer-annotations" "1.14"]]},
+     "22.0"
+     {:sha1 "3564ef3803de51fb0530a8377ec6100b33b0d073",
+      :dependencies
+      [["com.google.code.findbugs" "jsr305" "1.3.9"]
+       ["com.google.errorprone" "error_prone_annotations" "2.0.18"]
+       ["com.google.j2objc" "j2objc-annotations" "1.1"]
        ["org.codehaus.mojo" "animal-sniffer-annotations" "1.14"]]}}}}},
+ "strictly-specking-standalone"
+ {"strictly-specking-standalone"
+  {"jar"
+   {""
+    {"0.1.1"
+     {:sha1 "82bae83785a964f2403854b228eb5f413ac2c3c5",
+      :dependencies
+      [["org.clojure" "clojure" "1.7.0"]
+       ["net.cgrand"
+        "parsley"
+        "0.9.3"
+        {"exclusions" [["org.clojure" "clojure"]]}]
+       ["net.cgrand"
+        "sjacket"
+        "0.1.1"
+        {"exclusions"
+         [["org.clojure" "clojure"] ["net.cgrand" "parsley"]]}]]}}}}},
  "commons-codec"
  {"commons-codec"
   {"jar"
-   {"" {"1.10" {:sha1 "4b95f4897fa13f2cd904aee711aeafc0c5295cd8"}}}}},
+   {""
+    {"1.10" {:sha1 "4b95f4897fa13f2cd904aee711aeafc0c5295cd8"},
+     "1.6" {:sha1 "b7f0fc8f61ecadeb3695f0b9464755eee44374d4"}}}}},
+ "joda-time"
+ {"joda-time"
+  {"jar"
+   {"" {"2.8.2" {:sha1 "d27c24204c5e507b16fec01006b3d0f1ec42aed4"}}}}},
+ "net.incongru.watchservice"
+ {"barbary-watchservice"
+  {"jar"
+   {""
+    {"1.0"
+     {:sha1 "490d389d7a2fb76eaa5842c9606d778a60f5b45e",
+      :dependencies [["net.java.dev.jna" "jna" "3.2.2"]]}}}}},
+ "figwheel-sidecar"
+ {"figwheel-sidecar"
+  {"jar"
+   {""
+    {"0.5.19"
+     {:sha1 "7f9cdc6a1fa61f142c79b087e2f26b80c44e23db",
+      :dependencies
+      [["org.clojure" "clojure" "1.8.0"]
+       ["org.clojure"
+        "clojurescript"
+        "1.10.238"
+        {"exclusions" [["org.apache.ant" "ant"]]}]
+       ["org.clojure"
+        "core.async"
+        "0.4.474"
+        {"exclusions" [["org.clojure" "tools.reader"]]}]
+       ["com.stuartsierra" "component" "0.3.2"]
+       ["suspendable"
+        "0.1.1"
+        {"exclusions"
+         [["org.clojure" "clojure"] ["com.stuartsierra" "component"]]}]
+       ["http-kit" "2.3.0"]
+       ["ring-cors"
+        "0.1.12"
+        {"exclusions"
+         [["ring" "ring-core"] ["org.clojure" "clojure"]]}]
+       ["ring"
+        "ring-core"
+        "1.6.3"
+        {"exclusions"
+         [["org.clojure" "tools.reader"] ["org.clojure" "clojure"]]}]
+       ["co.deps" "ring-etag-middleware" "0.2.0"]
+       ["clj-stacktrace" "0.2.8"]
+       ["figwheel"
+        "0.5.19"
+        {"exclusions" [["org.clojure" "tools.reader"]]}]
+       ["hawk" "0.2.11" {"exclusions" [["org.clojure" "clojure"]]}]
+       ["nrepl" "0.5.3"]
+       ["simple-lein-profile-merge" "0.1.4"]
+       ["strictly-specking-standalone" "0.1.1"]]}}}}},
+ "clj-time"
+ {"clj-time"
+  {"jar"
+   {""
+    {"0.11.0"
+     {:sha1 "04461c7c89d96d32cf25f6674576f62aecf2ab05",
+      :dependencies
+      [["joda-time" "2.8.2"] ["org.clojure" "clojure" "1.7.0"]]}}}}},
  "org.codehaus.mojo"
  {"animal-sniffer-annotations"
   {"jar"
    {"" {"1.14" {:sha1 "775b7e22fb10026eed3f86e8dc556dfafe35f2d5"}}}}},
+ "simple-lein-profile-merge"
+ {"simple-lein-profile-merge"
+  {"jar"
+   {""
+    {"0.1.4"
+     {:sha1 "c7ef7ca80f349ca47d221fb0484078fc0249558c",
+      :dependencies [["org.clojure" "clojure" "1.6.0"]]}}}}},
  "org.javassist"
  {"javassist"
   {"jar"
    {""
-    {"3.18.1-GA" {:sha1 "d9a09f7732226af26bf99f19e2cffe0ae219db5b"}}}}}}
+    {"3.18.1-GA"
+     {:sha1 "d9a09f7732226af26bf99f19e2cffe0ae219db5b"}}}}},
+ "com.stuartsierra"
+ {"component"
+  {"jar"
+   {""
+    {"0.3.2"
+     {:sha1 "356fcceba88787671bd08c5cd788ef3541cce6ca",
+      :dependencies
+      [["com.stuartsierra" "dependency" "0.2.0"]
+       ["org.clojure" "clojure" "1.7.0"]]},
+     "0.2.3"
+     {:sha1 "02c992cf3a3e7ccd948d20d59552c5f13b3ac1f6",
+      :dependencies [["com.stuartsierra" "dependency" "0.1.1"]]}}}},
+  "dependency"
+  {"jar"
+   {""
+    {"0.2.0" {:sha1 "9e192005144258ea82ee8459bf2afeda88d45a36"},
+     "0.1.1" {:sha1 "f528756e584e14dcc2dd9f527d5f19cd1f3cefff"}}}}},
+ "org.ow2.asm"
+ {"asm-all"
+  {"jar"
+   {"" {"4.2" {:sha1 "7f7277e5b8002226ebfc8b861c775da8f6a55afd"}}}}},
+ "net.java.dev.jna"
+ {"jna"
+  {"jar"
+   {"" {"3.2.2" {:sha1 "d2598c4f68d43dc96b0ffa60e75baa54845596fe"}}}}}}

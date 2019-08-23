@@ -32,6 +32,7 @@ with self; {
   dwnTool = callPackage ./dwn-tool.nix {};
 
   clojure = callPackage ./clojure { };
+  clojurescript = build ./clojurescript/dwn.nix;
   deps = {
     expander = build ./deps.expander/dwn.nix;
     aether = build ./deps.aether/dwn.nix;
