@@ -44,6 +44,11 @@ in
       default = {};
       type = types.attrsOf types.package;
     };
+    plugins = mkOption {
+      default = [];
+      type = types.listOf types.unspecified;
+      description = "plugin modules";
+    };
   };
 
   options.result = mkOption {

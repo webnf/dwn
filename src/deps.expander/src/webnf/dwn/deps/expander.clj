@@ -10,6 +10,21 @@
 (defn warn [fmt & args]
   (.println *err* (str "WARNING: " (apply format fmt args))))
 
+(defmacro exception-barrier [expr fmt & fmt-args]
+  `(try
+     ~expr
+     (catch Exception e#
+       (throw (Exception. (format ~fmt ~@fmt-args)
+                          e#)))))
+
+(defn exception-barrier* [f fmt & fmt-args]
+  (fn [& args]
+    (try
+      (apply f args)
+      (catch Exception e
+        (throw (Exception. (apply format fmt (map pr-str fmt-args))
+                           e))))))
+
 (def gvs (GenericVersionScheme.))
 
 (defn- compare-versions [v1 v2]
@@ -50,10 +65,14 @@
                                                  :exclusions exclusions*
                                                  :extension extension*
                                                  :classifier classifier*})
-                                      (->> [group artifact extension* classifier* version* :dependencies]
-                                           (get-in repo)
-                                           (map coordinate-info)
-                                           (remove (exclusions-pred tree-exclusions*)))
+                                      (let [entry (get-in repo [group artifact extension* classifier* version*])]
+                                        (->>
+                                         entry :dependencies
+                                         (map (exception-barrier*
+                                               coordinate-info
+                                               "During coord-info in unify-versions %s"
+                                               (pr-str entry)))
+                                         (remove (exclusions-pred tree-exclusions*))))
                                       fixed-coordinates repo
                                       tree-exclusions*))))))
           result coordinates))
@@ -71,12 +90,14 @@
               (concat
                (when-not (contains? seen [group artifact])
                  [[group artifact extension classifier version]])
-               (expand-deps* (->> [group artifact extension classifier version]
-                                  (get-in repo)
-                                  :dependencies
-                                  (map coordinate-info)
-                                  #_(remove (seen-pred seen))
-                                  (remove (exclusions-pred tree-exclusions*)))
+               (expand-deps* (let [entry (get-in repo [group artifact extension classifier version])]
+                               (->> entry :dependencies
+                                    (map (exception-barrier*
+                                          coordinate-info
+                                          "During coord-info in expand-deps* %s"
+                                          (pr-str entry)))
+                                    #_(remove (seen-pred seen))
+                                    (remove (exclusions-pred tree-exclusions*))))
                              (conj seen [group artifact])
                              version-map repo
                              tree-exclusions*))))

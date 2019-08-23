@@ -24,48 +24,48 @@ in rec {
     mavenMirrors mvnResolve getRepo getRepoCoord unwrapCoord;
   inherit (callPackage ./lib/leiningen.nix {}) fromLein;
 
-  clojure = callPackage ./clojure { };
-  deps = {
-    expander = instantiatePkg ./deps.expander/dwn.nix;
-    aether = instantiatePkg ./deps.aether/dwn.nix;
-  };
-  dwn = instantiatePkg ./dwn.nix;
-  nrepl = instantiatePkg ./nrepl/dwn.nix;
-  lein.reader = callPackage ./lein.reader/project.nix { devMode = false; };
-  mvn.reader = callPackage ./mvn.reader/project.nix { devMode = true; };
+  dwn = build ./dwn.nix;
+  nrepl = build ./nrepl/dwn.nix;
+  lein.reader = build ./lein.reader/dwn.nix;
+  mvn.reader = build ./mvn.reader/dwn.nix;
+
   juds = callPackage ./juds.nix {};
   dwnTool = callPackage ./dwn-tool.nix {};
 
+  clojure = callPackage ./clojure { };
+  deps = {
+    expander = build ./deps.expander/dwn.nix;
+    aether = build ./deps.aether/dwn.nix;
+  };
+
   ## Module stuff
-  
-  instantiateWith = moduleList: config:
-    (instantiateWithBase moduleList { config.dwn = config; })
-    // {
-      overrideConfig = cfn:
-        instantiateWith moduleList (cfn config);
-    };
-  instantiateWithBase = moduleList: module: callPackage ({ lib, pkgs }:
-    (lib.evalModules {
+
+  instantiateModule = moduleList: module:
+    (self.lib.evalModules {
       modules = moduleList ++ [{
-        config._module.args.pkgs = pkgs;
+        config._module.args.pkgs = self;
       } module];
-    }).config.result
-  ) { };
+    }).config.result // {
+      overrideConfig = cfn:
+        instantiateModule moduleList (cfn module);
+    };
 
-  instantiatePkgWith = moduleList: pkg: instantiateWithBase
-    moduleList
-    ({ config, pkgs, lib, ... }:
-      let expr = import pkg;
-          dwn = if builtins.isFunction expr
-                then expr {
-                  inherit pkgs lib;
-                  config = config.dwn;
-                }
-                else expr;
-      in { inherit dwn; }
-    );
+  buildWith = moduleList: pkg:
+    (instantiateModule
+      moduleList
+      ({ config, pkgs, lib, ... }:
+        let expr = if builtins.isAttrs pkg then pkg else import pkg;
+            dwn = if builtins.isFunction expr
+                  then expr {
+                    inherit pkgs lib;
+                    config = config.dwn;
+                  }
+                  else expr;
+        in {
+          imports = dwn.plugins or [];
+          inherit dwn;
+        }));
 
-  instantiate = instantiateWith [ ./clojure/module.nix ];
-  instantiatePkg = instantiatePkgWith [ ./clojure/module.nix ];
+  build = buildWith [ ./clojure/module.nix ];
 
 }

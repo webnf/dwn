@@ -42,7 +42,6 @@ in package // {
     extension = "dirs";
     classifier = "";
     dependencies = [];
-    jar = null;
     inherit version;
     dirs = [ "${package}/lib" ];
   };

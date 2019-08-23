@@ -13,48 +13,57 @@ rec {
     then toString dir
     else copyPathToStore dir;
 
+  repoSingleton =
+    { artifact, version
+    , extension ? "jar"
+    , classifier ? ""
+    , group ? artifact
+    , dependencies ? []
+    , dirs ? null
+    , jar ? null
+    , ...
+    }: {
+      "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = {
+        inherit dependencies dirs jar group artifact extension classifier version;
+        coordinate = [ group artifact extension classifier version ];
+      };
+    };
+
   subProjectOverlay = {
-        subProjects ? []
-      , fixedVersions ? []
-      , overlayRepo ? {}
-      , closureRepo ? null
-      , ...}:
-    let result =
-    lib.foldl mergeRepos {}
-      (map (prj: let oprj = if prj ? overrideProject
-                            then (prj.overrideProject (_: {
-                              inherit closureRepo fixedVersions;
-                              overlayRepo = mergeRepos overlayRepo result;
-                            }))
-                            else prj;
-                     inherit (oprj.dwn.mvn) group artifact extension classifier version;
-                 in {
-                   "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = {
-                     inherit (oprj.dwn.mvn) dependencies dirs jar group artifact;
-                     coordinate = [ group artifact extension classifier version ];
-                     inherit (oprj) overrideProject;
-                   };
-                 })
-           subProjects);
-    in result;
+    subProjects ? []
+    , fixedVersions ? []
+    , overlayRepo ? {}
+    , closureRepo ? null
+    , ...}:
+      let result =
+            lib.foldl mergeRepos {}
+              (map (prj: let oprj = if prj ? overrideProject
+                                    then (prj.overrideProject (_: {
+                                      inherit closureRepo fixedVersions;
+                                      overlayRepo = mergeRepos overlayRepo result;
+                                    }))
+                                    else prj;
+                         in repoSingleton (oprj.dwn.mvn))
+                subProjects);
+      in result;
 
   subProjectFixedVersions = prjs:
     (map (prj: with prj.dwn;
-                 [group artifact extension classifier version])
-         prjs);
+      [group artifact extension classifier version])
+      prjs);
 
   classpathFor = args: artifactClasspath args ++ dependencyClasspath args;
 
   artifactClasspath = args@{
-      cljSourceDirs ? []
+    cljSourceDirs ? []
     , resourceDirs ? []
     , devMode ? false
     , ...
   }:   (map (sourceDir devMode) cljSourceDirs)
-    ++ (map (sourceDir devMode) resourceDirs)
-    ++ (classesFor args);
+       ++ (map (sourceDir devMode) resourceDirs)
+       ++ (classesFor args);
 
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
     lib.concatLists (map (mvnResolve mavenRepos) (expandDependencies args));
-  
+
 }

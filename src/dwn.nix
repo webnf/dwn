@@ -19,4 +19,5 @@
     ["com.stuartsierra" "component" "0.3.2"]
     ["webnf.deps" "logback" "0.2.0-alpha2"]
   ];
+  plugins = [ ./nrepl/module.nix ];
 }
