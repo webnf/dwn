@@ -1,16 +1,15 @@
 { pkgs, lib, ... }:
 
-builtins.trace (pkgs ? nrepl)
 {
   dev = true;
   clj = {
     aot = [ "webnf.dwn.boot" ];
     sourceDirectories = [
-      ./src/clj
+      ./clj
     ];
   };
   jvm.sourceDirectories = [
-    ./src/jvm
+    ./jvm
   ];
   mvn.repositoryFile = ./dwn.repo.edn;
   mvn.dependencies = with pkgs; [
