@@ -13,7 +13,7 @@
   ];
   mvn.repositoryFile = ./dwn.repo.edn;
   mvn.dependencies = with pkgs; [
-    clojure juds
+    juds
     ["org.clojure" "test.check" "0.9.0"]
     ["org.clojure" "tools.logging" "0.3.1"]
     ["com.stuartsierra" "component" "0.3.2"]
