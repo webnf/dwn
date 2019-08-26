@@ -12,7 +12,8 @@ with self; {
   inherit (callPackage ./lib/compile.nix {}) jvmCompile cljCompile classesFor;
   inherit (callPackage ./lib/lib-project.nix {})
     sourceDir subProjectOverlay subProjectFixedVersions
-    classpathFor artifactClasspath dependencyClasspath;
+    classpathFor artifactClasspath dependencyClasspath
+    dependencyList expandRepo;
   inherit (callPackage ./lib/descriptor.nix {})
     projectDescriptor projectNsLaunchers projectComponents artifactDescriptor;
   inherit (callPackage ./lib/shell-binder.nix {}) renderClasspath shellBinder;

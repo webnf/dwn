@@ -15,6 +15,39 @@ let
     check = v: builtins.isList v || builtins.isAttrs v;
     merge = mergeEqualOption;
   };
+  plainDependencyT = mkOptionType rec {
+    name = "maven-list-dependency";
+    description = "Maven dependency coordinate";
+    ## TODO syntax check
+    check = v: builtins.isList v;
+    merge = mergeEqualOption;
+  };
+  repoT = with types;
+    attrsOf string
+      (attrsOf string
+        (attrsOf string
+          (attrsOf string
+            (attrsOf string
+              (submodule {
+                options = {
+                  dependencies = mkOption {
+                    default = [];
+                    type = types.listOf plainDependencyT;
+                  };
+                  sha1 = mkOption {
+                    default = null;
+                    type = nullOr string;
+                  };
+                  jar = mkOption {
+                    default = null;
+                    type = nullOr string;
+                  };
+                  dirs = mkOption {
+                    default = null;
+                    type = nullOr string;
+                  };
+                };
+              })))));
 in
 
 {
@@ -61,6 +94,11 @@ in
         Maven dependencies.
       '';
     };
+    overlayRepository = mkOption {
+      default = {};
+      type = repoT;
+      description = "Repository of non-maven artifacts";
+    };
     repositoryFile = mkOption {
       default = null;
       type = types.nullOr types.path;
@@ -79,6 +117,9 @@ in
     };
   };
 
+  config.passthru.dwn.mvn =
+    pkgs.dwn.mvn.result
+      config.dwn.mvn;
   config.dwn.jvm.dependencyClasspath =
     lib.optionals
     (0 != lib.length config.dwn.mvn.dependencies && ! isNull config.dwn.mvn.repositoryFile)
@@ -91,5 +132,5 @@ in
   config.dwn.paths = lib.optional
     config.dwn.dev
     (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);
-  
+
 }

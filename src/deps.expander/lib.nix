@@ -1,16 +1,16 @@
 { lib, runCommand, callPackage
 , toEdn, subProjectOverlay
 , filterDirs, mergeRepos
-, deps
+, deps, dependencyList, expandRepo
 }:
 rec {
 
   depsExpander = repo: dependencies: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
     inherit repo;
-    ednDeps = toEdn dependencies;
-    ednFixedVersions = toEdn fixedVersions;
-    ednProvidedVersions = toEdn providedVersions;
-    ednOverlayRepo = toEdn (filterDirs overlayRepo);
+    ednDeps = toEdn (dependencyList dependencies);
+    ednFixedVersions = toEdn (dependencyList fixedVersions);
+    ednProvidedVersions = toEdn (dependencyList providedVersions);
+    ednOverlayRepo = toEdn (expandRepo overlayRepo);
     launcher = deps.expander.dwn.binaries.expand;
   } ''
     #!/bin/sh

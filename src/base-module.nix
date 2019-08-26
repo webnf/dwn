@@ -58,8 +58,17 @@ in
     '';
   };
 
-  # config.dwn.paths = [ pkgs.dwnTool ];
-
+  options.passthru = mkOption {
+    default = {};
+    type = mkOptionType rec {
+      name = "recursive-merged-attrs";
+      description = "Maven dependency coordinate";
+      check = lib.isAttrs;
+      merge = loc: defs:
+        lib.foldl lib.recursiveUpdate
+          {} (getValues defs);
+    };
+  };
 
   config.dwn.paths = lib.mapAttrsToList
     (name: path:
@@ -68,7 +77,11 @@ in
 
   config.result = (pkgs.buildEnv {
     inherit (config.dwn) name paths;
-  }) // {
-    inherit (config) dwn;
-  };
+  }) // (
+    lib.recursiveUpdate
+      {
+        inherit (config) dwn;
+      }
+      config.passthru
+  );
 }
