@@ -38,6 +38,7 @@ in
   ];
 
   options.dwn.systemd = mkOption {
+    default = {};
     type = types.unspecified;
   };
 

@@ -28,7 +28,7 @@ with self; {
   juds = callPackage ./juds.nix {};
   dwnTool = callPackage ./dwn-tool.nix {};
 
-  clojure = callPackage ./clojure { };
+  clojure = build ./clojure/dwn.nix; # callPackage ./clojure { };
   clojurescript = build ./clojurescript/dwn.nix;
   deps = {
     expander = build ./deps.expander/dwn.nix;

@@ -122,6 +122,10 @@ in
       default = null;
       type = types.nullOr paths;
     };
+    jar = mkOption {
+      default = null;
+      type = types.nullOr (types.either types.path types.package);
+    };
   };
 
   config.passthru.dwn.mvn =
