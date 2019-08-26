@@ -9,9 +9,6 @@ with self; {
   inherit (edn.syntax) tagged hash-map keyword-map list vector set symbol keyword string int bool nil;
   inherit (edn.data) get get-in eq nth nix-str nix-list extract;
 
-  inherit (callPackage ./lib/compile.nix {}) jvmCompile cljCompile classesFor;
-  inherit (callPackage ./lib/descriptor.nix {})
-    projectDescriptor projectNsLaunchers projectComponents artifactDescriptor;
   inherit (callPackage ./lib/shell-binder.nix {}) renderClasspath shellBinder;
   inherit (callPackage ./deps.expander/lib.nix {}) depsExpander expandDependencies;
   inherit (callPackage ./deps.aether/lib.nix {}) aetherDownloader closureRepoGenerator;
@@ -28,7 +25,7 @@ with self; {
   juds = callPackage ./juds.nix {};
   dwnTool = callPackage ./dwn-tool.nix {};
 
-  clojure = build ./clojure/dwn.nix; # callPackage ./clojure { };
+  clojure = build ./clojure/dwn.nix;
   clojurescript = build ./clojurescript/dwn.nix;
   deps = {
     expander = build ./deps.expander/dwn.nix;

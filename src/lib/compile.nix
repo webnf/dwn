@@ -1,11 +1,7 @@
-{ lib, runCommand, jdk
-, dependencyClasspath
-, renderClasspath
-, descriptorPaths
-}:
-
-rec {
-
+self: super:
+let
+  inherit (self) runCommand jdk renderClasspath;
+in {
   jvmCompile = { name, classpath, sources }:
     runCommand name {
       inherit classpath sources;
@@ -22,8 +18,8 @@ rec {
                 elideMeta ? [],
                 directLinking ? false
               }: runCommand name {
-        inherit classpath aot;
-      } ''
+                inherit classpath aot;
+              } ''
         # set -x #v
         mkdir out
         CLS=`pwd`/out
@@ -38,35 +34,5 @@ rec {
           clojure.lang.Compile $aot
         mv $CLS $out
       '';
-    in command options;
-
-  ## DEPRECATED
-  classesFor = args@{
-      name
-    , cljSourceDirs ? []
-    , javaSourceDirs ? []
-    , resourceDirs ? []
-    , aot ? []
-    , compilerOptions ? {}
-    , providedVersions ? []
-    , ...
-  }: let
-    baseClasspath = resourceDirs ++ dependencyClasspath args ++ (
-      lib.concatLists (map descriptorPaths providedVersions)
-    );
-    javaClasses = if lib.length javaSourceDirs > 0
-      then [ (jvmCompile {
-        name = name + "-java-classes";
-        classpath = baseClasspath;
-        sources = javaSourceDirs;
-      }) ] else [];
-    cljClasses = if (lib.length cljSourceDirs > 0) && (lib.length aot > 0)
-      then [ (cljCompile {
-        name = name + "-clj-classes";
-        classpath = cljSourceDirs ++ javaSourceDirs ++ javaClasses ++ baseClasspath;
-        inherit aot;
-        options = compilerOptions;
-      }) ] else [];
-  in cljClasses ++ javaClasses;
-
+  in command options;
 }

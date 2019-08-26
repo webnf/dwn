@@ -1,15 +1,5 @@
 self: super:
 
-# { lib, copyPathToStore
-# , mergeRepos
-# , classesFor
-# , defaultMavenRepos
-# , mvnResolve
-# , expandDependencies
-# , dependencyClasspath
-# , mapRepoVals
-# }:
-
 let
   inherit (self)
     lib copyPathToStore mergeRepos classesFor
