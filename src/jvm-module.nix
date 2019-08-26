@@ -72,6 +72,8 @@ in
     };
   };
 
+  config.dwn.mvn.dirs = config.dwn.jvm.runtimeClasspath ++ config.dwn.jvm.javaClasses;
+
   config.dwn.jvm = {
     compileClasspath = config.dwn.jvm.dependencyClasspath;
     javaClasses = lib.optional
@@ -90,5 +92,5 @@ in
       (config.dwn.name + "-jvm-classpath")
       config.dwn.jvm.resultClasspath)
   ];
-  
+
 }

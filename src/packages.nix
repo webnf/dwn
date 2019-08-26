@@ -10,10 +10,6 @@ with self; {
   inherit (edn.data) get get-in eq nth nix-str nix-list extract;
 
   inherit (callPackage ./lib/compile.nix {}) jvmCompile cljCompile classesFor;
-  inherit (callPackage ./lib/lib-project.nix {})
-    sourceDir subProjectOverlay subProjectFixedVersions
-    classpathFor artifactClasspath dependencyClasspath
-    dependencyList expandRepo;
   inherit (callPackage ./lib/descriptor.nix {})
     projectDescriptor projectNsLaunchers projectComponents artifactDescriptor;
   inherit (callPackage ./lib/shell-binder.nix {}) renderClasspath shellBinder;

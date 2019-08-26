@@ -2,6 +2,7 @@
 
 with lib;
 let
+  paths = types.listOf (types.either types.path types.package);
   subPath = path: drv: pkgs.runCommand (drv.name + "-" + lib.replaceStrings ["/"] ["_"] path) {
     inherit path;
   } ''
@@ -22,12 +23,14 @@ let
     check = v: builtins.isList v;
     merge = mergeEqualOption;
   };
+  depType = subT:
+    types.attrsOf subT;
   repoT = with types;
-    attrsOf string
-      (attrsOf string
-        (attrsOf string
-          (attrsOf string
-            (attrsOf string
+    depType
+      (depType
+        (depType
+          (depType
+            (depType
               (submodule {
                 options = {
                   dependencies = mkOption {
@@ -114,6 +117,10 @@ in
           mavenRepos = repos;
         });
       type = types.either types.package types.path;
+    };
+    dirs = mkOption {
+      default = null;
+      type = types.nullOr paths;
     };
   };
 
