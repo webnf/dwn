@@ -14,8 +14,8 @@ in
 
 {
   imports = [
-    ../jvm-module.nix
-    ../systemd-module.nix
+    ../jvm/module.nix
+    ../systemd/module.nix
   ];
   options.dwn.clj = {
     main = mkOption {

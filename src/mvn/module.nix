@@ -55,7 +55,7 @@ in
 
 {
   imports = [
-    ./base-module.nix
+    ../base-module.nix
   ];
 
   options.dwn.mvn = {

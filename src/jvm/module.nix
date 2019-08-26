@@ -29,7 +29,7 @@ in
 
 {
   imports = [
-    ./mvn-module.nix
+    ../mvn/module.nix
   ];
   options.dwn.jvm = {
     sourceDirectories = mkOption {
