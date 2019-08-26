@@ -85,6 +85,13 @@ in
         Clojure compiler option `elide-meta`
       '';
     };
+    customClojure = mkOption {
+      default = true;
+      type = types.bool;
+      description = ''
+        Use version of clojure, patched for more accurate compilation.
+      '';
+    };
   };
 
   config = let
@@ -96,7 +103,7 @@ in
       };
   in mkIf (0 != lib.length config.dwn.clj.sourceDirectories) {
     dwn.mvn = {
-      dependencies = [ pkgs.clojure ];
+      dependencies = lib.optional config.dwn.clj.customClojure pkgs.clojure;
     };
     dwn.jvm.runtimeClasspath =
       (map sourceDir config.dwn.clj.sourceDirectories)

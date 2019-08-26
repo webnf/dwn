@@ -49,10 +49,17 @@ in
       type = types.listOf types.unspecified;
       description = "plugin modules";
     };
+    result = mkOption {
+      default = config.result;
+      type = types.nullOr (types.either types.path types.package);
+      description = ''
+        freely definable package result
+      '';
+    };
   };
 
   options.result = mkOption {
-    type = types.package;
+    type = (types.either types.path types.package);
     description = ''
       The final result package
     '';

@@ -128,9 +128,7 @@ in
     };
   };
 
-  config.passthru.dwn.mvn =
-    pkgs.dwn.mvn.result
-      config.dwn.mvn;
+  config.passthru.dwn.mvn = pkgs.mvnResult config.dwn.mvn;
   config.dwn.jvm.dependencyClasspath =
     lib.optionals
     (0 != lib.length config.dwn.mvn.dependencies && ! isNull config.dwn.mvn.repositoryFile)

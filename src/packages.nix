@@ -22,8 +22,8 @@ with self; {
   lein.reader = build ./lein.reader/dwn.nix;
   mvn.reader = build ./mvn.reader/dwn.nix;
 
-  juds = callPackage ./juds.nix {};
-  dwnTool = callPackage ./dwn-tool.nix {};
+  juds = build ./juds/dwn.nix;
+  dwnTool = callPackage ./dwn-tool.nix { };
 
   clojure = build ./clojure/dwn.nix;
   clojurescript = build ./clojurescript/dwn.nix;

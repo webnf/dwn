@@ -36,6 +36,8 @@
         (pkgs.mvnResolve config.mvn.repos)
         (import ./deps.bootstrap.nix));
   clj = {
+    ## disabled for bootstrapping
+    customClojure = false;
     sourceDirectories = [ ./src ../nix.data/src ../nix.aether/src ];
     main.expand.namespace = "webnf.dwn.deps.expander";
   };
