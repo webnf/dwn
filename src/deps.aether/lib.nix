@@ -1,14 +1,12 @@
-{ lib, writeScript, callPackage
-, toEdn
-, defaultMavenRepos
-, expandRepo, dependencyList, deps
-}:
+self: super:
 
-rec {
+let
+  inherit (self) lib writeScript toEdn expandRepo dependencyList defaultMavenRepos;
+in {
 
   aetherDownloader = repoFile: repos: dependencies: overlay: writeScript "repo.edn.sh" ''
     #!/bin/sh
-    exec ${deps.aether.dwn.binaries.prefetch} ${repoFile} \
+    exec ${self.deps.aether.dwn.binaries.prefetch} ${repoFile} \
       ${lib.escapeShellArg (toEdn dependencies)} \
       ${lib.escapeShellArg (toEdn repos)} \
       ${lib.escapeShellArg (toEdn overlay)}
@@ -21,7 +19,7 @@ rec {
     , overlayRepository ? {}
     , repositoryFile
     , ... }:
-    aetherDownloader
+    self.aetherDownloader
       (toString repositoryFile)
       repos
 

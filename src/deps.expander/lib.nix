@@ -1,9 +1,8 @@
-{ lib, runCommand, callPackage
-, toEdn, subProjectOverlay
-, filterDirs, mergeRepos
-, deps, dependencyList, expandRepo
-}:
-rec {
+self: super:
+
+let
+  inherit (self) lib runCommand toEdn expandRepo;
+in {
 
   depsExpander = repo: dependencies: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
     inherit repo;
@@ -11,10 +10,9 @@ rec {
     ednFixedVersions = toEdn fixedVersions;
     ednProvidedVersions = toEdn providedVersions;
     ednOverlayRepo = toEdn (expandRepo overlayRepo);
-    launcher = deps.expander.dwn.binaries.expand;
+    launcher = self.deps.expander.dwn.binaries.expand;
   } ''
     #!/bin/sh
-    ## set -xv
     exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions" "$ednProvidedVersions" "$ednOverlayRepo";
   '';
 
@@ -27,7 +25,7 @@ rec {
     , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
     , ... }:
     let
-      deps = depsExpander closureRepo dependencies fixedDependencies providedVersions overlayRepository;
+      deps = self.depsExpander closureRepo dependencies fixedDependencies providedVersions overlayRepository;
     in
       map ({ coordinate, ... }@desc:
         if lib.hasAttrByPath coordinate overlayRepository
