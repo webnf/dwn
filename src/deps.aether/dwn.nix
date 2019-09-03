@@ -17,7 +17,7 @@
       ["org.apache.maven.wagon" "wagon-http" "3.2.0"]
       ["org.apache.maven.wagon" "wagon-ssh" "3.2.0"]
     ];
-    repositoryFile = ./bootstrap-repo.next.edn;
+    repositoryFile = ./repo.edn;
   };
   clj = {
     sourceDirectories = [ ./src ../nix.aether/src ];
