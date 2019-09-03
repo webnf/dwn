@@ -27,14 +27,14 @@
           config.mvn.dependencies)))}
 
       ${pkgs.deps.aether.dwn.binaries.prefetch} "$TMPREPO" "$DEPS" "$REPOS" "{}"
-      exec ${config.binaries.expand} ${toString ./deps.next.nix} "$TMPREPO" "$DEPS" [] [] {}
+      exec ${config.binaries.expand} ${toString ./deps.nix} "$TMPREPO" "$DEPS" [] [] {}
     '';
   };
   jvm.dependencyClasspath =
     lib.concatLists
       (map
         (pkgs.mvnResolve config.mvn.repos)
-        (import ./deps.bootstrap.nix));
+        (import ./deps.nix));
   clj = {
     ## disabled for bootstrapping
     customClojure = false;
