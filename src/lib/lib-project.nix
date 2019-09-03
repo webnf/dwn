@@ -91,6 +91,13 @@ in {
        ++ (classesFor args);
 
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
-    lib.concatLists (map (x: mvnResolve mavenRepos x) (expandDependencies args));
+    lib.concatLists (map
+      (x:
+        let
+          res = builtins.tryEval (mvnResolve mavenRepos x);
+        in if res.success then res.value
+           else lib.warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
+             [])
+      (expandDependencies args));
 
 }
