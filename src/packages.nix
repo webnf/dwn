@@ -10,12 +10,6 @@ with self; {
   inherit (edn.data) get get-in eq nth nix-str nix-list extract;
 
   inherit (callPackage ./lib/shell-binder.nix {}) renderClasspath shellBinder;
-  inherit (callPackage ./deps.expander/lib.nix {}) depsExpander expandDependencies;
-  inherit (callPackage ./deps.aether/lib.nix {}) aetherDownloader closureRepoGenerator;
-  inherit (callPackage ./lib/repository.nix {})
-    mergeRepos descriptorPaths mapRepoVals filterDirs
-    mavenMirrors mvnResolve getRepo getRepoCoord unwrapCoord;
-  inherit (callPackage ./lib/leiningen.nix {}) fromLein;
 
   dwn = build ./dwn.nix;
   nrepl = build ./nrepl/dwn.nix;

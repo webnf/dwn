@@ -1,7 +1,8 @@
 self: super:
 
 let
-  inherit (self) lib runCommand toEdn expandRepo;
+  inherit (self) lib runCommand toEdn expandRepo depsExpander;
+  inherit (self.deps) expander;
 in {
 
   depsExpander = repo: dependencies: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
@@ -10,7 +11,7 @@ in {
     ednFixedVersions = toEdn fixedVersions;
     ednProvidedVersions = toEdn providedVersions;
     ednOverlayRepo = toEdn (expandRepo overlayRepo);
-    launcher = self.deps.expander.dwn.binaries.expand;
+    launcher = expander.dwn.binaries.expand;
   } ''
     #!/bin/sh
     exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions" "$ednProvidedVersions" "$ednOverlayRepo";
@@ -25,7 +26,7 @@ in {
     , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
     , ... }:
     let
-      deps = self.depsExpander closureRepo dependencies fixedDependencies providedVersions overlayRepository;
+      deps = depsExpander closureRepo dependencies fixedDependencies providedVersions overlayRepository;
     in
       map ({ coordinate, ... }@desc:
         if lib.hasAttrByPath coordinate overlayRepository

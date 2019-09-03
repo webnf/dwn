@@ -1,12 +1,14 @@
 self: super:
 
 let
-  inherit (self) lib writeScript toEdn expandRepo dependencyList defaultMavenRepos;
+  inherit (self)
+    lib writeScript toEdn expandRepo dependencyList defaultMavenRepos aetherDownloader
+    coordinateFor;
+  inherit (self.deps) aether;
 in {
-
   aetherDownloader = repoFile: repos: dependencies: overlay: writeScript "repo.edn.sh" ''
     #!/bin/sh
-    exec ${self.deps.aether.dwn.binaries.prefetch} ${repoFile} \
+    exec ${aether.dwn.binaries.prefetch} ${repoFile} \
       ${lib.escapeShellArg (toEdn dependencies)} \
       ${lib.escapeShellArg (toEdn repos)} \
       ${lib.escapeShellArg (toEdn overlay)}
@@ -19,7 +21,7 @@ in {
     , overlayRepository ? {}
     , repositoryFile
     , ... }:
-    self.aetherDownloader
+    aetherDownloader
       (toString repositoryFile)
       repos
 
@@ -27,4 +29,22 @@ in {
         (dependencies ++ fixedDependencies))
 
       (expandRepo overlayRepository);
+
+  dependencyList = dependencies:
+    map (desc:
+      if desc ? dwn.mvn then
+        coordinateFor desc.dwn.mvn
+      else if builtins.isList desc then
+        desc
+      else throw "Not a list ${toString desc}"
+    ) dependencies;
+
+  coordinateFor =
+    { artifact, version
+    , extension ? "jar"
+    , classifier ? ""
+    , group ? artifact
+    , ...
+    }: [ group artifact extension classifier version ];
+
 }
