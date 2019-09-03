@@ -21,5 +21,5 @@
       patches = [ ./compile-gte-mtime.patch ];
     };
   };
-  
+  jvm.resultClasspath = [ config.mvn.jar ];
 }
