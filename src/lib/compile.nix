@@ -20,7 +20,6 @@ in {
               }: runCommand name {
                 inherit classpath aot;
               } ''
-        # set -x #v
         mkdir out
         CLS=`pwd`/out
         ${jdk.jre}/bin/java \
