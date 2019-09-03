@@ -90,26 +90,47 @@
   (let [[project-clj base-dir op & args] args']
     ;; (apply println "Hello, got" args)
     (assert (.isFile (io/file (str project-clj))) (pr-str project-clj))
-    (assert (= "pr-deps" op) (pr-str op))
     (assert (= nil args) (pr-str args))
-    (-> (prj/read-raw project-clj)
-        (assoc :root (io/file base-dir))
-        (prj/project-with-profiles)
-        (prj/init-profiles [:base :system :user :provided :dev])
-        (as-> #__ prj
-          (-> {}
-              (select-coords prj :dependencies :plugins)
-              (select-paths prj :source-paths :resource-paths :java-source-paths)
-              (assoc :aot (mapv name (:aot prj)))
-              (assoc
-               :group   (:group prj)
-               :name    (:name prj)
-               :version (:version prj))
-              (cond-> (:main prj) (assoc :mainNs {:main (str (:main prj))}))))
-        (rename-keys
-         :source-paths      :cljSourceDirs
-         :resource-paths    :resourceDirs
-         :java-source-paths :javaSourceDirs)
-        ;; pp/pprint
-        nix-data/nixprn))
+    (case op
+      "pr-deps" (-> (prj/read-raw project-clj)
+                    (assoc :root (io/file base-dir))
+                    (prj/project-with-profiles)
+                    (prj/init-profiles [:base :system :user :provided :dev])
+                    (as-> #__ prj
+                      (-> {}
+                          (select-coords prj :dependencies :plugins)
+                          (select-paths prj :source-paths :resource-paths :java-source-paths)
+                          (assoc :aot (mapv name (:aot prj)))
+                          (assoc
+                           :group   (:group prj)
+                           :name    (:name prj)
+                           :version (:version prj))
+                          (cond-> (:main prj) (assoc :mainNs {:main (str (:main prj))}))))
+                    (rename-keys
+                     :source-paths      :cljSourceDirs
+                     :resource-paths    :resourceDirs
+                     :java-source-paths :javaSourceDirs)
+                    ;; pp/pprint
+                    nix-data/nixprn)
+      "pr-descriptor"
+      (let [prj (-> (prj/read-raw project-clj)
+                    (assoc :root (io/file base-dir))
+                    (prj/project-with-profiles)
+                    (prj/init-profiles [:base :system :user :provided :dev]))]
+        (nix-data/nixprn
+         {:mvn (-> {:group (:group prj)
+                    :artifact (:name prj)
+                    :version (:version prj)
+                    :extension "dirs"}
+                   (select-coords prj :dependencies))
+          :clj (-> {:aot (mapv name (:aot prj))}
+                   (select-paths prj :source-paths)
+                   (rename-keys :source-paths :sourceDirectories)
+                   (cond-> (:main prj)
+                     (assoc :main {:main {:namespace (str (:main prj))}})))
+          :jvm (-> {}
+                   (select-paths prj :java-source-paths :resource-paths)
+                   (rename-keys :java-source-paths :sourceDirectories
+                                :resource-paths :resourceDirectories))}))
+      (throw (ex-info (str "Unknown op " (pr-str op)) {}))))
   (System/exit 0))
