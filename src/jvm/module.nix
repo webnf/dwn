@@ -39,6 +39,13 @@ in
           Source roots for jvm compilation
         '';
     };
+    resourceDirectories = mkOption {
+      default = [];
+      type = types.listOf types.path;
+      description = ''
+          Resource roots for jvm compilation
+        '';
+    };
     runtimeClasspath = mkOption {
       default = [];
       type = paths;
@@ -75,7 +82,7 @@ in
   config.dwn.mvn.dirs = config.dwn.jvm.runtimeClasspath ++ config.dwn.jvm.javaClasses;
 
   config.dwn.jvm = {
-    compileClasspath = config.dwn.jvm.dependencyClasspath;
+    compileClasspath = config.dwn.jvm.resourceDirectories ++ config.dwn.jvm.dependencyClasspath;
     javaClasses = lib.optional
       (0 != lib.length config.dwn.jvm.sourceDirectories) (
         pkgs.jvmCompile {
@@ -85,6 +92,7 @@ in
         });
     resultClasspath = config.dwn.jvm.runtimeClasspath
                       ++ config.dwn.jvm.javaClasses
+                      ++ config.dwn.jvm.resourceDirectories
                       ++ config.dwn.jvm.dependencyClasspath;
   };
   config.dwn.paths = [
