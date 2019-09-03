@@ -1,7 +1,7 @@
 { lib, writeScript, callPackage
 , toEdn
 , defaultMavenRepos
-, filterDirs, deps
+, expandRepo, dependencyList, deps
 }:
 
 rec {
@@ -14,22 +14,19 @@ rec {
       ${lib.escapeShellArg (toEdn overlay)}
   '';
 
-  closureRepoGenerator = { dependencies ? []
-                         , mavenRepos ? defaultMavenRepos
-                         , fixedVersions ? []
-                         , overlayRepo ? {}
-                         , closureRepo
-                         , ... }:
+  closureRepoGenerator =
+    { dependencies ? []
+    , repos ? defaultMavenRepos
+    , fixedDependencies ? []
+    , overlayRepository ? {}
+    , repositoryFile
+    , ... }:
     aetherDownloader
-      (toString closureRepo)
-      mavenRepos
-      (lib.concatLists
-        (map
-          (dep:
-            if builtins.isList dep
-            then [ dep ]
-            else dep.dwn.mvn.dependencies)
-          (dependencies ++ fixedVersions)))
-      (filterDirs overlayRepo);
+      (toString repositoryFile)
+      repos
 
+      (dependencyList
+        (dependencies ++ fixedDependencies))
+
+      (expandRepo overlayRepository);
 }

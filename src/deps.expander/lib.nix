@@ -7,9 +7,9 @@ rec {
 
   depsExpander = repo: dependencies: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
     inherit repo;
-    ednDeps = toEdn (dependencyList dependencies);
-    ednFixedVersions = toEdn (dependencyList fixedVersions);
-    ednProvidedVersions = toEdn (dependencyList providedVersions);
+    ednDeps = toEdn dependencies;
+    ednFixedVersions = toEdn fixedVersions;
+    ednProvidedVersions = toEdn providedVersions;
     ednOverlayRepo = toEdn (expandRepo overlayRepo);
     launcher = deps.expander.dwn.binaries.expand;
   } ''
@@ -18,33 +18,20 @@ rec {
     exec $launcher $out "$repo" "$ednDeps" "$ednFixedVersions" "$ednProvidedVersions" "$ednOverlayRepo";
   '';
 
-  expandDependencies = { name
-                       , dependencies ? []
-                       , overlayRepo ? {}
-                       , fixedVersions ? []
-                       , providedVersions ? []
-                       , fixedDependencies ? null # bootstrap hack
-                       , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
-                       , ... }:
-    let dependencies' = map (d:
-          # builtins.trace (if builtins.isAttrs d then builtins.attrNames d.dwn.mvn else d)
-          (if builtins.isList d then d
-           else with d.dwn.mvn; [group artifact extension classifier version])
-        ) dependencies;
-        overlayRepo' = mergeRepos overlayRepo (subProjectOverlay {
-          subProjects = lib.filter (d: ! builtins.isList d) dependencies;
-          inherit overlayRepo closureRepo fixedVersions;
-        });
-        expDep = depsExpander
-           closureRepo dependencies' fixedVersions providedVersions overlayRepo';
-        result = map ({ coordinate, ... }@desc:
-          if lib.hasAttrByPath coordinate overlayRepo'
-          then lib.getAttrFromPath coordinate overlayRepo'
-          else desc
-        ) (import expDep);
+  expandDependencies =
+    { name
+    , dependencies ? []
+    , overlayRepository ? {}
+    , fixedDependencies ? []
+    , providedVersions ? []
+    , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
+    , ... }:
+    let
+      deps = depsExpander closureRepo dependencies fixedDependencies providedVersions overlayRepository;
     in
-    if isNull fixedDependencies
-    then result
-    else fixedDependencies;
-
+      map ({ coordinate, ... }@desc:
+        if lib.hasAttrByPath coordinate overlayRepository
+        then lib.getAttrFromPath coordinate overlayRepository
+        else desc
+      ) (import deps);
 }

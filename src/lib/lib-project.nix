@@ -35,11 +35,12 @@ in {
     , dependencies ? []
     , dirs ? null
     , jar ? null
+    , overlayRepository ? {}
     , ...
-    }@args: self.inRepo args {
+    }@args: self.mergeRepos overlayRepository (self.inRepo args {
       inherit dependencies dirs jar group artifact extension classifier version;
       coordinate = self.coordinateFor args;
-    };
+    });
 
   dependencyList = dependencies:
     map (desc:

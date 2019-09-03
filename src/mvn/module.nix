@@ -97,6 +97,13 @@ in
         Maven dependencies.
       '';
     };
+    fixedDependencies = mkOption {
+      default = [];
+      type = types.listOf dependencyT;
+      description = ''
+        Fixed Maven dependencies.
+      '';
+    };
     overlayRepository = mkOption {
       default = {};
       type = repoT;
@@ -110,12 +117,10 @@ in
       '';
     };
     repositoryUpdater = mkOption {
-      default = pkgs.closureRepoGenerator
-        (with config.dwn.mvn; {
-          inherit dependencies;
-          closureRepo = repositoryFile;
-          mavenRepos = repos;
-        });
+      default = pkgs.closureRepoGenerator {
+        inherit (config.passthru.dwn.mvn) dependencies fixedDependencies overlayRepository;
+        inherit (config.dwn.mvn) repositoryFile repos;
+      };
       type = types.either types.package types.path;
     };
     dirs = mkOption {
@@ -131,14 +136,14 @@ in
   config.passthru.dwn.mvn = pkgs.mvnResult config.dwn.mvn;
   config.dwn.jvm.dependencyClasspath =
     lib.optionals
-    (0 != lib.length config.dwn.mvn.dependencies && ! isNull config.dwn.mvn.repositoryFile)
-    (pkgs.dependencyClasspath {
-      name = config.dwn.name + "-mvn-classpath";
-      mavenRepos = config.dwn.mvn.repos;
-      closureRepo = config.dwn.mvn.repositoryFile;
-      inherit (config.dwn.mvn) dependencies;
-    });
-  config.dwn.paths = lib.optional
+      (0 != lib.length config.dwn.mvn.dependencies && ! isNull config.dwn.mvn.repositoryFile)
+      (pkgs.dependencyClasspath {
+        name = config.dwn.name + "-mvn-classpath";
+        mavenRepos = config.dwn.mvn.repos;
+        closureRepo = config.dwn.mvn.repositoryFile;
+        inherit (config.passthru.dwn.mvn) dependencies fixedDependencies overlayRepository;
+      });
+  config.dwn.paths = [] ++ lib.optional
     config.dwn.dev
     (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);
 
