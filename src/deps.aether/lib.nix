@@ -17,7 +17,7 @@ in {
   closureRepoGenerator =
     { dependencies ? []
     , repos ? defaultMavenRepos
-    , fixedDependencies ? []
+    , fixedVersions ? []
     , overlayRepository ? {}
     , repositoryFile
     , ... }:
@@ -26,7 +26,7 @@ in {
       repos
 
       (dependencyList
-        (dependencies ++ fixedDependencies))
+        (dependencies ++ fixedVersions))
 
       (expandRepo overlayRepository);
 

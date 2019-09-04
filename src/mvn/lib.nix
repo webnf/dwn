@@ -2,22 +2,34 @@ self: super:
 
 with self.lib;
 {
-  mvnResult = {dependencies, fixedDependencies, overlayRepository, ... }: {
+  mvnResult = {dependencies, fixedVersions, overlayRepository, repositoryFile, ... }@args: {
     overlayRepository = foldl self.mergeRepos overlayRepository
       (map
-        ({ dwn, ... }:
-          self.repoSingleton dwn.mvn)
-        (filter (d: d ? dwn.mvn) (dependencies ++ fixedDependencies)));
+
+        # ({ dwn, ... }:
+        #   self.repoSingleton dwn.mvn)
+
+        (pkg: self.repoSingleton
+          (pkg.overrideConfig
+            (cfg: recursiveUpdate cfg {
+              dwn.mvn = {
+                inherit repositoryFile;
+                # fixedVersions = filter (d: self.coordinateFor args != self.coordinateFor d.dwn.mvn) fixedVersions;
+              };
+            })
+          ).dwn.mvn)
+
+        (filter (d: d ? dwn.mvn) (dependencies ++ fixedVersions)));
     dependencies = map
       (d: if d ? dwn.mvn
           then self.coordinateFor d.dwn.mvn
           else d)
       dependencies;
-    fixedDependencies = map
+    fixedVersions = map
       (d: if d ? dwn.mvn
           then self.coordinateFor d.dwn.mvn
           else d)
-      fixedDependencies;
+      fixedVersions;
   };
 
   mergeRepos = recursiveUpdate;
@@ -28,7 +40,7 @@ with self.lib;
         let
           res = builtins.tryEval (self.mvnResolve mavenRepos x);
         in if res.success then res.value
-           else lib.warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
+           else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
              [])
       (self.expandDependencies args));
 
@@ -77,16 +89,22 @@ with self.lib;
                baseVersion = if isNull resolved-base-version then version else resolved-base-version;
              in
                if "dirs" == extension then
-                 if isNull dirs then throw "Dirs for ${toString coordinate} not found" else dirs
-               else if "jar" == extension
-                    && isNull sha1 then
-                 if isNull jar then throw "Jar file for ${toString coordinate} not found" else [ jar ]
-               else [ ((self.fetchurl {
-                          name = "${name}-${version}.${extension}";
-                          urls = self.mavenMirrors mavenRepos group name extension classifier baseVersion version;
-                          inherit sha1;
-                                # prevent nix-daemon from downloading maven artifacts from the nix cache
-                 })  // { preferLocalBuild = true; }) ];
+                 if isNull dirs
+                 then throw "Dirs for ${toString coordinate} not found"
+                 else dirs
+               else if "jar" == extension then
+                 if ! isNull jar
+                 then [ jar ]
+                 else if isNull sha1 then
+                   throw "Jar file for ${toString coordinate} not found"
+                 else [ ((self.fetchurl {
+                   name = "${name}-${version}.${extension}";
+                   urls = self.mavenMirrors mavenRepos group name extension classifier baseVersion version;
+                   inherit sha1;
+                   # prevent nix-daemon from downloading maven artifacts from the nix cache
+                 })  // { preferLocalBuild = true; }) ]
+               else
+                 throw "Unknown extension '${extension}'";
     in
       self.unwrapCoord resF coordinate;
 

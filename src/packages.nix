@@ -1,5 +1,6 @@
 self: super:
 
+let comp = g: f: x: g (f x); in
 with self; {
   defaultMavenRepos = [ http://repo1.maven.org/maven2
                         https://clojars.org/repo ];
@@ -33,12 +34,9 @@ with self; {
       modules = moduleList ++ [{
         config._module.args.pkgs = self;
       } module];
-    }).config.result // {
-      overrideConfig = cfn:
-        instantiateModule moduleList (cfn module);
-    };
+    }).config.result;
 
-  buildWith = moduleList: pkg:
+  buildWith = moduleList: overrideFn: pkg:
     (instantiateModule
       moduleList
       ({ config, pkgs, lib, ... }:
@@ -49,11 +47,15 @@ with self; {
                     config = config.dwn;
                   }
                   else expr;
-        in {
+        in overrideFn {
           imports = dwn.plugins or [];
           inherit dwn;
-        }));
+        }))
+    // {
+      overrideConfig = cfn:
+        buildWith moduleList (comp cfn overrideFn) pkg;
+    };
 
-  build = buildWith [ ./clojure/module.nix ];
+  build = buildWith [ ./clojure/module.nix ] lib.id;
 
 }

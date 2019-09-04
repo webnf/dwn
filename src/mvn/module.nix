@@ -97,11 +97,18 @@ in
         Maven dependencies.
       '';
     };
+    fixedVersions = mkOption {
+      default = [];
+      type = types.listOf dependencyT;
+      description = ''
+        Override versions from dependencies (transitive).
+      '';
+    };
     fixedDependencies = mkOption {
       default = [];
       type = types.listOf dependencyT;
       description = ''
-        Fixed Maven dependencies.
+        Dependencies with fixed versions.
       '';
     };
     overlayRepository = mkOption {
@@ -118,7 +125,7 @@ in
     };
     repositoryUpdater = mkOption {
       default = pkgs.closureRepoGenerator {
-        inherit (config.passthru.dwn.mvn) dependencies fixedDependencies overlayRepository;
+        inherit (config.passthru.dwn.mvn) dependencies fixedVersions overlayRepository;
         inherit (config.dwn.mvn) repositoryFile repos;
       };
       type = types.either types.package types.path;
@@ -133,6 +140,10 @@ in
     };
   };
 
+  config.dwn.name = mkDefault (config.dwn.mvn.group + "_" + config.dwn.mvn.artifact);
+  config.dwn.mvn.dependencies = config.dwn.mvn.fixedDependencies;
+  config.dwn.mvn.fixedVersions = config.dwn.mvn.fixedDependencies;
+
   config.passthru.dwn.mvn = pkgs.mvnResult config.dwn.mvn;
   config.dwn.jvm.dependencyClasspath =
     lib.optionals
@@ -141,7 +152,7 @@ in
         name = config.dwn.name + "-mvn-classpath";
         mavenRepos = config.dwn.mvn.repos;
         closureRepo = config.dwn.mvn.repositoryFile;
-        inherit (config.passthru.dwn.mvn) dependencies fixedDependencies overlayRepository;
+        inherit (config.passthru.dwn.mvn) dependencies fixedVersions overlayRepository;
       });
   config.dwn.paths = [] ++ lib.optional
     config.dwn.dev
