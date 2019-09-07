@@ -52,14 +52,15 @@ with self.lib;
     , ...
     }: [ group artifact extension classifier version ];
 
+  mavenCoordinate = pkg:
+    if pkg ? dwn.mvn then
+      self.coordinateFor pkg.dwn.mvn
+    else if builtins.isList pkg then
+      pkg
+    else throw "Not a list ${toString pkg}";
+
   dependencyList = dependencies:
-    map (desc:
-      if desc ? dwn.mvn then
-        self.coordinateFor desc.dwn.mvn
-      else if builtins.isList desc then
-        desc
-      else throw "Not a list ${toString desc}"
-    ) dependencies;
+    map mavenCoordinate dependencies;
 
   expandRepo = repo:
     self.mapRepoVals (desc: {
