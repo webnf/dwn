@@ -14,6 +14,10 @@
   `(.println *err* (str "TRACE: " (format ~fmt ~@args)))
   nil)
 
+(defmacro trace2 [fmt & args]
+  `(.println *err* (str "TRACE2: " (format ~fmt ~@args)))
+  nil)
+
 (defmacro exception-barrier [expr fmt & fmt-args]
   `(try
      ~expr
@@ -89,31 +93,32 @@
   (fn [{:keys [group artifact extension classifier]}]
     (contains? seen [group artifact])))
 
-(defn- expand-deps* [coordinates seen version-map repo tree-exclusions]
+(defn- expand-deps* [coordinates version-map repo tree-exclusions acc]
   (trace "expand-deps*: %s" seen)
-  (mapcat (fn [{:keys [group artifact] :as coord}]
+  (reduce (fn [{:keys [seen result] :as acc} {:keys [group artifact] :as coord}]
             #_(when-not ((exclusions-pred tree-exclusions) coord))
             (let [{:keys [version exclusions extension classifier] :as vmi}
                   (get-in version-map [group artifact])
                   tree-exclusions* (set/union tree-exclusions exclusions)]
               (if (nil? version)
                 (do (warn "Unversioned dependency %s %s not in repository; discarding" group artifact)
-                    [])
-                (concat
-                 (when-not (contains? seen [group artifact])
-                   [[group artifact extension classifier version]])
-                 (expand-deps* (let [entry (get-in repo [group artifact extension classifier version])]
-                                 (->> entry :dependencies
-                                      (map (exception-barrier*
-                                            coordinate-info
-                                            "During coord-info in expand-deps* %s"
-                                            (pr-str entry)))
-                                      #_(remove (seen-pred seen))
-                                      (remove (exclusions-pred tree-exclusions*))))
-                               (conj seen [group artifact])
-                               version-map repo
-                               tree-exclusions*)))))
-          coordinates))
+                    acc)
+                (if (contains? seen [group artifact])
+                  acc
+                  (expand-deps* (let [entry (get-in repo [group artifact extension classifier version])]
+                                  (trace2 "expanding %s %s %s" #_"\n  %s\n  %s" group artifact version seen (conj seen [group artifact]))
+                                  (->> entry :dependencies
+                                       (map (exception-barrier*
+                                             coordinate-info
+                                             "During coord-info in expand-deps* %s"
+                                             (pr-str entry)))
+                                       #_(remove (seen-pred seen))
+                                       (remove (exclusions-pred tree-exclusions*))))
+                                version-map repo
+                                tree-exclusions*
+                                {:result (cons [group artifact extension classifier version] result)
+                                 :seen (conj seen [group artifact])})))))
+          acc (reverse coordinates)))
 
 (defn- provided->seen [provided]
   (into #{}
@@ -131,8 +136,11 @@
                                       (assoc-in c [group artifact] [extension classifier version])))
                                   {} fixed-coordinates')
         version-map (unify-versions {} coordinates fixed-coordinates repo #{})]
-    (->> (expand-deps* coordinates (provided->seen provided-versions) version-map repo #{})
-         reverse distinct reverse
+    (->> (expand-deps* coordinates version-map repo #{}
+                       {:seen (provided->seen provided-versions)
+                        :result ()})
+         :result
+         ;; reverse distinct reverse
          (mapv (fn [coord]
                  (-> (get-in repo coord)
                      (assoc :coordinate coord)
