@@ -5,7 +5,7 @@ let
   inherit (self.deps) expander;
 in {
 
-  depsExpander = repo: dependencies: fixedVersions: providedVersions: overlayRepo: runCommand "deps.nix" {
+  depsExpander = name: repo: dependencies: fixedVersions: providedVersions: overlayRepo: runCommand "${name}-deps.nix" {
     inherit repo;
     ednDeps = toEdn dependencies;
     ednFixedVersions = toEdn fixedVersions;
@@ -26,7 +26,7 @@ in {
     , closureRepo ? throw "Please pre-generate the repository add attribute `closureRepo = ./repo.edn;` to project `${name}`"
     , ... }:
     let
-      deps = depsExpander closureRepo dependencies fixedVersions providedVersions overlayRepository;
+      deps = depsExpander name closureRepo dependencies fixedVersions providedVersions overlayRepository;
     in
       map ({ coordinate, ... }@desc:
         if lib.hasAttrByPath coordinate overlayRepository
