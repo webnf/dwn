@@ -6,4 +6,6 @@
   ./deps.aether/lib.nix
   ./deps.expander/lib.nix
   ./jvm/lib.nix
+  ./lib/simple.nix
+  ./lib/types.nix
 ]

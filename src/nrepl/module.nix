@@ -9,7 +9,7 @@ with lib;
   options.dwn.nrepl = {
     host = mkOption {
       default = "127.0.0.1";
-      type = types.string;
+      type = types.str;
       description = ''
         Nrepl host name
       '';
@@ -23,7 +23,7 @@ with lib;
     };
     middleware = mkOption {
       default = [];
-      type = types.listOf types.string;
+      type = types.listOf types.str;
       description = ''
         Nrepl middleware
       '';

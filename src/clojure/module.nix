@@ -2,13 +2,6 @@
 
 with lib;
 let
-  paths = types.listOf (types.either types.path types.package);
-  subPath = path: drv: pkgs.runCommand (drv.name + "-" + lib.replaceStrings ["/"] ["_"] path) {
-    inherit path;
-  } ''
-    mkdir -p $out/$(dirname $path)
-    ln -s ${drv} $out/$path
-  '';
   sourceDir = if config.dwn.dev then toString else lib.id;
 in
 
@@ -23,12 +16,12 @@ in
       type = types.attrsOf (types.submodule {
         options = {
           namespace = mkOption {
-            type = types.string;
+            type = types.str;
             description = "Clojure namespace to launch";
           };
           prefixArgs = mkOption {
             default = [];
-            type = types.listOf types.string;
+            type = types.listOf types.str;
             description = "Prefix arguments for -main function";
           };
         };
@@ -45,7 +38,7 @@ in
       default = if config.dwn.optimize
                 then lib.mapAttrsToList (_: { namespace, ...}: namespace) config.dwn.clj.main
                 else [];
-      type = types.listOf types.string;
+      type = types.listOf types.str;
       description = ''
         Clojure namespaces to AOT compile
       '';
@@ -80,7 +73,7 @@ in
     };
     elideMeta = mkOption {
       default = if config.dwn.optimize then [":line" ":file" ":doc" ":added"] else [];
-      type = types.listOf types.string;
+      type = types.listOf types.str;
       description = ''
         Clojure compiler option `elide-meta`
       '';

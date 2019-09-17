@@ -3,12 +3,8 @@
 with lib;
 
 let
-  subPath = path: drv: pkgs.runCommand (drv.name + "-" + lib.replaceStrings ["/"] ["_"] path) {
-    inherit path;
-  } ''
-    mkdir -p $out/$(dirname $path)
-    ln -s ${drv} $out/$path
-  '';
+  inherit (pkgs) subPath;
+
   systemd =
     import <nixos/lib/eval-config.nix> {
       system = builtins.currentSystem;

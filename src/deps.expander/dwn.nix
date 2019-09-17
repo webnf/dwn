@@ -34,7 +34,7 @@
     lib.concatLists
       (map
         (pkgs.mvnResolve config.mvn.repos)
-        (import ./deps.nix));
+        (map pkgs.unpackEdnDep (import ./deps.nix)));
   clj = {
     ## disabled for bootstrapping
     customClojure = false;

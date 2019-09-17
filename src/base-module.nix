@@ -28,7 +28,7 @@ in
     };
     name = mkOption {
       default = "dwn-result";
-      type = types.string;
+      type = types.str;
       description = ''
         Package result name
       '';
@@ -87,7 +87,7 @@ in
   }) // (
     lib.recursiveUpdate
       {
-        inherit (config) dwn;
+        dwn = config.dwn // { orig = config.dwn; };
       }
       config.passthru
   );

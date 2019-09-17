@@ -32,5 +32,5 @@ in {
         if lib.hasAttrByPath coordinate overlayRepository
         then lib.getAttrFromPath coordinate overlayRepository
         else desc
-      ) (import deps);
+      ) (import deps); #(map (x: builtins.trace x.coordinate x) (import deps));
 }

@@ -2,29 +2,7 @@
 
 with lib;
 let
-  paths = types.listOf (types.either types.path types.package);
-  subPath = path: drv: pkgs.runCommand (drv.name + "-" + lib.replaceStrings ["/"] ["_"] path) {
-    inherit path;
-  } ''
-    mkdir -p $out/$(dirname $path)
-    ln -s ${drv} $out/$path
-  '';
-  uniqifyingSymlinkJoin = name: classpath: pkgs.runCommand name {
-    inherit classpath;
-  } ''
-    mkdir -p $out/share/java
-    cd $out/share/java
-    for c in $classpath; do
-      local targetOrig=$out/share/java/$(stripHash $c)
-      local target=$targetOrig
-      local cnt=0
-      while [ -L $target ]; do
-        target=$targetOrig-$cnt
-        cnt=$(( cnt + 1 ))
-      done
-      ln -s $c $target
-    done
-  '';
+  inherit (pkgs) pathsT uniqifyingSymlinkJoin;
 in
 
 {
@@ -48,34 +26,34 @@ in
     };
     runtimeClasspath = mkOption {
       default = [];
-      type = paths;
+      type = pathsT;
       description = ''
           Jvm runtime classpath
         '';
     };
     runtimeArgs = mkOption {
       default = [];
-      type = types.listOf types.string;
+      type = types.listOf types.str;
       description = "Extra JVM args";
     };
     compileClasspath = mkOption {
       default = [];
-      type = paths;
+      type = pathsT;
       description = ''
           Jvm compile classpath
         '';
     };
     resultClasspath = mkOption {
       internal = true;
-      type = paths;
+      type = pathsT;
     };
     dependencyClasspath = mkOption {
       internal = true;
-      type = paths;
+      type = pathsT;
     };
     javaClasses = mkOption {
       internal = true;
-      type = paths;
+      type = pathsT;
     };
   };
 
