@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, overrideConfig, ... }:
 
 with lib;
 let
@@ -97,16 +97,17 @@ in
   config.dwn.mvn.dependencies = config.dwn.mvn.fixedDependencies;
   config.dwn.mvn.fixedVersions = config.dwn.mvn.fixedDependencies;
 
-  config.passthru.dwn.mvn = mvnResult config.dwn.mvn;
+  config.passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
+
   config.dwn.jvm.dependencyClasspath =
     lib.optionals
-      (0 != lib.length config.dwn.mvn.dependencies && ! isNull config.dwn.mvn.repositoryFile)
-      (dependencyClasspath {
-        name = config.dwn.name + "-mvn-classpath";
-        mavenRepos = config.dwn.mvn.repos;
-        closureRepo = config.dwn.mvn.repositoryFile;
-        inherit (config.passthru.dwn.mvn) dependencies fixedVersions overlayRepository;
-      });
+      (0 != lib.length config.dwn.mvn.dependencies
+       && (
+         if isNull config.dwn.mvn.repositoryFile then
+           warn "Please set and generate repository file ${config.dwn.name}" false
+         else
+           true))
+      (pkgs.dependencyClasspath2 config);
   config.dwn.paths = [] ++ lib.optional
     config.dwn.dev
     (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);

@@ -1,7 +1,9 @@
 self: super:
 
 let comp = g: f: x: g (f x); in
-with self; {
+with self;
+with lib;
+{
   defaultMavenRepos = [ http://repo1.maven.org/maven2
                         https://clojars.org/repo ];
 
@@ -29,32 +31,36 @@ with self; {
 
   ## Module stuff
 
-  instantiateModule = moduleList: module:
+  instantiateModule = moduleList: overrideConfig: module:
     (self.lib.evalModules {
       modules = moduleList ++ [{
         config._module.args.pkgs = self;
+        config._module.args.overrideConfig = overrideConfig;
       } module];
     }).config.result;
 
   buildWith = moduleList: overrideFn: pkg:
-    (instantiateModule
-      moduleList
-      ({ config, pkgs, lib, ... }:
-        let expr = if builtins.isAttrs pkg then pkg else import pkg;
-            dwn = if builtins.isFunction expr
-                  then expr {
-                    inherit pkgs lib;
-                    config = config.dwn;
-                  }
-                  else expr;
-        in overrideFn {
-          imports = dwn.plugins or [];
-          inherit dwn;
-        }))
-    // {
+    let
       overrideConfig = cfn:
         buildWith moduleList (comp cfn overrideFn) pkg;
-    };
+    in
+      (instantiateModule
+        moduleList overrideConfig
+        ({ config, pkgs, lib, ... }:
+          let expr = if builtins.isAttrs pkg then pkg else import pkg;
+              dwn = if builtins.isFunction expr
+                    then expr {
+                      inherit pkgs lib overrideConfig;
+                      config = config.dwn;
+                    }
+                    else expr;
+          in overrideFn {
+            imports = dwn.plugins or [];
+            inherit dwn;
+          }))
+      // {
+        inherit overrideConfig;
+      };
 
   build = buildWith [ ./clojure/module.nix ] lib.id;
 

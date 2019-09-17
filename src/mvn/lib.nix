@@ -3,7 +3,7 @@ self: super:
 with builtins; with self.lib;
 {
 
-  mvnResult = {dependencies, fixedVersions, overlayRepository, repositoryFile, ... }@args:
+  mvnResult = overrideConfig: {dependencies, fixedVersions, overlayRepository, repositoryFile, ... }@args:
     let
       filterOvr = filter (d: d ? overrideConfig);
     in
@@ -11,7 +11,7 @@ with builtins; with self.lib;
         dependencies = self.mergeByType self.coordinateListT [ dependencies ];
         fixedVersions = self.mergeByType self.coordinateListT [ fixedVersions ];
         overlayRepository = self.mergeByType self.repoT
-          ([ (self.repoSingleton args)
+          ([ (self.singletonRepo overrideConfig args)
              overlayRepository ]
           ++
           (map
@@ -30,6 +30,17 @@ with builtins; with self.lib;
              []
       )
       (self.expandDependencies args));
+
+  dependencyClasspath2 = cfg:
+    concatLists (map
+      (x:
+        let
+          res = builtins.tryEval (self.mvnResolve cfg.dwn.mvn.repos x);
+        in if res.success then res.value
+           else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
+             []
+      )
+      (self.expandDependencies2 cfg));
 
   # FIXME remove
   coordinateFor =
@@ -58,7 +69,6 @@ with builtins; with self.lib;
       dependencies = self.dependencyList desc.dependencies;
     }) repo;
 
-  # FIXME remove
   mapRepoVals = f: repo:
     let mapVals = depth: vals:
       if depth > 0 then
@@ -69,7 +79,7 @@ with builtins; with self.lib;
       mapVals 5 repo;
 
   # FIXME remove by reworking aether and expander
-  unpackEdnDep = 
+  unpackEdnDep =
     { coordinate ? null
     , sha1 ? null
     , dirs ? null
@@ -80,7 +90,7 @@ with builtins; with self.lib;
           else { inherit group artifact extension classifier version; } // args;
     in
       self.unwrapCoord resF coordinate;
-  
+
   mvnResolve =
     mavenRepos:
     { base-version ? null
@@ -94,13 +104,13 @@ with builtins; with self.lib;
     in
       if "dirs" == extension then
         if isNull dirs
-        then throw "Dirs for ${toString coordinate} not found"
+        then throw "Dirs for ${group} ${artifact} ${version} not found"
         else dirs
       else if "jar" == extension then
         if ! isNull jar
         then [ jar ]
         else if isNull sha1 then
-          throw "Jar file for ${toString coordinate} not found"
+          throw "Jar file for ${group} ${artifact} ${version} not found"
         else [ ((self.fetchurl {
           name = "${artifact}-${version}.${extension}";
           urls = self.mavenMirrors mavenRepos group artifact extension classifier baseVersion version;
@@ -126,8 +136,9 @@ with builtins; with self.lib;
       version = elemAt coordinate 4;
     in
       f group name extension classifier version;
-  
-  repoSingleton =
+
+  singletonRepo =
+    overrideConfig:
     { artifact, version
     , extension
     , classifier
@@ -142,8 +153,17 @@ with builtins; with self.lib;
       inherit dirs jar group artifact extension classifier version;
       dependencies = self.mergeByType self.coordinateListT [ dependencies ];
       fixed-versions = self.mergeByType self.coordinateListT [ fixedVersions ];
+      instantiate = { fixedVersions, overlayRepository, repositoryFile }:
+        overrideConfig (cfg:
+          cfg // {
+            dwn = cfg.dwn // {
+              mvn = cfg.dwn.mvn // {
+                inherit fixedVersions overlayRepository repositoryFile;
+              };
+            };
+          });
     };
-  
+
   inRepo =
     { artifact, version
     , extension ? "jar"
@@ -221,9 +241,18 @@ with builtins; with self.lib;
           default = [];
           type = listOf self.pathT;
         };
+        instantiate = mkOption {
+          type = mkOptionType {
+            name = "instantiation-fn";
+            merge = loc: defs:
+              ## equality should be guaranteed by
+              ## checks on sha1 / jar / dirs
+              (head defs).value;
+          };
+        };
       };
     };
-  
+
   repoT = with types; let
     depType = subT:
       types.attrsOf subT;
