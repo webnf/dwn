@@ -14,6 +14,20 @@
                   (sort m))))
      [indent "}"])))
 
+(defn flat-map-emitter [key-emitter value-emitter]
+  (fn [m]
+    (concat
+     ["{"]
+     (apply concat
+            (interpose
+             [", "]
+             (map (fn [[k v]]
+                    (concat
+                     (key-emitter k)
+                     (cons ":" (value-emitter v))))
+                  (sort m))))
+     ["}"])))
+
 (defn map-keyed-emitter [indent & {:as key-emitters}]
   (let [emitters (sort key-emitters)]
     (fn [m]
@@ -22,10 +36,12 @@
        (apply concat
               (interpose
                [","]
-               (map (fn [[k emitter]]
-                      (when (contains? m k)
-                        (list* indent " \"" (name k) "\":" (emitter (get m k)))))
-                    emitters)))
+               (filter
+                some?
+                (map (fn [[k emitter]]
+                       (when (contains? m k)
+                         (list* indent " \"" (name k) "\":" (emitter (get m k)))))
+                     emitters))))
        [indent "}"]))))
 
 (defn list-emitter [indent value-emitter]
@@ -53,19 +69,28 @@
              (map value-emitter l)))
      ["]"])))
 
+(declare emit-generic)
+(let [le (flat-list-emitter #'emit-generic)
+      me (flat-map-emitter #'emit-generic #'emit-generic)]
+  (defn emit-generic [o]
+    (cond
+      (string? o) [(pr-str o)]
+      (instance? clojure.lang.Named o) [(pr-str (name o))]
+      (map? o) (me o)
+      (or (seq? o)
+          (vector? o)) (le o)
+      :else (throw (ex-info "don't know how to emit" {:o o})))))
+
 (def emitter
   (->>
    (map-keyed-emitter
     "\n     "
-    :sha1 (comp list pr-str)
+    :sha1 emit-generic
     :dependencies (comp (list-emitter
-                         "\n       "
-                         (flat-list-emitter
-                          (comp list pr-str)))
+                         "\n      "
+                         (flat-list-emitter emit-generic))
                         sort)
-    :resolved-coordinate (list-emitter
-                          "\n       "
-                          (comp list pr-str)))
+    :resolved-coordinate (flat-list-emitter emit-generic))
    (map-emitter "\n    ")
    (map-emitter "\n   ")
    (map-emitter "\n  ")
@@ -80,6 +105,7 @@
               w (io/writer json-out-file)]
     (doseq [s (emit-repo (edn/read r))]
       (.write w (str s)))
-    #_(.write w (pr-str (emit-repo (edn/read r)))))
+    #_(.write w (pr-str (emit-repo (edn/read r))))
+    (.write w "\n"))
   (System/exit 0))
 

@@ -15,8 +15,8 @@ with lib;
       '';
     };
     port = mkOption {
-      default = null;
-      type = types.nullOr types.int;
+      ## default = 4050;
+      type = types.int;
       description = ''
         Nrepl port
       '';
@@ -37,7 +37,7 @@ with lib;
     };
   };
 
-  config = lib.optionalAttrs true {
+  config = {
     dwn.mvn.dependencies = [ pkgs.nrepl ];
 
     dwn.clj.main = {

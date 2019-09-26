@@ -29,6 +29,12 @@ with lib;
     aether = build ./deps.aether/dwn.nix;
   };
 
+  overrideDwn = p: dwn:
+    p.overrideConfig (
+      cfg: {
+        dwn = lib.recursiveUpdate cfg.dwn dwn;
+      });
+
   ## Module stuff
 
   instantiateModule = moduleList: overrideConfig: module:

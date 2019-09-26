@@ -91,6 +91,11 @@ in
       default = null;
       type = types.nullOr pathT;
     };
+    repositoryFormat = mkOption {
+      internal = true;
+      default = "repo-edn";
+      type = types.str;
+    };
   };
 
   config.dwn.name = mkDefault (config.dwn.mvn.group + "_" + config.dwn.mvn.artifact);
@@ -98,6 +103,7 @@ in
   config.dwn.mvn.fixedVersions = config.dwn.mvn.fixedDependencies;
 
   config.passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
+  config.passthru.mvnResult2 = pkgs.mvnResult2 overrideConfig config.dwn.mvn;
 
   config.dwn.jvm.dependencyClasspath =
     lib.optionals
@@ -107,7 +113,11 @@ in
            warn "Please set and generate repository file ${config.dwn.name}" false
          else
            true))
-      (pkgs.dependencyClasspath2 config);
+      (if "repo-edn" == config.dwn.mvn.repositoryFormat
+       then pkgs.dependencyClasspath2 config
+       else if "repo-json" == config.dwn.mvn.repositoryFormat
+       then config.passthru.mvnResult.dependencyClasspath
+       else throw "Unknown repository format ${config.dwn.mvn.repositoryFormat}");
   config.dwn.paths = [] ++ lib.optional
     config.dwn.dev
     (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);

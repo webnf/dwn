@@ -1,8 +1,82 @@
 self: super:
 
-with builtins; with self.lib;
-{
+with builtins;
+with self.lib;
+let
+  completeInfo =
+    { group ? artifact
+    , version ? "*"
+    , classifier ? ""
+    , extension ? "jar"
+    , scope ? "compile"
+    , exclusions ? []
+    , dependencies ? []
+    , fixedVersions ? {}
+    , artifact
+    }: {
+      inherit group artifact version classifier extension fixedVersions scope;
+      exclusions = unique (map coordinateInfo exclusions);
+      dependencies = unique (map coordinateInfo dependencies);
+    };
+  completeDependency =
+    { group ? artifact
+    , artifact
+    , version
+    , classifier ? ""
+    , extension ? "jar"
+    , scope ? "compile"
+    , exclusions ? []
+    , dependencies ? []
+    , fixedVersions ? {}
+    }: {
+      inherit group artifact version classifier extension fixedVersions scope;
+      exclusions = unique (map (coordinateInfo2 completeExclusion) exclusions);
+      dependencies = unique (map (coordinateInfo2 completeDependency) dependencies);
+      fixedVersions = unique (map 
+    };
 
+  coordinateInfo = o:
+    completeInfo
+      (if isAttrs o then o
+       else if isList o then fromList o
+       else throw "Not attrs or list: ${toString o}");
+  coordinateInfo2 = completeInfo: o:
+    if isList o then {
+      dwn.mvn = completeInfo2 (fromList o);
+    }
+    else if ! o ? dwn.mvn then
+      throw "Not a dwn project or maven coordinate ${toString o}"
+    else o;
+  fromList = lst:
+    let l = length lst;
+        e = (elemAt lst (l - 1)); in
+    if l > 1 && isAttrs e then
+      (fromList (take (l - 1) lst)) // e
+    else if 1 == l then {
+      artifact = elemAt lst 0;
+    } else if 2 == l then {
+      group = elemAt lst 0;
+      artifact = elemAt lst 1;
+    } else if 3 == l then {
+      group = elemAt lst 0;
+      artifact = elemAt lst 1;
+      version = elemAt lst 2;
+    } else if 4 == l then {
+      group = elemAt lst 0;
+      artifact = elemAt lst 1;
+      classifier = elemAt lst 2;
+      version = elemAt lst 3;
+    } else if 5 == l then {
+      group = elemAt lst 0;
+      artifact = elemAt lst 1;
+      extension = elemAt lst 2;
+      classifier = elemAt lst 3;
+      version = elemAt lst 4;
+    } else throw "Invalid list length ${toString l}";
+in {
+
+  inherit coordinateInfo;
+  
   mvnResult = overrideConfig: {dependencies, fixedVersions, overlayRepository, repositoryFile, ... }@args:
     let
       filterOvr = filter (d: d ? overrideConfig);
@@ -19,6 +93,18 @@ with builtins; with self.lib;
             (filterOvr (dependencies ++ fixedVersions))));
       };
 
+  mvnResult2 = overrideConfig: cfg: rec {
+    dependencies = map (coordinateInfo2 completeDependency) cfg.dependencies;
+    fixedVersions =
+      unique
+        (concatLists
+          ((map (coordinateInfo2 completeFixedVersions) cfg.fixedVersions)
+           ++ (map (d: d.mvnResult2.fixedVersions) dependencies)));
+    exclusions = map (coordinateInfo2 completeExclusions) cfg.exclusions;
+
+    dependencyClasspath = [];
+  };
+  
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
     concatLists (map
       (x:
@@ -41,6 +127,17 @@ with builtins; with self.lib;
              []
       )
       (self.expandDependencies2 cfg));
+
+  dependencyClasspath3 = cfg:
+    concatLists (map
+      (x:
+        let
+          res = builtins.tryEval (self.mvnResolve cfg.dwn.mvn.repos x);
+        in if res.success then res.value
+           else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
+             []
+      )
+      (self.expandDependencies3 cfg));
 
   # FIXME remove
   coordinateFor =
@@ -205,28 +302,35 @@ with builtins; with self.lib;
     submodule {
       options = {
         group = mkOption {
-          type = types.str;
+          default = null;
+          type = nullOr types.str;
         };
         artifact = mkOption {
-          type = types.str;
+          default = null;
+          type = nullOr types.str;
         };
         version = mkOption {
-          type = types.str;
+          default = null;
+          type = nullOr types.str;
         };
         base-version = mkOption {
           default = null;
           type = nullOr types.str;
         };
         extension = mkOption {
-          type = types.str;
+          default = null;
+          type = nullOr types.str;
         };
         classifier = mkOption {
-          type = types.str;
+          default = null;
+          type = nullOr types.str;
         };
         dependencies = mkOption {
+          default = [];
           type = types.listOf plainDependencyT;
         };
         fixed-versions = mkOption {
+          default = [];
           type = types.listOf plainDependencyT;
         };
         sha1 = mkOption {
@@ -242,13 +346,14 @@ with builtins; with self.lib;
           type = listOf self.pathT;
         };
         instantiate = mkOption {
-          type = mkOptionType {
+          default = null;
+          type = nullOr (mkOptionType {
             name = "instantiation-fn";
             merge = loc: defs:
               ## equality should be guaranteed by
               ## checks on sha1 / jar / dirs
               (head defs).value;
-          };
+          });
         };
       };
     };

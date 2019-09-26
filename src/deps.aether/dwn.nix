@@ -17,7 +17,8 @@
       ["org.apache.maven.wagon" "wagon-http" "3.2.0"]
       ["org.apache.maven.wagon" "wagon-ssh" "3.2.0"]
     ];
-    repositoryFile = ./repo.edn;
+    repositoryFile = ./repo.json;
+    repositoryFormat = "repo-json";
   };
   clj = {
     sourceDirectories = [ ./src ../nix.aether/src ];
