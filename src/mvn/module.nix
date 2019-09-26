@@ -4,6 +4,7 @@ with lib;
 let
   inherit (pkgs) dependencyT plainDependencyT repoT pathT pathsT urlT coordinateListT
     subPath closureRepoGenerator mvnResult dependencyClasspath;
+  haveSha1 = ! isNull config.dwn.mvn.sha1;
 in
 
 {
@@ -25,9 +26,14 @@ in
       type = types.str;
       description = "Maven version";
     };
+    baseVersion = mkOption {
+      default = config.dwn.mvn.version;
+      type = types.str;
+      description = "Base (path) maven version";
+    };
     extension = mkOption {
       type = types.str;
-      default = "dirs";
+      default = if haveSha1 then "jar" else "dirs";
       description = "Maven packaging extension";
     };
     classifier = mkOption {
@@ -50,18 +56,34 @@ in
         Maven dependencies.
       '';
     };
+    exclusions = mkOption {
+      default = [];
+      ## FIXME coordinate w/o version
+      type = types.listOf dependencyT;
+      description = ''
+        Maven exclusions
+      '';
+    };
+    providedVersions = mkOption {
+      default = [];
+      type = types.listOf dependencyT;
+      description = ''
+        Dependencies, that are already on the classpath. Either from a container, or previous dependencies.
+      '';
+    };
     fixedVersions = mkOption {
       default = [];
       type = types.listOf dependencyT;
       description = ''
         Override versions from dependencies (transitive).
+        As opposed to `providedVersions`, this will include a dependency, but at the pinned version.
       '';
     };
     fixedDependencies = mkOption {
       default = [];
       type = types.listOf dependencyT;
       description = ''
-        Dependencies with fixed versions.
+        Combination of dependencies and fixedVersions.
       '';
     };
     overlayRepository = mkOption {
@@ -91,6 +113,10 @@ in
       default = null;
       type = types.nullOr pathT;
     };
+    sha1 = mkOption {
+      default = null;
+      type = types.nullOr types.str;
+    };
     repositoryFormat = mkOption {
       internal = true;
       default = "repo-edn";
@@ -98,28 +124,44 @@ in
     };
   };
 
-  config.dwn.name = mkDefault (config.dwn.mvn.group + "_" + config.dwn.mvn.artifact);
-  config.dwn.mvn.dependencies = config.dwn.mvn.fixedDependencies;
-  config.dwn.mvn.fixedVersions = config.dwn.mvn.fixedDependencies;
+  config = {
+    passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
+    passthru.mvnResult3 = pkgs.mvnResult3 config;
 
-  config.passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
-  config.passthru.mvnResult2 = pkgs.mvnResult2 overrideConfig config.dwn.mvn;
-
-  config.dwn.jvm.dependencyClasspath =
-    lib.optionals
-      (0 != lib.length config.dwn.mvn.dependencies
-       && (
-         if isNull config.dwn.mvn.repositoryFile then
-           warn "Please set and generate repository file ${config.dwn.name}" false
-         else
-           true))
-      (if "repo-edn" == config.dwn.mvn.repositoryFormat
-       then pkgs.dependencyClasspath2 config
-       else if "repo-json" == config.dwn.mvn.repositoryFormat
-       then config.passthru.mvnResult.dependencyClasspath
-       else throw "Unknown repository format ${config.dwn.mvn.repositoryFormat}");
-  config.dwn.paths = [] ++ lib.optional
-    config.dwn.dev
-    (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);
-
+    dwn = {
+      name = mkDefault (config.dwn.mvn.group + "_" + config.dwn.mvn.artifact + "_" + config.dwn.mvn.version);
+      mvn.dependencies = config.dwn.mvn.fixedDependencies;
+      mvn.fixedVersions = config.dwn.mvn.fixedDependencies;
+      mvn.jar = lib.mkIf haveSha1
+        ((pkgs.fetchurl (with config.dwn.mvn; {
+          name = "${config.dwn.name}.${config.dwn.mvn.extension}";
+          urls = pkgs.mavenMirrors
+            config.dwn.mvn.repos
+            config.dwn.mvn.group
+            config.dwn.mvn.artifact
+            config.dwn.mvn.extension
+            config.dwn.mvn.classifier
+            config.dwn.mvn.baseVersion
+            config.dwn.mvn.version;
+          inherit (config.dwn.mvn) sha1;
+          # prevent nix-daemon from downloading maven artifacts from the nix cache
+        })) // { preferLocalBuild = true; });
+      jvm.dependencyClasspath =
+        lib.optionals
+          (0 != lib.length config.dwn.mvn.dependencies
+           && (
+             if isNull config.dwn.mvn.repositoryFile then
+               warn "Please set and generate repository file ${config.dwn.name}" false
+             else
+               true))
+          (if "repo-edn" == config.dwn.mvn.repositoryFormat
+           then pkgs.dependencyClasspath2 config
+           else if "repo-json" == config.dwn.mvn.repositoryFormat
+           then config.passthru.mvnResult.dependencyClasspath
+           else throw "Unknown repository format ${config.dwn.mvn.repositoryFormat}");
+      paths = [] ++ lib.optional
+        config.dwn.dev
+        (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);
+    };    
+  };
 }

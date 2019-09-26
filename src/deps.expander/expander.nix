@@ -97,6 +97,8 @@ let
 in
 
 {      
+
+  inherit pinL;
   
   depsExpander3 = repo: dependencies: fixedVersions: providedVersions:
     let tfv = fromFixedVersions fixedVersions;

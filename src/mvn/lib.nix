@@ -29,10 +29,10 @@ let
     , dependencies ? []
     , fixedVersions ? {}
     }: {
-      inherit group artifact version classifier extension fixedVersions scope;
+      inherit group artifact version classifier extension scope;
       exclusions = unique (map (coordinateInfo2 completeExclusion) exclusions);
       dependencies = unique (map (coordinateInfo2 completeDependency) dependencies);
-      fixedVersions = unique (map 
+      fixedVersions = unique (map );
     };
 
   coordinateInfo = o:
@@ -104,6 +104,69 @@ in {
 
     dependencyClasspath = [];
   };
+
+  mvn = {
+    pinMap = coords: foldl' (s: e: self.pinL.set s e.dwn.mvn e) {} coords;
+    mergeFixedVersions =
+      self.mergeAttrsWith
+        (group: self.mergeAttrsWith
+          (artifact: v1: v2:
+            if v1 == v2
+            then v1
+            else throw "Incompatible fixed versions for ${group} ${artifact}"));
+    updateResolvedVersions = rvMap: mcfg: e:
+      if ! self.pinL.has rvMap mcfg
+         || versionOlder
+           (self.pinL.get rvMap mcfg).dwn.mvn.version
+           mcfg.version
+      then self.pinL.set rvMap mcfg e
+      else rvMap;
+    resolve = d:
+      fix ((flip d.mvnResult3) {
+        exclusions = [];
+        dependencies = [];
+        fixedVersionMap = {};
+        providedVersionMap = {};
+        resolvedVersionMap = {};
+      });
+  };
+
+  reduceAttrs = f: s: a:
+    foldl' (s: n: f s n (getAttr n a))
+      s (attrNames a);
+
+  mergeAttrsWith = mf: a1: a2:
+    self.reduceAttrs
+      (a: n: v:
+        setAttr a n
+          (if hasAttr n a
+           then (mf n (getAttr n a) v)
+           else v))
+      a1 a2;
+  
+  mvnResult3 = cfg: rself: rsuper: let
+    mcfg = cfg.dwn.mvn;
+    resolvedVersionMap = self.mvn.updateResolvedVersions rsuper.resolvedVersionMap mcfg cfg.result;
+  in
+    if self.pinL.has rsuper.providedVersionMap mcfg
+    then {
+      inherit (rsuper) dependencies fixedVersionMap providedVersionMap;
+      inherit resolvedVersionMap;
+    }
+    else let
+      providedVersionMap = self.pinL.set rsuper.providedVersionMap mcfg cfg.result;
+      fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap mcfg.fixedVersions);
+      exclusions = unique (rsuper.exclusions ++ mcfg.exclusions);
+      dresult = foldl' (s: d: d.mvnResult3 rself s)
+        (rsuper // { inherit providedVersionMap fixedVersionMap resolvedVersionMap exclusions; })
+        (reverseList mcfg.dependencies);
+    in {
+      dependencies =
+        [ (self.pinL.getDefault rself.fixedVersionMap mcfg (self.pinL.get rself.resolvedVersionMap mcfg)) ]
+        ++ dresult.dependencies;
+      fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap mcfg.fixedVersions);
+      inherit (dresult) providedVersionMap resolvedVersionMap;
+    };
   
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
     concatLists (map
