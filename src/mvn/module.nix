@@ -51,7 +51,7 @@ in
     };
     dependencies = mkOption {
       default = [];
-      type = types.listOf dependencyT;
+      type = types.listOf dependencyT; # pkgs.mvn.dependencyT;
       description = ''
         Maven dependencies.
       '';
@@ -125,27 +125,32 @@ in
   };
 
   config = {
-    passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
+    # passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
     passthru.mvnResult3 = pkgs.mvnResult3 (pkgs.mvn.pimpConfig config);
 
     dwn = {
       name = mkDefault (config.dwn.mvn.group + "_" + config.dwn.mvn.artifact + "_" + config.dwn.mvn.version);
-      mvn.dependencies = config.dwn.mvn.fixedDependencies;
-      mvn.fixedVersions = config.dwn.mvn.fixedDependencies;
-      mvn.jar = lib.mkIf haveSha1
-        ((pkgs.fetchurl (with config.dwn.mvn; {
-          name = "${config.dwn.name}.${config.dwn.mvn.extension}";
-          urls = pkgs.mavenMirrors
-            config.dwn.mvn.repos
-            config.dwn.mvn.group
-            config.dwn.mvn.artifact
-            config.dwn.mvn.extension
-            config.dwn.mvn.classifier
-            config.dwn.mvn.baseVersion
-            config.dwn.mvn.version;
-          inherit (config.dwn.mvn) sha1;
-          # prevent nix-daemon from downloading maven artifacts from the nix cache
-        })) // { preferLocalBuild = true; });
+      mvn = {
+        dependencies = config.dwn.mvn.fixedDependencies;
+        fixedVersions = config.dwn.mvn.fixedDependencies;
+        jar = lib.mkIf haveSha1
+          ((pkgs.fetchurl (with config.dwn.mvn; {
+            name = "${config.dwn.name}.${config.dwn.mvn.extension}";
+            urls = pkgs.mavenMirrors
+              config.dwn.mvn.repos
+              config.dwn.mvn.group
+              config.dwn.mvn.artifact
+              config.dwn.mvn.extension
+              config.dwn.mvn.classifier
+              config.dwn.mvn.baseVersion
+              config.dwn.mvn.version;
+            inherit (config.dwn.mvn) sha1;
+            # prevent nix-daemon from downloading maven artifacts from the nix cache
+          })) // { preferLocalBuild = true; });
+        overlayRepository = lib.mkIf (! isNull config.dwn.mvn.repositoryFile
+                                      && "repo-json" == config.dwn.mvn.repositoryFormat)
+          pkgs.mvn.hydrateJsonRepository config.dwn.mvn.repositoryFile;
+      };
       jvm.dependencyClasspath =
         lib.optionals
           (0 != lib.length config.dwn.mvn.dependencies

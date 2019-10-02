@@ -139,6 +139,67 @@ in {
             then d.dwn.mvn.dirs
             else throw "Unknown extension ${ext}")
         dependencies);
+    hydrateJsonRepository = jf:
+      # fix (repo:
+        self.mvn.mapRepo
+          (pgroup: partifact: pextension: pclassifier: pversion:
+            { group ? pgroup
+            , artifact ? partifact
+            , extension ? pextension
+            , classifier ? pclassifier
+            , version ? pversion
+            , baseVersion ? version
+            # FIXME: emit these instead of resolved-coordinate
+            , dependencies ? []
+            , sha1
+            , ...
+            }: self.build {
+              mvn = {
+                inherit group artifact extension classifier version baseVersion sha1 dependencies;
+                # dependencies = map (self.repoL.get repo) dependencies;
+              };
+            })
+          (importJSON jf)
+      #)
+    ;
+    mapRepo = f: repo:
+      mapAttrs
+        (group: arts:
+          mapAttrs
+            (artifact: exts:
+              mapAttrs
+                (extension: clss:
+                  mapAttrs
+                    (classifier: vrss:
+                      mapAttrs
+                        (version: desc:
+                          f group artifact extension classifier version desc)
+                        vrss)
+                    clss)
+                exts)
+            arts)
+        repo;
+    lstDependencyT = mkOptionType {
+      name = "list-maven-dependency";
+      description = "List maven dependency";
+      check = isList;
+      merge = mergeEqualOption;
+    };
+    drvDependencyT = mkOptionType {
+      name = "derivation-maven-dependency";
+      description = "DWN maven dependency";
+      check = d: d ? d.dwn.mvn;
+      merge = mergeEqualOption;
+    };
+    dependencyT = types.coercedTo
+      self.mvn.lstDependencyT
+      (lst: self.build { mvn = (fromList lst); })
+      self.mvn.drvDependencyT;
+    projectDependencyT = { overlayRepository, ... }:
+      self.typeMap
+        dependencyT
+        (d: d.overrideConfig { inherit overlayRepository; })
+        drvDependencyT;
     ## FIXME into module
     pimpConfig = cfg:
       let
