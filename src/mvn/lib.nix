@@ -52,11 +52,12 @@ let
         e = (elemAt lst (l - 1)); in
     if l > 1 && isAttrs e then
       (fromList (take (l - 1) lst)) // e
-    else if 1 == l then {
-      artifact = elemAt lst 0;
-    } else if 2 == l then {
-      group = elemAt lst 0;
-      artifact = elemAt lst 1;
+    else if 1 == l then
+      throw "Don't know version of [${toString lst}]"
+    else if 2 == l then {
+        group = elemAt lst 0;
+        artifact = elemAt lst 0;
+        version = elemAt lst 1;
     } else if 3 == l then {
       group = elemAt lst 0;
       artifact = elemAt lst 1;
@@ -129,6 +130,47 @@ in {
         providedVersionMap = {};
         resolvedVersionMap = {};
       });
+    dependencyClasspath = dependencies:
+      concatLists (map
+        (d: let ext = d.dwn.mvn.extension; in
+            if ext == "jar"
+            then [ d.dwn.mvn.jar ]
+            else if ext == "dirs"
+            then d.dwn.mvn.dirs
+            else throw "Unknown extension ${ext}")
+        dependencies);
+    ## FIXME into module
+    pimpConfig = cfg:
+      let
+        repo = importJSON cfg.dwn.mvn.repositoryFile;
+        inflateDep = d: if isList d
+                        then let
+                          mvn = fromList d;
+                          dsc = self.repoL.get repo
+                            (self.build {
+                              mvn = mvn // {
+                                inherit (cfg.dwn.mvn) repositoryFile;
+                                extension = "jar";
+                              };
+                            }).dwn.mvn;
+                        in
+                          self.build {
+                            mvn = mvn // {
+                              inherit (dsc) sha1;
+                              dependencies = map inflateDep (dsc.dependencies or []);
+                            };
+                          }
+                        else d;
+      in
+      cfg // {
+        dwn = cfg.dwn // {
+          mvn = cfg.dwn.mvn // {
+            dependencies = map
+              inflateDep
+              cfg.dwn.mvn.dependencies;
+          };
+        };
+      };
   };
 
   reduceAttrs = f: s: a:
@@ -157,15 +199,23 @@ in {
       providedVersionMap = self.pinL.set rsuper.providedVersionMap mcfg cfg.result;
       fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap mcfg.fixedVersions);
       exclusions = unique (rsuper.exclusions ++ mcfg.exclusions);
-      dresult = foldl' (s: d: d.mvnResult3 rself s)
-        (rsuper // { inherit providedVersionMap fixedVersionMap resolvedVersionMap exclusions; })
+      dresult = foldl'
+        (s: d: let r = d.mvnResult3 rself s; in
+               r // { dependencies =
+                        [(self.pinL.getDefault r.fixedVersionMap d.dwn.mvn
+                          (self.pinL.get r.resolvedVersionMap d.dwn.mvn))]
+                        ++ r.dependencies; } )
+        {
+          inherit (rsuper) dependencies;
+          inherit providedVersionMap fixedVersionMap resolvedVersionMap exclusions;
+        }
         (reverseList mcfg.dependencies);
     in {
-      dependencies =
-        [ (self.pinL.getDefault rself.fixedVersionMap mcfg (self.pinL.get rself.resolvedVersionMap mcfg)) ]
-        ++ dresult.dependencies;
+      # dependencies =
+      #   [ (self.pinL.getDefault rself.fixedVersionMap mcfg (self.pinL.get rself.resolvedVersionMap mcfg)) ]
+      #   ++ dresult.dependencies;
       fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap mcfg.fixedVersions);
-      inherit (dresult) providedVersionMap resolvedVersionMap;
+      inherit (dresult) providedVersionMap resolvedVersionMap dependencies;
     };
   
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:

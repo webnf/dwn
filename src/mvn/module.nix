@@ -106,12 +106,12 @@ in
       type = types.either types.package types.path;
     };
     dirs = mkOption {
-      default = null;
-      type = types.nullOr pathsT;
+      default = throw "No dirs for ${config.dwn.name}";
+      type = pathsT;
     };
     jar = mkOption {
-      default = null;
-      type = types.nullOr pathT;
+      default = throw "No jar file for ${config.dwn.name}";
+      type = pathT;
     };
     sha1 = mkOption {
       default = null;
@@ -126,7 +126,7 @@ in
 
   config = {
     passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
-    passthru.mvnResult3 = pkgs.mvnResult3 config;
+    passthru.mvnResult3 = pkgs.mvnResult3 (pkgs.mvn.pimpConfig config);
 
     dwn = {
       name = mkDefault (config.dwn.mvn.group + "_" + config.dwn.mvn.artifact + "_" + config.dwn.mvn.version);
@@ -157,7 +157,7 @@ in
           (if "repo-edn" == config.dwn.mvn.repositoryFormat
            then pkgs.dependencyClasspath2 config
            else if "repo-json" == config.dwn.mvn.repositoryFormat
-           then config.passthru.mvnResult.dependencyClasspath
+           then pkgs.mvn.dependencyClasspath (pkgs.mvn.resolve { inherit (config.passthru) mvnResult3; }).dependencies
            else throw "Unknown repository format ${config.dwn.mvn.repositoryFormat}");
       paths = [] ++ lib.optional
         config.dwn.dev

@@ -13,7 +13,8 @@
         exclusions = [[ "org.clojure" "clojure" ]];
       }]
     ];
-    repositoryFile = ./repo.edn;
+    repositoryFile = ./repo.json;
+    repositoryFormat = "repo-json";
     jar = pkgs.buildClojure {
       inherit (config.mvn) version;
       sha256 = "0769zr58cgi0fpg02dlr82qr2apc09dg05j2bg3dg9a8xac5n1dz";

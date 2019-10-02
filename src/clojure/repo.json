@@ -1,0 +1,24 @@
+{
+ "org.clojure":{
+  "core.specs.alpha":{
+   "jar":{
+    "":{
+     "0.2.44":{
+      "resolved-coordinate":["org.clojure", "core.specs.alpha", "jar", "", "0.2.44"],
+      "sha1":"6027ceb1d1ae70a6a3fb1a8da2144632fa688604"
+     }
+    }
+   }
+  },
+  "spec.alpha":{
+   "jar":{
+    "":{
+     "0.2.176":{
+      "resolved-coordinate":["org.clojure", "spec.alpha", "jar", "", "0.2.176"],
+      "sha1":"cd2d5b03d2ff95a958cb075201b89d28a7dea626"
+     }
+    }
+   }
+  }
+ }
+}

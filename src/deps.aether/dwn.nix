@@ -19,6 +19,7 @@
     ];
     repositoryFile = ./repo.json;
     repositoryFormat = "repo-json";
+    # repositoryFile = ./repo.edn;
   };
   clj = {
     sourceDirectories = [ ./src ../nix.aether/src ];
