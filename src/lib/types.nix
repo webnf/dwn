@@ -42,7 +42,11 @@ with self.lib; with types;
     mkOptionType rec {
       name = "typeMap";
       description = "${inputT.description} mapped to ${outputT.description}";
-      check = x: inputT.check x && outputT.check (mapFn x);
+      check = x: inputT.check x
+                 && outputT.check
+                   (mapFn
+                     (inputT.merge
+                       ["typeMap" "check"] [{ file = "types.nix"; value = x;}]));
       merge = loc: defs:
         mapFn (inputT.merge loc defs);
       getSubOptions = inputT.getSubOptions;
