@@ -2,51 +2,8 @@ self: super:
 
 with builtins;
 with self.lib;
+with types;
 let
-  completeInfo =
-    { group ? artifact
-    , version ? "*"
-    , classifier ? ""
-    , extension ? "jar"
-    , scope ? "compile"
-    , exclusions ? []
-    , dependencies ? []
-    , fixedVersions ? {}
-    , artifact
-    }: {
-      inherit group artifact version classifier extension fixedVersions scope;
-      exclusions = unique (map coordinateInfo exclusions);
-      dependencies = unique (map coordinateInfo dependencies);
-    };
-  completeDependency =
-    { group ? artifact
-    , artifact
-    , version
-    , classifier ? ""
-    , extension ? "jar"
-    , scope ? "compile"
-    , exclusions ? []
-    , dependencies ? []
-    , fixedVersions ? {}
-    }: {
-      inherit group artifact version classifier extension scope;
-      exclusions = unique (map (coordinateInfo2 completeExclusion) exclusions);
-      dependencies = unique (map (coordinateInfo2 completeDependency) dependencies);
-      fixedVersions = unique (map );
-    };
-
-  coordinateInfo = o:
-    completeInfo
-      (if isAttrs o then o
-       else if isList o then fromList o
-       else throw "Not attrs or list: ${toString o}");
-  coordinateInfo2 = completeInfo: o:
-    if isList o then {
-      dwn.mvn = completeInfo2 (fromList o);
-    }
-    else if ! o ? dwn.mvn then
-      throw "Not a dwn project or maven coordinate ${toString o}"
-    else o;
   fromList = lst:
     let l = length lst;
         e = (elemAt lst (l - 1)); in
@@ -75,39 +32,150 @@ let
       version = elemAt lst 4;
     } else throw "Invalid list length ${toString l}";
 in {
-
-  inherit coordinateInfo;
   
-  mvnResult = overrideConfig: {dependencies, fixedVersions, overlayRepository, repositoryFile, ... }@args:
-    let
-      filterOvr = filter (d: d ? overrideConfig);
+  mvn = {
+    optionsFor = config: let depT = listOf (self.mvn.projectDependencyT config); in {
+      group = mkOption {
+        type = str;
+        default = config.artifact;
+        description = "Maven group";
+      };
+      artifact = mkOption {
+        type = str;
+        description = "Maven artifact";
+      };
+      version = mkOption {
+        type = str;
+        description = "Maven version";
+      };
+      baseVersion = mkOption {
+        default = config.version;
+        type = str;
+        description = "Base (path) maven version";
+      };
+      extension = mkOption {
+        type = str;
+        default = if ! isNull config.sha1 then "jar" else "dirs";
+        description = "Maven packaging extension";
+      };
+      classifier = mkOption {
+        type = str;
+        default = "";
+        description = "Maven classifier";
+      };
+      repos = mkOption {
+        default = [ http://repo1.maven.org/maven2
+                    https://clojars.org/repo ];
+        type = listOf self.urlT;
+        description = ''
+        Maven repositories
+      '';
+      };
+      dependencies = mkOption {
+        default = [];
+        type = depT;
+        description = ''
+        Maven dependencies.
+      '';
+      };
+      exclusions = mkOption {
+        default = [];
+        ## FIXME coordinate w/o version
+        type = depT;
+        description = ''
+        Maven exclusions
+      '';
+      };
+      providedVersions = mkOption {
+        default = [];
+        type = depT;
+        description = ''
+        Dependencies, that are already on the classpath. Either from a container, or previous dependencies.
+      '';
+      };
+      fixedVersions = mkOption {
+        default = [];
+        type = depT;
+        description = ''
+        Override versions from dependencies (transitive).
+        As opposed to `providedVersions`, this will include a dependency, but at the pinned version.
+      '';
+      };
+      dirs = mkOption {
+        default = throw "No dirs for [ ${config.group} ${config.artifact} ${config.version} ]";
+        type = self.pathsT;
+      };
+      jar = mkOption {
+        default = with config;
+          if isNull sha1
+          then throw "No jar file / sha1 for [ ${group} ${artifact} ${version} ]"
+          else
+            (self.fetchurl ( {
+              name = "${group}__${artifact}__${version}.${extension}";
+              urls = self.mavenMirrors repos group artifact extension classifier baseVersion version;
+              inherit sha1;
+            }))
+            # prevent nix-daemon from downloading maven artifacts from the nix cache
+            // { preferLocalBuild = true; };
+        type = self.pathT;
+      };
+      sha1 = mkOption {
+        default = (self.repoL.getDefault config.repository config { sha1 = null; }).sha1;
+        type = nullOr str;
+      };
+      repository = mkOption {
+        default = {};
+        type = self.mvn.repoT;
+      };
+      linkAsDependency = mkOption {
+        default = self.mvn.linkAsDependencyFor config;
+        type = unspecified;
+        internal = true;
+      };
+    };
+    
+    linkAsDependencyFor = config: rself: rsuper: let
+      resolvedVersionMap = self.mvn.updateResolvedVersions rsuper.resolvedVersionMap config;
     in
-      {
-        dependencies = self.mergeByType self.coordinateListT [ dependencies ];
-        fixedVersions = self.mergeByType self.coordinateListT [ fixedVersions ];
-        overlayRepository = self.mergeByType self.repoT
-          ([ (self.singletonRepo overrideConfig args)
-             overlayRepository ]
-          ++
-          (map
-            (x: x.dwn.mvn.overlayRepository)
-            (filterOvr (dependencies ++ fixedVersions))));
+      if self.pinL.has rsuper.providedVersionMap config
+      then {
+        inherit (rsuper) dependencies fixedVersionMap providedVersionMap;
+        inherit resolvedVersionMap;
+      }
+      else let
+        providedVersionMap = self.pinL.set rsuper.providedVersionMap config config;
+        fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
+        exclusions = unique (rsuper.exclusions ++ config.exclusions);
+        dresult = foldl'
+          (s: d: let r = d.linkAsDependency rself s; in
+                 r // { dependencies =
+                          [(self.pinL.getDefault r.fixedVersionMap d
+                            (self.pinL.get r.resolvedVersionMap d))]
+                          ++ r.dependencies; } )
+          {
+            inherit (rsuper) dependencies;
+            inherit providedVersionMap fixedVersionMap resolvedVersionMap exclusions;
+          }
+          (reverseList config.dependencies);
+      in {
+        # dependencies =
+        #   [ (self.pinL.getDefault rself.fixedVersionMap config (self.pinL.get rself.resolvedVersionMap config)) ]
+        #   ++ dresult.dependencies;
+        fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
+        inherit (dresult) providedVersionMap resolvedVersionMap dependencies;
       };
 
-  mvnResult2 = overrideConfig: cfg: rec {
-    dependencies = map (coordinateInfo2 completeDependency) cfg.dependencies;
-    fixedVersions =
-      unique
-        (concatLists
-          ((map (coordinateInfo2 completeFixedVersions) cfg.fixedVersions)
-           ++ (map (d: d.mvnResult2.fixedVersions) dependencies)));
-    exclusions = map (coordinateInfo2 completeExclusions) cfg.exclusions;
+    hydrateDependency = config: dep:
+      if dep ? linkAsDependency
+      then dep
+      else let
+        result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
+          (self.selectAttrs ["repos" "repository" "exclusions" "providedVersions" "fixedVersions"] config)
+          dep
+        ];
+      in result;
 
-    dependencyClasspath = [];
-  };
-
-  mvn = {
-    pinMap = coords: foldl' (s: e: self.pinL.set s e.dwn.mvn e) {} coords;
+    pinMap = coords: foldl' (s: e: self.pinL.set s e e) {} coords;
     mergeFixedVersions =
       self.mergeAttrsWith
         (group: self.mergeAttrsWith
@@ -115,15 +183,15 @@ in {
             if v1 == v2
             then v1
             else throw "Incompatible fixed versions for ${group} ${artifact}"));
-    updateResolvedVersions = rvMap: mcfg: e:
+    updateResolvedVersions = rvMap: mcfg:
       if ! self.pinL.has rvMap mcfg
          || versionOlder
-           (self.pinL.get rvMap mcfg).dwn.mvn.version
+           (self.pinL.get rvMap mcfg).version
            mcfg.version
-      then self.pinL.set rvMap mcfg e
+      then self.pinL.set rvMap mcfg mcfg
       else rvMap;
     resolve = d:
-      fix ((flip d.mvnResult3) {
+      fix ((flip d.linkAsDependency) {
         exclusions = [];
         dependencies = [];
         fixedVersionMap = {};
@@ -132,36 +200,13 @@ in {
       });
     dependencyClasspath = dependencies:
       concatLists (map
-        (d: let ext = d.dwn.mvn.extension; in
+        (d: let ext = d.extension; in
             if ext == "jar"
-            then [ d.dwn.mvn.jar ]
+            then [ d.jar ]
             else if ext == "dirs"
-            then d.dwn.mvn.dirs
+            then d.dirs
             else throw "Unknown extension ${ext}")
         dependencies);
-    hydrateJsonRepository = jf:
-      # fix (repo:
-        self.mvn.mapRepo
-          (pgroup: partifact: pextension: pclassifier: pversion:
-            { group ? pgroup
-            , artifact ? partifact
-            , extension ? pextension
-            , classifier ? pclassifier
-            , version ? pversion
-            , baseVersion ? version
-            # FIXME: emit these instead of resolved-coordinate
-            , dependencies ? []
-            , sha1
-            , ...
-            }: self.build {
-              mvn = {
-                inherit group artifact extension classifier version baseVersion sha1 dependencies;
-                # dependencies = map (self.repoL.get repo) dependencies;
-              };
-            })
-          (importJSON jf)
-      #)
-    ;
     mapRepo = f: repo:
       mapAttrs
         (group: arts:
@@ -185,55 +230,42 @@ in {
       check = isList;
       merge = mergeEqualOption;
     };
+    mapDependencyT = mkOptionType {
+      name = "map-maven-dependency";
+      description = "Map maven dependency";
+      check = m: isAttrs m && ! isDerivation m;
+      merge = mergeEqualOption;
+    };
     drvDependencyT = mkOptionType {
       name = "derivation-maven-dependency";
       description = "DWN maven dependency";
-      check = d: d ? d.dwn.mvn;
+      check = d: isDerivation d && d ? dwn.mvn;
       merge = mergeEqualOption;
     };
-    dependencyT = types.coercedTo
-      self.mvn.lstDependencyT
-      (lst: self.build { mvn = (fromList lst); })
-      self.mvn.drvDependencyT;
-    projectDependencyT = { overlayRepository, ... }:
+    dependencyT = either
+      (coercedTo self.mvn.lstDependencyT fromList self.mvn.mapDependencyT)
+      (coercedTo self.mvn.drvDependencyT (d: d.dwn.mvn) self.mvn.mapDependencyT);
+    projectDependencyT = config:
       self.typeMap
-        dependencyT
-        (d: d.overrideConfig { inherit overlayRepository; })
-        drvDependencyT;
-    ## FIXME into module
-    pimpConfig = cfg:
-      let
-        repo = importJSON cfg.dwn.mvn.repositoryFile;
-        inflateDep = d: if isList d
-                        then let
-                          mvn = fromList d;
-                          dsc = self.repoL.get repo
-                            (self.build {
-                              mvn = mvn // {
-                                inherit (cfg.dwn.mvn) repositoryFile;
-                                extension = "jar";
-                              };
-                            }).dwn.mvn;
-                        in
-                          self.build {
-                            mvn = mvn // {
-                              inherit (dsc) sha1;
-                              dependencies = map inflateDep (dsc.dependencies or []);
-                            };
-                          }
-                        else d;
-      in
-      cfg // {
-        dwn = cfg.dwn // {
-          mvn = cfg.dwn.mvn // {
-            dependencies = map
-              inflateDep
-              cfg.dwn.mvn.dependencies;
-          };
-        };
-      };
+        self.mvn.dependencyT
+        (self.mvn.hydrateDependency config)
+        self.mvn.mapDependencyT;
+    repoT =
+      attrsOf
+        (attrsOf
+          (attrsOf
+            (attrsOf
+              (attrsOf
+                # partial mvn options
+                unspecified))));
   };
 
+  selectAttrs = names: a:
+    listToAttrs
+      (map (n: nameValuePair n a.${n})
+        (filter (n: a ? ${n})
+          names));
+  
   reduceAttrs = f: s: a:
     foldl' (s: n: f s n (getAttr n a))
       s (attrNames a);
@@ -246,39 +278,7 @@ in {
            then (mf n (getAttr n a) v)
            else v))
       a1 a2;
-  
-  mvnResult3 = cfg: rself: rsuper: let
-    mcfg = cfg.dwn.mvn;
-    resolvedVersionMap = self.mvn.updateResolvedVersions rsuper.resolvedVersionMap mcfg cfg.result;
-  in
-    if self.pinL.has rsuper.providedVersionMap mcfg
-    then {
-      inherit (rsuper) dependencies fixedVersionMap providedVersionMap;
-      inherit resolvedVersionMap;
-    }
-    else let
-      providedVersionMap = self.pinL.set rsuper.providedVersionMap mcfg cfg.result;
-      fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap mcfg.fixedVersions);
-      exclusions = unique (rsuper.exclusions ++ mcfg.exclusions);
-      dresult = foldl'
-        (s: d: let r = d.mvnResult3 rself s; in
-               r // { dependencies =
-                        [(self.pinL.getDefault r.fixedVersionMap d.dwn.mvn
-                          (self.pinL.get r.resolvedVersionMap d.dwn.mvn))]
-                        ++ r.dependencies; } )
-        {
-          inherit (rsuper) dependencies;
-          inherit providedVersionMap fixedVersionMap resolvedVersionMap exclusions;
-        }
-        (reverseList mcfg.dependencies);
-    in {
-      # dependencies =
-      #   [ (self.pinL.getDefault rself.fixedVersionMap mcfg (self.pinL.get rself.resolvedVersionMap mcfg)) ]
-      #   ++ dresult.dependencies;
-      fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap mcfg.fixedVersions);
-      inherit (dresult) providedVersionMap resolvedVersionMap dependencies;
-    };
-  
+    
   dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
     concatLists (map
       (x:
@@ -442,105 +442,5 @@ in {
     , group ? artifact
     , ...
     }: descriptor: { "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = descriptor; };
-
-  dependencyT = mkOptionType rec {
-    name = "maven-dependency";
-    description = "maven dependency";
-    ## TODO syntax check
-    check = v: isList v || isAttrs v;
-    merge = mergeEqualOption;
-  };
-
-  plainDependencyT = mkOptionType rec {
-    name = "maven-list-dependency";
-    description = "plain maven coordinate";
-    ## TODO syntax check
-    check = v: isList v;
-    merge = mergeEqualOption;
-  };
-
-  coordinateListT =
-    with types;
-    self.typeMap
-      (listOf
-        (coercedTo
-          self.dependencyT
-          (d: self.coordinateFor (d.dwn.mvn))
-          self.plainDependencyT))
-      unique
-      (listOf self.plainDependencyT);
-
-  repoCoordT = with types; let
-    inherit (self) plainDependencyT;
-  in
-    submodule {
-      options = {
-        group = mkOption {
-          default = null;
-          type = nullOr types.str;
-        };
-        artifact = mkOption {
-          default = null;
-          type = nullOr types.str;
-        };
-        version = mkOption {
-          default = null;
-          type = nullOr types.str;
-        };
-        base-version = mkOption {
-          default = null;
-          type = nullOr types.str;
-        };
-        extension = mkOption {
-          default = null;
-          type = nullOr types.str;
-        };
-        classifier = mkOption {
-          default = null;
-          type = nullOr types.str;
-        };
-        dependencies = mkOption {
-          default = [];
-          type = types.listOf plainDependencyT;
-        };
-        fixed-versions = mkOption {
-          default = [];
-          type = types.listOf plainDependencyT;
-        };
-        sha1 = mkOption {
-          default = null;
-          type = nullOr str;
-        };
-        jar = mkOption {
-          default = null;
-          type = nullOr self.pathT;
-        };
-        dirs = mkOption {
-          default = [];
-          type = listOf self.pathT;
-        };
-        instantiate = mkOption {
-          default = null;
-          type = nullOr (mkOptionType {
-            name = "instantiation-fn";
-            merge = loc: defs:
-              ## equality should be guaranteed by
-              ## checks on sha1 / jar / dirs
-              (head defs).value;
-          });
-        };
-      };
-    };
-
-  repoT = with types; let
-    depType = subT:
-      types.attrsOf subT;
-  in
-    depType
-      (depType
-        (depType
-          (depType
-            (depType
-              self.repoCoordT))));
 
 }
