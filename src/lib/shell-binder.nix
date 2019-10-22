@@ -1,7 +1,8 @@
-{ lib, writeScript, jdk
-, renderClasspath }:
+self: super:
 
-rec {
+let
+  inherit (self) lib writeScript jdk renderClasspath;
+in {
 
   renderClasspath = classpath: lib.concatStringsSep ":" classpath;
 
@@ -13,7 +14,7 @@ rec {
         #!/bin/sh
         ${if debug then "set -vx" else ""}
         exec ${jdk.jre}/bin/java \
-          -cp ${renderClasspath classpath} \
+          -cp ${self.renderClasspath classpath} \
           ${lib.escapeShellArgs jvmArgs} \
           ${class} \
           ${lib.escapeShellArgs prefixArgs} \

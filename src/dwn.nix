@@ -19,7 +19,7 @@
     dependencies = with pkgs; [
       juds
       (pkgs.overrideDwn deps.aether { dev = true; })
-      (pkgs.overrideDwn deps.expander { dev = true; })
+      # (pkgs.overrideDwn deps.expander { dev = true; })
       ["org.clojure" "test.check" "0.9.0"]
       ["org.clojure" "tools.logging" "0.3.1"]
       ["com.stuartsierra" "component" "0.3.2"]

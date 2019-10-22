@@ -32,7 +32,7 @@ let
       version = elemAt lst 4;
     } else throw "Invalid list length ${toString l}";
 in {
-  
+
   mvn = {
     optionsFor = config: let depT = listOf (self.mvn.projectDependencyT config); in {
       group = mkOption {
@@ -112,7 +112,7 @@ in {
           else
             (self.fetchurl ( {
               name = "${group}__${artifact}__${version}.${extension}";
-              urls = self.mavenMirrors repos group artifact extension classifier baseVersion version;
+              urls = self.mvn.mirrorsFor repos group artifact extension classifier baseVersion version;
               inherit sha1;
             }))
             # prevent nix-daemon from downloading maven artifacts from the nix cache
@@ -133,7 +133,7 @@ in {
         internal = true;
       };
     };
-    
+
     linkAsDependencyFor = config: rself: rsuper: let
       resolvedVersionMap = self.mvn.updateResolvedVersions rsuper.resolvedVersionMap config;
     in
@@ -176,6 +176,7 @@ in {
       in result;
 
     pinMap = coords: foldl' (s: e: self.pinL.set s e e) {} coords;
+
     mergeFixedVersions =
       self.mergeAttrsWith
         (group: self.mergeAttrsWith
@@ -183,6 +184,7 @@ in {
             if v1 == v2
             then v1
             else throw "Incompatible fixed versions for ${group} ${artifact}"));
+
     updateResolvedVersions = rvMap: mcfg:
       if ! self.pinL.has rvMap mcfg
          || versionOlder
@@ -190,6 +192,7 @@ in {
            mcfg.version
       then self.pinL.set rvMap mcfg mcfg
       else rvMap;
+
     resolve = d:
       fix ((flip d.linkAsDependency) {
         exclusions = [];
@@ -198,6 +201,7 @@ in {
         providedVersionMap = {};
         resolvedVersionMap = {};
       });
+
     dependencyClasspath = dependencies:
       concatLists (map
         (d: let ext = d.extension; in
@@ -207,6 +211,16 @@ in {
             then d.dirs
             else throw "Unknown extension ${ext}")
         dependencies);
+
+    repoT =
+      attrsOf
+        (attrsOf
+          (attrsOf
+            (attrsOf
+              (attrsOf
+                # partial mvn options
+                unspecified))));
+
     mapRepo = f: repo:
       mapAttrs
         (group: arts:
@@ -224,223 +238,57 @@ in {
                 exts)
             arts)
         repo;
+
     lstDependencyT = mkOptionType {
       name = "list-maven-dependency";
       description = "List maven dependency";
       check = isList;
       merge = mergeEqualOption;
     };
+
     mapDependencyT = mkOptionType {
       name = "map-maven-dependency";
       description = "Map maven dependency";
       check = m: isAttrs m && ! isDerivation m;
       merge = mergeEqualOption;
     };
+
     drvDependencyT = mkOptionType {
       name = "derivation-maven-dependency";
       description = "DWN maven dependency";
       check = d: isDerivation d && d ? dwn.mvn;
       merge = mergeEqualOption;
     };
+
     dependencyT = either
       (coercedTo self.mvn.lstDependencyT fromList self.mvn.mapDependencyT)
       (coercedTo self.mvn.drvDependencyT (d: d.dwn.mvn) self.mvn.mapDependencyT);
+
     projectDependencyT = config:
       self.typeMap
         self.mvn.dependencyT
         (self.mvn.hydrateDependency config)
         self.mvn.mapDependencyT;
-    repoT =
-      attrsOf
-        (attrsOf
-          (attrsOf
-            (attrsOf
-              (attrsOf
-                # partial mvn options
-                unspecified))));
+
+    mirrorsFor = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
+      dotToSlash = replaceStrings [ "." ] [ "/" ];
+      tag = if classifier == "" then "" else "-" + classifier;
+      mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}${tag}.${extension}";
+    in # builtins.trace "DOWNLOADING '${group}' '${name}' '${extension}' '${classifier}' '${version}' '${resolvedVersion}'"
+      (map mvnPath mavenRepos);
+
   };
 
-  selectAttrs = names: a:
-    listToAttrs
-      (map (n: nameValuePair n a.${n})
-        (filter (n: a ? ${n})
-          names));
-  
-  reduceAttrs = f: s: a:
-    foldl' (s: n: f s n (getAttr n a))
-      s (attrNames a);
-
-  mergeAttrsWith = mf: a1: a2:
-    self.reduceAttrs
-      (a: n: v:
-        setAttr a n
-          (if hasAttr n a
-           then (mf n (getAttr n a) v)
-           else v))
-      a1 a2;
-    
-  dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
-    concatLists (map
-      (x:
-        # self.mvnResolve mavenRepos (self.unpackEdnDep x)
-        let
-          res = builtins.tryEval (self.mvnResolve mavenRepos (self.unpackEdnDep x));
-        in if res.success then res.value
-           else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
-             []
-      )
-      (self.expandDependencies args));
-
-  dependencyClasspath2 = cfg:
-    concatLists (map
-      (x:
-        let
-          res = builtins.tryEval (self.mvnResolve cfg.dwn.mvn.repos x);
-        in if res.success then res.value
-           else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
-             []
-      )
-      (self.expandDependencies2 cfg));
-
-  dependencyClasspath3 = cfg:
-    concatLists (map
-      (x:
-        let
-          res = builtins.tryEval (self.mvnResolve cfg.dwn.mvn.repos x);
-        in if res.success then res.value
-           else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
-             []
-      )
-      (self.expandDependencies3 cfg));
-
-  # FIXME remove
-  coordinateFor =
-    { artifact, version
-    , extension ? "jar"
-    , classifier ? ""
-    , group ? artifact
-    , ...
-    }: [ group artifact extension classifier version ];
-
-  # FIXME remove
-  mavenCoordinate = pkg:
-    if pkg ? dwn.mvn then
-      self.coordinateFor pkg.dwn.mvn
-    else if builtins.isList pkg then
-      pkg
-    else throw "Not a list ${toString pkg}";
-
-  # FIXME remove
-  dependencyList = dependencies:
-    map mavenCoordinate dependencies;
-
-  # FIXME remove
-  expandRepo = repo:
-    self.mapRepoVals (desc: {
-      dependencies = self.dependencyList desc.dependencies;
-    }) repo;
-
-  mapRepoVals = f: repo:
-    let mapVals = depth: vals:
-      if depth > 0 then
-        mapAttrs (_: v: mapVals (depth - 1) v) vals
-      else
-        f vals;
-    in
-      mapVals 5 repo;
-
-  # FIXME remove by reworking aether and expander
-  unpackEdnDep =
-    { coordinate ? null
-    , sha1 ? null
-    , dirs ? null
-    , jar ? null
-    , ... }@args:
-    let resF = group: artifact: extension: classifier: version:
-          if isNull coordinate then args
-          else { inherit group artifact extension classifier version; } // args;
-    in
-      self.unwrapCoord resF coordinate;
-
-  mvnResolve =
-    mavenRepos:
-    { base-version ? null
-    , group, artifact, extension, classifier, version
-    , sha1 ? null
-    , dirs ? null
-    , jar ? null
-    , ... }@args:
-    let
-      baseVersion = if isNull base-version then version else base-version;
-    in
-      if "dirs" == extension then
-        if isNull dirs
-        then throw "Dirs for ${group} ${artifact} ${version} not found"
-        else dirs
-      else if "jar" == extension then
-        if ! isNull jar
-        then [ jar ]
-        else if isNull sha1 then
-          throw "Jar file for ${group} ${artifact} ${version} not found"
-        else [ ((self.fetchurl {
-          name = "${artifact}-${version}.${extension}";
-          urls = self.mavenMirrors mavenRepos group artifact extension classifier baseVersion version;
-          inherit sha1;
-          # prevent nix-daemon from downloading maven artifacts from the nix cache
-        })  // { preferLocalBuild = true; }) ]
-      else
-        throw (trace args "Unknown extension in '${toString extension}'");
-
-  mavenMirrors = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
-    dotToSlash = replaceStrings [ "." ] [ "/" ];
-    tag = if classifier == "" then "" else "-" + classifier;
-    mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}${tag}.${extension}";
-  in # builtins.trace "DOWNLOADING '${group}' '${name}' '${extension}' '${classifier}' '${version}' '${resolvedVersion}'"
-       (map mvnPath mavenRepos);
-
-  unwrapCoord = f: coordinate:
-    let
-      group = elemAt coordinate 0;
-      name = elemAt coordinate 1;
-      extension = elemAt coordinate 2;
-      classifier = elemAt coordinate 3;
-      version = elemAt coordinate 4;
-    in
-      f group name extension classifier version;
-
-  singletonRepo =
-    overrideConfig:
-    { artifact, version
-    , extension
-    , classifier
-    , group
-    , dependencies
-    , dirs
-    , jar
-    , fixedVersions
-    , ...
-    }@args:
-    self.inRepo args {
-      inherit dirs jar group artifact extension classifier version;
-      dependencies = self.mergeByType self.coordinateListT [ dependencies ];
-      fixed-versions = self.mergeByType self.coordinateListT [ fixedVersions ];
-      instantiate = { fixedVersions, overlayRepository, repositoryFile }:
-        overrideConfig (cfg:
-          cfg // {
-            dwn = cfg.dwn // {
-              mvn = cfg.dwn.mvn // {
-                inherit fixedVersions overlayRepository repositoryFile;
-              };
-            };
-          });
-    };
-
-  inRepo =
-    { artifact, version
-    , extension ? "jar"
-    , classifier ? ""
-    , group ? artifact
-    , ...
-    }: descriptor: { "${group}"."${artifact}"."${extension}"."${classifier}"."${version}" = descriptor; };
+  # dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
+  #   concatLists (map
+  #     (x:
+  #       # self.mvnResolve mavenRepos (self.unpackEdnDep x)
+  #       let
+  #         res = builtins.tryEval (self.mvnResolve mavenRepos (self.unpackEdnDep x));
+  #       in if res.success then res.value
+  #          else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
+  #            []
+  #     )
+  #     (self.expandDependencies args));
 
 }
