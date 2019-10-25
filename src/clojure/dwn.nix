@@ -1,10 +1,10 @@
-{ config, pkgs, ... }:
+{ config, pkgs, lib, ... }:
 {
   mvn = {
     group = "org.clojure";
     artifact = "clojure";
     version = "1.10.1";
-    extension = "jar";
+    extension = lib.mkForce "jar";
     dependencies = [
       ["org.clojure" "spec.alpha" "jar" "" "0.2.176" {
         exclusions = [[ "org.clojure" "clojure" ]];

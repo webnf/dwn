@@ -26,7 +26,7 @@ in
       description = "Repository of non-maven artifacts";
     };
     repositoryFile = mkOption {
-      default = null;
+      default = warn "Please set and generate repository file ${config.dwn.name}" null;
       type = types.nullOr types.path;
       description = ''
         Path of closure file, generated with SHAs of dependency tree.
@@ -34,8 +34,7 @@ in
     };
     repositoryUpdater = mkOption {
       default = closureRepoGenerator {
-        inherit (config.passthru.dwn.mvn) dependencies fixedVersions overlayRepository;
-        inherit (config.dwn.mvn) repositoryFile repos;
+        inherit (config.dwn.mvn) repositoryFile repos dependencies fixedVersions overlayRepository providedVersions;
       };
       type = types.either types.package types.path;
     };
@@ -58,16 +57,14 @@ in
         fixedVersions = config.dwn.mvn.fixedDependencies;
         repository = lib.mkIf (! isNull config.dwn.mvn.repositoryFile)
           (lib.importJSON config.dwn.mvn.repositoryFile);
+        override = mvn:
+          (overrideConfig
+            (cfg: cfg // { dwn = cfg.dwn // { mvn = (traceVal cfg.dwn.mvn // mvn); }; })
+          ).dwn.mvn;
       };
-      jvm.dependencyClasspath =
-        lib.optionals
-          (0 != lib.length config.dwn.mvn.dependencies
-           && (
-             if isNull config.dwn.mvn.repositoryFile then
-               warn "Please set and generate repository file ${config.dwn.name}" false
-             else
-               true))
-          (pkgs.mvn.dependencyClasspath (pkgs.mvn.resolve config.dwn.mvn).dependencies);
+      jvm.dependencyClasspath = pkgs.mvn.dependencyClasspath config.dwn.mvn.resultLinkage.path;
+      jvm.compileClasspath = pkgs.mvn.dependencyClasspath
+        (config.dwn.mvn.override { linkage = config.dwn.mvn.linkage // { /*_*/ }; }).resultLinkage.path
       paths = [] ++ lib.optional
         config.dwn.dev
         (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);

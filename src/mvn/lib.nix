@@ -34,7 +34,7 @@ let
 in {
 
   mvn = {
-    optionsFor = config: let depT = listOf (self.mvn.projectDependencyT config); in {
+    optionsFor = config: let depT = listOf self.mvn.dependencyT; in {
       group = mkOption {
         type = str;
         default = config.artifact;
@@ -55,7 +55,7 @@ in {
       };
       extension = mkOption {
         type = str;
-        default = if ! isNull config.sha1 then "jar" else "dirs";
+        default = "jar";
         description = "Maven packaging extension";
       };
       classifier = mkOption {
@@ -102,70 +102,121 @@ in {
       '';
       };
       dirs = mkOption {
-        default = throw "No dirs for [ ${config.group} ${config.artifact} ${config.version} ]";
+        default = if config.extension == "dirs"
+                  then throw "No dirs for [ ${config.group} ${config.artifact} ${config.version} ]"
+                  else [ ];
         type = self.pathsT;
       };
       jar = mkOption {
-        default = with config;
-          if isNull sha1
-          then throw "No jar file / sha1 for [ ${group} ${artifact} ${version} ]"
-          else
-            (self.fetchurl ( {
-              name = "${group}__${artifact}__${version}.${extension}";
-              urls = self.mvn.mirrorsFor repos group artifact extension classifier baseVersion version;
-              inherit sha1;
-            }))
-            # prevent nix-daemon from downloading maven artifacts from the nix cache
-            // { preferLocalBuild = true; };
-        type = self.pathT;
+        default =
+          if config.extension == "jar"
+          then with config;
+            if isNull sha1
+            then throw "No jar file / sha1 for [ ${group} ${artifact} ${version} ]"
+            else
+              (self.fetchurl ( {
+                name = "${group}__${artifact}__${version}.${extension}";
+                urls = self.mvn.mirrorsFor repos group artifact extension classifier baseVersion version;
+                inherit sha1;
+              }))
+              # prevent nix-daemon from downloading maven artifacts from the nix cache
+              // { preferLocalBuild = true; }
+          else null;
+        type = nullOr self.pathT;
       };
       sha1 = mkOption {
-        default = (self.repoL.getDefault config.repository config { sha1 = null; }).sha1;
+        default =
+          if config.extension == "jar"
+          then (
+            self.repoL.getDefault
+              config.repository config
+              { sha1 = null; } # (throw "No sha1 for [ ${config.group} ${config.artifact} ${config.version} ]")
+          ).sha1
+          else null;
         type = nullOr str;
       };
       repository = mkOption {
         default = {};
         type = self.mvn.repoT;
       };
-      linkAsDependency = mkOption {
-        default = self.mvn.linkAsDependencyFor config;
-        type = unspecified;
-        internal = true;
+
+      override = self.internalDefault (_: with config; throw "No default linkage for [ ${group} ${artifact} ${version} ]"); #(linkage: self.mvn.optionsFor (config // { inherit linkage; }));
+
+      linkage = self.internalDefault {
+        path = [];
+        exclusions = [];
+        fixedVersionMap = {};
+        providedVersionMap = {};
+        resolvedVersionMap = {};
       };
+
+      resultLinkage = self.internalDefault (let
+        resolvedVersionMap = self.mvn.updateResolvedVersions config.linkage.resolvedVersionMap config;
+      in
+        if self.pinL.has config.linkage.providedVersionMap config
+        then {
+          inherit (config.linkage) dependencies fixedVersionMap providedVersionMap exclusions path;
+          inherit resolvedVersionMap;
+        }
+        else
+          let
+            result = foldl'
+              (linkage: pd:
+                let
+                  d = self.mvn.hydrateDependency pd {
+                    inherit linkage;
+                  };
+                  r = (d.override {
+                    inherit (config) repository;
+                  }).resultLinkage;
+                in
+                  if self.mvn.dependencyFilter linkage.providedVersionMap linkage.exclusions d
+                  then r // {
+                    path = [
+                      (self.pinL.getDefault
+                        result.fixedVersionMap d
+                        (self.pinL.getDefault
+                          result.resolvedVersionMap d
+                          (throw (trace result.resolvedVersionMap "Cannot find ${config.group} ${config.artifact}"))))
+                    ] ++ r.path;
+                            }
+                  else linkage)
+              {
+                inherit resolvedVersionMap;
+                inherit (config.linkage) path;
+                providedVersionMap = self.pinL.set config.linkage.providedVersionMap config config;
+                fixedVersionMap = self.mvn.mergeFixedVersions config.linkage.fixedVersionMap
+                  (self.mvn.pinMap config.fixedVersions);
+                exclusions = unique (config.linkage.exclusions ++ config.exclusions);
+              }
+              (reverseList config.dependencies);
+          in {
+            inherit (config.linkage) exclusions;
+            inherit (result) resolvedVersionMap providedVersionMap fixedVersionMap path;
+          });
+
     };
 
-    linkAsDependencyFor = config: rself: rsuper: let
-      resolvedVersionMap = self.mvn.updateResolvedVersions rsuper.resolvedVersionMap config;
-    in
-      if self.pinL.has rsuper.providedVersionMap config
-      then {
-        inherit (rsuper) dependencies fixedVersionMap providedVersionMap;
-        inherit resolvedVersionMap;
-      }
-      else let
-        providedVersionMap = self.pinL.set rsuper.providedVersionMap config config;
-        fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
-        exclusions = unique (rsuper.exclusions ++ config.exclusions);
-        dresult = foldl'
-          (s: d: let r = d.linkAsDependency rself s; in
-                 r // { dependencies =
-                          [(self.pinL.getDefault r.fixedVersionMap d
-                            (self.pinL.get r.resolvedVersionMap d))]
-                          ++ r.dependencies; } )
-          {
-            inherit (rsuper) dependencies;
-            inherit providedVersionMap fixedVersionMap resolvedVersionMap exclusions;
-          }
-          (reverseList config.dependencies);
-      in {
-        # dependencies =
-        #   [ (self.pinL.getDefault rself.fixedVersionMap config (self.pinL.get rself.resolvedVersionMap config)) ]
-        #   ++ dresult.dependencies;
-        fixedVersionMap = self.mvn.mergeFixedVersions rsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
-        inherit (dresult) providedVersionMap resolvedVersionMap dependencies;
-      };
+    dependencyFilter = providedVersionMap: exclusions: dep:
+      ! self.pinL.has providedVersionMap dep
+      && isNull
+        (findFirst (e: dep.group == e.group && dep.artifact == e.artifact)
+          null exclusions);
 
-    hydrateDependency = config: dep:
+    hydrateDependency = dep: mvn:
+      if dep ? override
+      then dep.override mvn
+      else let
+        result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
+          mvn
+          {
+            override = mvn2: self.mvn.hydrateDependency dep (mvn // mvn2);
+          }
+          dep
+        ];
+      in result;
+
+    hydrateDependency0 = config: dep:
       if dep ? linkAsDependency
       then dep
       else let
@@ -192,15 +243,6 @@ in {
            mcfg.version
       then self.pinL.set rvMap mcfg mcfg
       else rvMap;
-
-    resolve = d:
-      fix ((flip d.linkAsDependency) {
-        exclusions = [];
-        dependencies = [];
-        fixedVersionMap = {};
-        providedVersionMap = {};
-        resolvedVersionMap = {};
-      });
 
     dependencyClasspath = dependencies:
       concatLists (map

@@ -20,24 +20,16 @@ in {
     , fixedVersions ? []
     , overlayRepository ? {}
     , repositoryFile
+    , providedVersions
     , ... }:
     aetherDownloader
       (toString repositoryFile)
       repos
 
-      (dependencyList
-        (dependencies ++ fixedVersions))
+      (map coordinateFor
+        (dependencies ++ fixedVersions ++ providedVersions))
 
-      (expandRepo overlayRepository);
-
-  dependencyList = dependencies:
-    map (desc:
-      if desc ? dwn.mvn then
-        coordinateFor desc.dwn.mvn
-      else if builtins.isList desc then
-        desc
-      else throw "Not a list ${toString desc}"
-    ) dependencies;
+      overlayRepository;
 
   coordinateFor =
     { artifact, version

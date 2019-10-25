@@ -48,6 +48,12 @@ in
       type = pathsT;
     };
     dependencyClasspath = mkOption {
+      default = [];
+      internal = true;
+      type = pathsT;
+    };
+    compileDependencyClasspath = mkOption {
+      default = [];
       internal = true;
       type = pathsT;
     };
@@ -57,10 +63,16 @@ in
     };
   };
 
-  config.dwn.mvn.dirs = config.dwn.jvm.runtimeClasspath ++ config.dwn.jvm.javaClasses;
+  config.dwn.mvn.extension = "dirs";
+  config.dwn.mvn.dirs =
+    config.dwn.jvm.runtimeClasspath
+    ++ config.dwn.jvm.javaClasses
+    ++ config.dwn.jvm.resourceDirectories;
 
   config.dwn.jvm = {
-    compileClasspath = config.dwn.jvm.resourceDirectories ++ config.dwn.jvm.dependencyClasspath;
+    compileClasspath =
+      config.dwn.jvm.resourceDirectories
+      ++ config.dwn.jvm.compileDependencyClasspath;
     javaClasses = lib.optional
       (0 != lib.length config.dwn.jvm.sourceDirectories) (
         pkgs.jvmCompile {

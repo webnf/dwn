@@ -63,4 +63,11 @@ with self.lib;
            else v))
       a1 a2;
 
+  internalDefault = v:
+    mkOption {
+      default = v;
+      type = types.unspecified;
+      internal = true;
+    };
+
 }
