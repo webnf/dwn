@@ -70,4 +70,11 @@ with self.lib;
       internal = true;
     };
 
+  ## Debugging tools
+
+  cutAttrLayers = n: a:
+    if n > 0 then
+      mapAttrs (v: self.cutAttrLayers (n - 1) a) a
+    else attrNames a;
+
 }

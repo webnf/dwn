@@ -46,10 +46,6 @@ in
   };
 
   config = {
-    # passthru.dwn.mvn = mvnResult overrideConfig config.dwn.mvn;
-    # passthru.mvnResult3 = pkgs.mvnResult3 (pkgs.mvn.pimpConfig config);
-    # passthru.dwn.mvn.linkAsDependency = pkgs.mvn.linkAsDependency config.dwn.mvn;
-
     dwn = {
       name = mkDefault (config.dwn.mvn.group + "__" + config.dwn.mvn.artifact + "__" + config.dwn.mvn.version);
       mvn = {
@@ -57,14 +53,19 @@ in
         fixedVersions = config.dwn.mvn.fixedDependencies;
         repository = lib.mkIf (! isNull config.dwn.mvn.repositoryFile)
           (lib.importJSON config.dwn.mvn.repositoryFile);
-        override = mvn:
-          (overrideConfig
-            (cfg: cfg // { dwn = cfg.dwn // { mvn = (traceVal cfg.dwn.mvn // mvn); }; })
+        overrideLinkage = linkage:
+          if linkage == config.dwn.mvn.linkage
+          then config.dwn.mvn
+          else (overrideConfig
+            (cfg: cfg // { dwn = cfg.dwn // { mvn = cfg.dwn.mvn // { inherit linkage; }; }; })
           ).dwn.mvn;
       };
       jvm.dependencyClasspath = pkgs.mvn.dependencyClasspath config.dwn.mvn.resultLinkage.path;
       jvm.compileClasspath = pkgs.mvn.dependencyClasspath
-        (config.dwn.mvn.override { linkage = config.dwn.mvn.linkage // { /*_*/ }; }).resultLinkage.path
+        (config.dwn.mvn.overrideLinkage config.dwn.mvn.linkage // {
+          fixedVersionMap = config.dwn.mvn.linkage.fixedVersionMap // config.dwn.mvn.linkage.providedVersionMap;
+          providedVersionMap = {};
+        }).resultLinkage.path;
       paths = [] ++ lib.optional
         config.dwn.dev
         (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);

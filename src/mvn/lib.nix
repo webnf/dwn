@@ -140,7 +140,7 @@ in {
         type = self.mvn.repoT;
       };
 
-      override = self.internalDefault (_: with config; throw "No default linkage for [ ${group} ${artifact} ${version} ]"); #(linkage: self.mvn.optionsFor (config // { inherit linkage; }));
+      overrideLinkage = self.internalDefault (_: with config; throw "No default linkage for [ ${group} ${artifact} ${version} ]"); #(linkage: self.mvn.optionsFor (config // { inherit linkage; }));
 
       linkage = self.internalDefault {
         path = [];
@@ -152,10 +152,12 @@ in {
 
       resultLinkage = self.internalDefault (let
         resolvedVersionMap = self.mvn.updateResolvedVersions config.linkage.resolvedVersionMap config;
+        fixedVersionMap = self.mvn.mergeFixedVersions config.linkage.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
+        providedVersionMap = self.pinL.set config.linkage.providedVersionMap config config;
       in
         if self.pinL.has config.linkage.providedVersionMap config
         then {
-          inherit (config.linkage) dependencies fixedVersionMap providedVersionMap exclusions path;
+          inherit (config.linkage) fixedVersionMap providedVersionMap exclusions path;
           inherit resolvedVersionMap;
         }
         else
@@ -164,29 +166,24 @@ in {
               (linkage: pd:
                 let
                   d = self.mvn.hydrateDependency pd {
+                    inherit (config) repository;
                     inherit linkage;
                   };
-                  r = (d.override {
-                    inherit (config) repository;
-                  }).resultLinkage;
                 in
                   if self.mvn.dependencyFilter linkage.providedVersionMap linkage.exclusions d
-                  then r // {
+                  then d.resultLinkage // {
                     path = [
                       (self.pinL.getDefault
                         result.fixedVersionMap d
                         (self.pinL.getDefault
                           result.resolvedVersionMap d
                           (throw (trace result.resolvedVersionMap "Cannot find ${config.group} ${config.artifact}"))))
-                    ] ++ r.path;
-                            }
+                    ] ++ d.resultLinkage.path;
+                  }
                   else linkage)
               {
-                inherit resolvedVersionMap;
+                inherit resolvedVersionMap fixedVersionMap providedVersionMap;
                 inherit (config.linkage) path;
-                providedVersionMap = self.pinL.set config.linkage.providedVersionMap config config;
-                fixedVersionMap = self.mvn.mergeFixedVersions config.linkage.fixedVersionMap
-                  (self.mvn.pinMap config.fixedVersions);
                 exclusions = unique (config.linkage.exclusions ++ config.exclusions);
               }
               (reverseList config.dependencies);
@@ -204,13 +201,15 @@ in {
           null exclusions);
 
     hydrateDependency = dep: mvn:
-      if dep ? override
-      then dep.override mvn
+      if dep ? overrideLinkage
+      then dep.overrideLinkage mvn.linkage
       else let
         result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
           mvn
           {
-            override = mvn2: self.mvn.hydrateDependency dep (mvn // mvn2);
+            overrideLinkage = linkage:
+              if mvn.linkage == linkage then result
+              else self.mvn.hydrateDependency dep (mvn // { inherit linkage; });
           }
           dep
         ];
