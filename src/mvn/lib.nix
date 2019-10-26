@@ -9,8 +9,11 @@ let
         e = (elemAt lst (l - 1)); in
     if l > 1 && isAttrs e then
       (fromList (take (l - 1) lst)) // e
-    else if 1 == l then
-      throw "Don't know version of [${toString lst}]"
+    else if 1 == l then {
+        group = elemAt lst 0;
+        artifact = elemAt lst 0;
+        version = "0";
+    }
     else if 2 == l then {
         group = elemAt lst 0;
         artifact = elemAt lst 0;
@@ -207,6 +210,10 @@ in {
         result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
           mvn
           {
+            dependencies =
+              (self.repoL.getDefault
+                result.repository result (throw "No found in repo ${group}/${artifact}")
+              ).dependencies or [];
             overrideLinkage = linkage:
               if mvn.linkage == linkage then result
               else self.mvn.hydrateDependency dep (mvn // { inherit linkage; });
