@@ -6,12 +6,8 @@
     version = "1.10.1";
     extension = lib.mkForce "jar";
     dependencies = [
-      ["org.clojure" "spec.alpha" "jar" "" "0.2.176" {
-        exclusions = [[ "org.clojure" "clojure" ]];
-      }]
-      ["org.clojure" "core.specs.alpha" "jar" "" "0.2.44" {
-        exclusions = [[ "org.clojure" "clojure" ]];
-      }]
+      ["org.clojure" "spec.alpha" "jar" "" "0.2.176"]
+      ["org.clojure" "core.specs.alpha" "jar" "" "0.2.44"]
     ];
     repositoryFile = ./repo.json;
     repositoryFormat = "repo-json";
