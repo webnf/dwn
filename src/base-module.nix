@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, overrideConfig, ... }:
 
 with lib;
 let
@@ -87,7 +87,11 @@ in
   }) // (
     lib.recursiveUpdate
       {
-        dwn = config.dwn // { orig = config.dwn; };
+        dwn = config.dwn // {
+          orig = config.dwn;
+          override = dwn: overrideConfig
+            (cfg: cfg // { dwn = cfg.dwn // dwn; });
+        };
       }
       config.passthru
   );

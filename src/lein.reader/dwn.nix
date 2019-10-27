@@ -7,7 +7,7 @@
     dependencies = [
       ["leiningen" "leiningen" "2.8.2"]
     ];
-    repositoryFile = ./repo.edn;
+    repositoryFile = ./repo.json;
   };
 
   clj = {

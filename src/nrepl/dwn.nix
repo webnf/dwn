@@ -10,7 +10,7 @@
       ["refactor-nrepl" "2.4.0"]
       ["org.clojure" "tools.logging" "0.4.1"]
     ];
-    repositoryFile = ./repo.edn;
+    repositoryFile = ./repo.json;
   };
   clj = {
     # cider aot inhibits middleware loading

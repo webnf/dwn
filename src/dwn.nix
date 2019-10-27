@@ -15,10 +15,10 @@
     group = "webnf";
     artifact = "dwn";
     version = "1";
-    repositoryFile = ./dwn.repo.edn;
+    repositoryFile = ./dwn.repo.json;
     dependencies = with pkgs; [
       juds
-      (pkgs.overrideDwn deps.aether { dev = true; })
+      (deps.aether.dwn.override { dev = true; })
       # (pkgs.overrideDwn deps.expander { dev = true; })
       ["org.clojure" "test.check" "0.9.0"]
       ["org.clojure" "tools.logging" "0.3.1"]

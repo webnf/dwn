@@ -7,7 +7,7 @@
     dependencies = [
       ["org.apache.maven" "maven-model" "3.6.1"]
     ];
-    repositoryFile = ./repo.edn;
+    repositoryFile = ./repo.json;
   };
   # nrepl.port = 4050;
   clj = {
