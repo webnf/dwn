@@ -143,59 +143,36 @@ in {
         type = self.mvn.repoT;
       };
 
-      overrideLinkage = self.internalDefault (_: with config; throw "No default linkage for [ ${group} ${artifact} ${version} ]"); #(linkage: self.mvn.optionsFor (config // { inherit linkage; }));
-
-      linkage = self.internalDefault {
-        path = [];
-        exclusions = [];
-        fixedVersionMap = {};
-        providedVersionMap = {};
-        resolvedVersionMap = {};
-      };
-
-      resultLinkage = self.internalDefault (let
-        resolvedVersionMap = self.mvn.updateResolvedVersions config.linkage.resolvedVersionMap config;
-        fixedVersionMap = self.mvn.mergeFixedVersions config.linkage.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
-        providedVersionMap = self.pinL.set config.linkage.providedVersionMap config config;
-      in
-        if self.pinL.has config.linkage.providedVersionMap config
-        then {
-          inherit (config.linkage) fixedVersionMap providedVersionMap exclusions path;
-          inherit resolvedVersionMap;
-        }
-        else
-          let
-            result = foldl'
-              (linkage: pd:
-                let
-                  d = self.mvn.hydrateDependency pd {
-                    inherit (config) repository;
-                    inherit linkage;
-                  };
-                in
-                  if self.mvn.dependencyFilter linkage.providedVersionMap linkage.exclusions d
-                  then d.resultLinkage // {
-                    path = [
-                      (self.pinL.getDefault
-                        result.fixedVersionMap d
-                        (self.pinL.getDefault
-                          result.resolvedVersionMap d
-                          (throw (trace result.resolvedVersionMap "Cannot find ${config.group} ${config.artifact}"))))
-                    ] ++ d.resultLinkage.path;
-                  }
-                  else linkage)
-              {
-                inherit resolvedVersionMap fixedVersionMap providedVersionMap;
-                inherit (config.linkage) path;
-                exclusions = unique (config.linkage.exclusions ++ config.exclusions);
-              }
-              (reverseList config.dependencies);
-          in {
-            inherit (config.linkage) exclusions;
-            inherit (result) resolvedVersionMap providedVersionMap fixedVersionMap path;
-          });
-
     };
+
+    linkageFor = config: linkage:
+      if self.pinL.has linkage.providedVersionMap config
+      then {
+        inherit (linkage) fixedVersionMap providedVersionMap exclusions path;
+        resolvedVersionMap = self.mvn.updateResolvedVersions linkage.resolvedVersionMap config;
+      }
+      else if self.pinL.has linkage.fixedVersionMap config
+      then linkageFor (self.pinL.get linkage.fixedVersionMap config) linkage
+      else let
+        resolvedVersionMap = self.mvn.updateResolvedVersions linkage.resolvedVersionMap config;
+        fixedVersionMap = self.mvn.mergeFixedVersions linkage.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
+        providedVersionMap = self.pinL.set linkage.providedVersionMap config config;
+        result = foldl'
+          (linkage: pd:
+            self.mvn.linkageFor (self.mvn.hydrateDependency pd {
+              inherit (config) repository;
+            }) linkage)
+          {
+            inherit resolvedVersionMap fixedVersionMap providedVersionMap;
+            inherit (linkage) path;
+            exclusions = unique (linkage.exclusions ++ config.exclusions);
+          }
+          (reverseList config.dependencies);
+      in {
+        inherit (linkage) exclusions;
+        inherit (result) resolvedVersionMap providedVersionMap fixedVersionMap;
+        path = [ config ] ++ result.path;
+      };
 
     dependencyFilter = providedVersionMap: exclusions: dep:
       ! self.pinL.has providedVersionMap dep
@@ -205,7 +182,7 @@ in {
 
     hydrateDependency = dep: mvn:
       if dep ? overrideLinkage
-      then dep.overrideLinkage mvn.linkage
+      then dep
       else let
         result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
           mvn
@@ -218,16 +195,6 @@ in {
               if mvn.linkage == linkage then result
               else self.mvn.hydrateDependency dep (mvn // { inherit linkage; });
           }
-          dep
-        ];
-      in result;
-
-    hydrateDependency0 = config: dep:
-      if dep ? linkAsDependency
-      then dep
-      else let
-        result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
-          (self.selectAttrs ["repos" "repository" "exclusions" "providedVersions" "fixedVersions"] config)
           dep
         ];
       in result;
@@ -311,12 +278,6 @@ in {
     dependencyT = either
       (coercedTo self.mvn.lstDependencyT fromList self.mvn.mapDependencyT)
       (coercedTo self.mvn.drvDependencyT (d: d.dwn.mvn) self.mvn.mapDependencyT);
-
-    projectDependencyT = config:
-      self.typeMap
-        self.mvn.dependencyT
-        (self.mvn.hydrateDependency config)
-        self.mvn.mapDependencyT;
 
     mirrorsFor = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
       dotToSlash = replaceStrings [ "." ] [ "/" ];
