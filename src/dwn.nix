@@ -16,10 +16,9 @@
     artifact = "dwn";
     version = "1";
     repositoryFile = ./dwn.repo.json;
-    dependencies = [
-      # pkgs.juds
-      # (deps.aether.overrideConfig (cfg: cfg // { dwn = cfg.dwn // { dev = true; }; }))
-      pkgs.deps.aether
+    dependencies = with pkgs; [
+      juds
+      (deps.aether.dwn.override { dev = true; })
       # (pkgs.overrideDwn deps.expander { dev = true; })
       ["org.clojure" "test.check" "0.9.0"]
       ["org.clojure" "tools.logging" "0.3.1"]
@@ -27,6 +26,6 @@
       ["webnf.deps" "logback" "0.2.0-alpha2"]
     ];
   };
-  # nrepl.port = 4050;
-  # plugins = [ ./nrepl/module.nix ];
+  nrepl.port = 4050;
+  plugins = [ ./nrepl/module.nix ];
 }

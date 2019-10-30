@@ -53,23 +53,19 @@ in
         fixedVersions = config.dwn.mvn.fixedDependencies;
         repository = lib.mkIf (! isNull config.dwn.mvn.repositoryFile)
           (lib.importJSON config.dwn.mvn.repositoryFile);
+        overrideLinkage = linkage:
+          if linkage == config.dwn.mvn.linkage
+          then config.dwn.mvn
+          else (overrideConfig
+            (cfg: cfg // { dwn = cfg.dwn // { mvn = cfg.dwn.mvn // { inherit linkage; }; }; })
+          ).dwn.mvn;
       };
-      jvm.dependencyClasspath = pkgs.mvn.dependencyClasspath
-        (pkgs.mvn.linkageFor config.dwn.mvn {
-          fixedVersionMap = {};
-          path = [];
-          exclusions = [];
-          providedVersionMap = {};
-          resolvedVersionMap = {};
-        }).path;
+      jvm.dependencyClasspath = pkgs.mvn.dependencyClasspath config.dwn.mvn.resultLinkage.path;
       jvm.compileClasspath = pkgs.mvn.dependencyClasspath
-        (pkgs.mvn.linkageFor config.dwn.mvn {
+        (config.dwn.mvn.overrideLinkage config.dwn.mvn.linkage // {
           fixedVersionMap = config.dwn.mvn.linkage.fixedVersionMap // config.dwn.mvn.linkage.providedVersionMap;
-          path = [];
-          exclusions = [];
           providedVersionMap = {};
-          resolvedVersionMap = {};
-        }).path;
+        }).resultLinkage.path;
       paths = [] ++ lib.optional
         config.dwn.dev
         (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);
