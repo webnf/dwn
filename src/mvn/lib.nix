@@ -327,16 +327,27 @@ in {
 
   };
 
-  # dependencyClasspath = args@{ mavenRepos ? defaultMavenRepos , ... }:
-  #   concatLists (map
-  #     (x:
-  #       # self.mvnResolve mavenRepos (self.unpackEdnDep x)
-  #       let
-  #         res = builtins.tryEval (self.mvnResolve mavenRepos (self.unpackEdnDep x));
-  #       in if res.success then res.value
-  #          else warn ("Didn't find dependency " + self.toEdn x + " please regenerate repository")
-  #            []
-  #     )
-  #     (self.expandDependencies args));
+  keyedListFor = type: keyFn: merge: let
+    uniqueFor = keyFn: merge: loc: list:
+      if list == [] then
+        []
+      else
+        let
+          x = head list;
+          t = tail list;
+          kx = keyFn x;
+          fm = y: kx == keyFn y;
 
+          m = filter fm t;
+          o = remove fm t;
+        in merge loc m ++ uniqueFor keyFn merge loc o;
+    listT = listOf type;
+  in mkOptionType rec {
+    name = "keyed-list";
+    description = "Keyed list";
+    check = listT.check;
+    merge = loc: defs:
+      uniqueFor keyFn merge loc (listT.merge loc defs);
+    functor = (defaultFunctor name) // { wrapped = listT; };
+  };
 }
