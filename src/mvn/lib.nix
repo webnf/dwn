@@ -37,7 +37,10 @@ let
 in {
 
   mvn = {
-    optionsFor = config: let depT = listOf (self.mvn.projectDependencyT config); in {
+    optionsFor = config: let
+      depT = listOf (self.mvn.projectDependencyT config);
+      error = self.errorDerivation "error__${config.group}__${config.artifact}__${config.version}";
+    in {
       group = mkOption {
         type = str;
         default = config.artifact;
@@ -76,7 +79,8 @@ in {
       };
       dependencies = mkOption {
         default = (self.repoL.getDefault
-          config.repository config (warn "Not found in repo ${config.group}:${config.artifact}:${config.version}" [])
+          config.repository config
+          [(error "Not found in repo")]
         ).dependencies or [];
         type = depT;
         description = ''
@@ -115,7 +119,7 @@ in {
       };
       dirs = mkOption {
         default = if config.extension == "dirs"
-                  then warn "No dirs for [ ${config.group} ${config.artifact} ${config.version} ]" [ ]
+                  then [(error "No dirs")]
                   else [ ];
         type = self.pathsT;
       };
@@ -124,7 +128,7 @@ in {
           if config.extension == "jar"
           then with config;
             if isNull sha1
-            then warn "No jar file / sha1 for [ ${group} ${artifact} ${version} ]" null
+            then error "No jar file / sha1"
             else
               (self.fetchurl ( {
                 name = "${group}__${artifact}__${version}.${extension}";
@@ -143,7 +147,7 @@ in {
             self.repoL.getDefault
               config.repository config
               { sha1 = null; } # (throw "No sha1 for [ ${config.group} ${config.artifact} ${config.version} ]")
-          ).sha1
+          ).sha1 or null
           else null;
         type = nullOr str;
       };
@@ -151,6 +155,9 @@ in {
         default = {};
         type = self.mvn.repoT;
       };
+      override = self.internalDefault (config2:
+        optionsFor (config // config2)
+      );
     };
 
     # linkageFor = config: lself: lsuper:
@@ -233,8 +240,8 @@ in {
       self.lib.versionOlder cfg1.version cfg2.version;
 
     hydrateDependency = dep: mvn:
-      if dep ? extension && dep ? ${dep.extension}
-      then dep
+      if dep ? override #extension && dep ? ${dep.extension}
+      then dep.override mvn
       else let
         result = self.mergeByType
           (submodule {

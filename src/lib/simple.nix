@@ -70,6 +70,12 @@ with self.lib;
       internal = true;
     };
 
+  errorDerivation = name: msg:
+    self.runCommand name { inherit name msg; } ''
+      echo BUILD ERROR: $name: $msg >&2
+      exit 1
+    '';
+
   ## Debugging tools
 
   cutAttrLayers = n: a:

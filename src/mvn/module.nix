@@ -50,6 +50,13 @@ in
     dwn = {
       name = mkDefault (config.dwn.mvn.group + "__" + config.dwn.mvn.artifact + "__" + config.dwn.mvn.version);
       mvn = {
+        override = mvn:
+          (overrideConfig (cfg:
+            cfg // {
+              dwn = cfg.dwn // {
+                mvn = cfg.dwn.mvn // mvn;
+              };
+            })).dwn.mvn;
         overlayRepository = pkgs.mvn.overlayFor config.dwn.mvn {};
         dependencies = config.dwn.mvn.fixedDependencies;
         fixedVersions = config.dwn.mvn.fixedDependencies;
