@@ -56,6 +56,11 @@ in
         freely definable package result
       '';
     };
+    override = pkgs.internalDefault
+      (dwn: (overrideConfig
+        (cfg: cfg // {
+          dwn = cfg.dwn // dwn;
+        })));
   };
 
   options.result = mkOption {
@@ -89,9 +94,6 @@ in
       {
         dwn = config.dwn // {
           orig = config.dwn;
-          override = dwn: (overrideConfig
-            (cfg: cfg // { dwn = cfg.dwn // dwn; })
-          ).result;
         };
       }
       config.passthru

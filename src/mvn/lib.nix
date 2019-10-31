@@ -37,7 +37,7 @@ let
 in {
 
   mvn = {
-    optionsFor = config: let depT = listOf self.mvn.dependencyT; in {
+    optionsFor = config: let depT = listOf (self.mvn.projectDependencyT config); in {
       group = mkOption {
         type = str;
         default = config.artifact;
@@ -75,7 +75,9 @@ in {
       '';
       };
       dependencies = mkOption {
-        default = [];
+        default = (self.repoL.getDefault
+          config.repository config (warn "Not found in repo ${config.group}:${config.artifact}:${config.version}" [])
+        ).dependencies or [];
         type = depT;
         description = ''
         Maven dependencies.
@@ -88,6 +90,13 @@ in {
         description = ''
         Maven exclusions
       '';
+      };
+      scope = mkOption {
+        default = "compile";
+        type = str;
+        description = ''
+          The scope for this project to be included in
+        '';
       };
       providedVersions = mkOption {
         default = [];
@@ -106,7 +115,7 @@ in {
       };
       dirs = mkOption {
         default = if config.extension == "dirs"
-                  then throw "No dirs for [ ${config.group} ${config.artifact} ${config.version} ]"
+                  then warn "No dirs for [ ${config.group} ${config.artifact} ${config.version} ]" [ ]
                   else [ ];
         type = self.pathsT;
       };
@@ -115,7 +124,7 @@ in {
           if config.extension == "jar"
           then with config;
             if isNull sha1
-            then throw "No jar file / sha1 for [ ${group} ${artifact} ${version} ]"
+            then warn "No jar file / sha1 for [ ${group} ${artifact} ${version} ]" null
             else
               (self.fetchurl ( {
                 name = "${group}__${artifact}__${version}.${extension}";
@@ -142,33 +151,25 @@ in {
         default = {};
         type = self.mvn.repoT;
       };
-
-      resultLinkage = self.internalDefault (lself: lsuper:
-        let
-          resolvedVersionMap = self.mvn.updateResolvedVersions lsuper.resolvedVersionMap config;
-        in
-          if self.pinL.has lsuper.providedVersionMap config
-          then {
-            inherit (lsuper) fixedVersionMap providedVersionMap exclusions path;
-            inherit resolvedVersionMap;
-          }
-          else let
-            fixedVersionMap = self.mvn.mergeFixedVersions
-              lsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
-            providedVersionMap = self.pinL.set lsuper.providedVersionMap config config;
-            this = self.pinL.getDefault
-              lself.fixedVersionMap config
-              (self.pinL.getDefault
-                lself.resolvedVersionMap config
-                (throw (trace result.resolvedVersionMap "Cannot find ${config.group} ${config.artifact}")));
-            result = self.mvn.linkageFor config lself lsuper;
-          in {
-            inherit (lsuper) exclusions;
-            inherit (result) resolvedVersionMap providedVersionMap fixedVersionMap;
-            path = [ this ] ++ result.path;
-          });
-
+      passthru = self.internalDefault {
+        pin = { inherit (config) group artifact; };
+        coordinate = {
+          inherit (config) extension classifier version;
+          dependencies = map (d: d.config.passthru) config.dependencies;
+          fixedVersions = map (d: d.config.passthru) config.fixedVersions;
+          providedVersions = map (d: d.config.passthru) config.providedVersions;
+        };
+        qualifier = { inherit (config) scope exclusions; };
+        metadata = { inherit (config) sha1 repository; };
+        classpathEntry = config.${config.extension};
+      };
     };
+
+    # linkageFor = config: lself: lsuper:
+    #   let res = tryEval (self.mvn.linkageFor' config lself lsuper); in
+    #   if res.success
+    #   then res.value
+    #   else warn "Linking ${config.group}:${config.artifact}:${config.version} failed: ${toString res.value}" lsuper;
 
     linkageFor = config: lself: lsuper:
       if self.mvn.versionOlder
@@ -192,11 +193,8 @@ in {
          then lsuper
          else foldl'
            (lsuper: dep:
-             let hd = self.mvn.hydrateDependency dep {
-                   inherit (config) repository;
-                 };
-                 res = self.mvn.linkageFor hd lself lsuper;
-             in res // {
+             let res = self.mvn.linkageFor dep lself lsuper; in
+             res // {
                path = [ (self.pinL.get lself.resolvedVersionMap dep) ] ++ res.path;
              })
            (lsuper // {
@@ -233,16 +231,11 @@ in {
       if dep ? extension && dep ? ${dep.extension}
       then dep
       else let
-        result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
-          mvn
-          {
-            dependencies =
-              (self.repoL.getDefault
-                result.repository result (throw "No found in repo ${dep.group}/${dep.artifact}")
-              ).dependencies or [];
-          }
-          dep
-        ];
+        result = self.mergeByType
+          (submodule {
+            options = self.mvn.optionsFor result;
+          })
+          [ mvn dep ];
       in result;
 
     pinMap = coords: foldl' (s: e: self.pinL.set s e e) {} coords;
@@ -265,7 +258,9 @@ in {
       concatLists (map
         (d: let ext = d.extension; in
             if ext == "jar"
-            then [ d.jar ]
+            then if isNull d.jar
+                 then []
+                 else [ d.jar ]
             else if ext == "dirs"
             then d.dirs
             else throw "Unknown extension ${ext}")
@@ -308,14 +303,14 @@ in {
     mapDependencyT = mkOptionType {
       name = "map-maven-dependency";
       description = "Map maven dependency";
-      check = m: isAttrs m && ! isDerivation m;
+      check = m: isAttrs m && m ? artifact;
       merge = mergeEqualOption;
     };
 
     drvDependencyT = mkOptionType {
       name = "derivation-maven-dependency";
       description = "DWN maven dependency";
-      check = d: isDerivation d && d ? dwn.mvn;
+      check = d: isAttrs d && d ? dwn.mvn;
       merge = mergeEqualOption;
     };
 
@@ -326,7 +321,7 @@ in {
     projectDependencyT = config:
       self.typeMap
         self.mvn.dependencyT
-        (self.mvn.hydrateDependency config)
+        (d: self.mvn.hydrateDependency d { inherit (config) repository; })
         self.mvn.mapDependencyT;
 
     mirrorsFor = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let

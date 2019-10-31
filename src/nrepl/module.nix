@@ -1,6 +1,7 @@
 { config, lib, pkgs, ... }:
 
 with lib;
+with types;
 
 {
   imports = [
@@ -9,35 +10,35 @@ with lib;
   options.dwn.nrepl = {
     host = mkOption {
       default = "127.0.0.1";
-      type = types.str;
+      type = str;
       description = ''
         Nrepl host name
       '';
     };
     port = mkOption {
-      ## default = 4050;
-      type = types.int;
+      default = null;
+      type = nullOr int;
       description = ''
         Nrepl port
       '';
     };
     middleware = mkOption {
       default = [];
-      type = types.listOf types.str;
+      type = listOf str;
       description = ''
         Nrepl middleware
       '';
     };
     enable-cider = mkOption {
       default = true;
-      type = types.bool;
+      type = bool;
       description = ''
         Enable cider on nrepl
       '';
     };
   };
 
-  config = {
+  config = mkIf (! isNull config.dwn.nrepl.port) {
     dwn.mvn.dependencies = [ pkgs.nrepl ];
 
     dwn.clj.main = {

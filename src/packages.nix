@@ -26,6 +26,13 @@ with lib;
   aether = build ./deps.aether/dwn.nix;
 
   updaterFor = { pkg }:
-    (self.buildWith [ ./clojure/module.nix { _module.check = false; } ] lib.id pkg).dwn.mvn.repositoryUpdater;
+    if pkg ? dwn.mvn.repositoryUpdater
+    then pkg.dwn.mvn.repositoryUpdater
+    else (self.buildWith [ ./clojure/module.nix { _module.check = false; } ] lib.id pkg).dwn.mvn.repositoryUpdater;
+
+  builderFor = { pkg }:
+    if pkg ? dwn.mvn.repositoryUpdater
+    then pkg.dwn.mvn.repositoryUpdater
+    else (self.buildWith [ ./clojure/module.nix { _module.check = false; } ] lib.id pkg).result;
 
 }

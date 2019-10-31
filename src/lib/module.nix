@@ -4,6 +4,7 @@ let inherit (self) lib comp; in
 
   instantiateModule = moduleList: overrideConfig: module:
     (self.lib.evalModules {
+      # check = false;
       modules = moduleList ++ [{
         config._module.args.pkgs = self;
         config._module.args.overrideConfig = overrideConfig;
@@ -33,6 +34,8 @@ let inherit (self) lib comp; in
         inherit overrideConfig;
       };
 
-  build = pkg: (self.buildWith [ ../clojure/module.nix ] lib.id pkg).result;
+  build = pkg: self.buildWith [ ../clojure/module.nix ] lib.id pkg;
+
+  evalBuild = pkg: (self.build pkg).result;
 
 }

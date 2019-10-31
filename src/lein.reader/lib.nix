@@ -26,7 +26,7 @@ in
 
   leinDescriptor = projectClj: import (runCommand "project-descriptor.nix" {
     inherit projectClj;
-    inherit (self.lein) reader;
+    reader = self.lein.reader.result;
     projectCljOrig = toString projectClj;
   } ''
     echo "Generating Leiningen Descriptor for $projectClj -> $out"
