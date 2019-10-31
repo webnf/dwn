@@ -88,7 +88,12 @@
              (wrap-fn res)
              res))))
 
-(def default-repo-system (factory RepositorySystem))
+(defn not-nil-assert [msg]
+  (fn [val]
+    (assert (some? val) msg)
+    val))
+
+(def default-repo-system (factory RepositorySystem (not-nil-assert "(factory RepositorySystem) => nil")))
 (def default-repo-layout-provider (factory RepositoryLayoutProvider))
 
 (s/def ::binding any?)

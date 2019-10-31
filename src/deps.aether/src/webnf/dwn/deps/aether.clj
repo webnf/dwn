@@ -7,12 +7,21 @@
    java.nio.file.attribute.FileAttribute
    java.io.PushbackReader)
   (:require [webnf.dwn.deps.aether.cons :as cons]
+            [webnf.dwn.deps.aether.json :as json]
             ;; [webnf.nix.data :as data]
             [webnf.nix.aether :refer [coordinate-info]]
             [clojure.pprint :as pp :refer [pprint]]
             [clojure.java.io :as io]
             [clojure.edn :as edn]
             [clojure.string :as str]))
+
+(defmacro trace [f & args]
+  `(try (let [r# (~f ~@args)]
+          (.println *err* (pr-str (list ~f ~@args) '~'=> r#))
+          r#)
+        (catch Exception e#
+          (.println *err* (pr-str (list ~f ~@args) '~'=> e#))
+          (throw e#))))
 
 (def default-repositories
   {"central" "http://repo1.maven.org/maven2"
@@ -233,8 +242,8 @@
                                             (for [r (edn/read-string repos-str)]
                                               [(str (gensym "repo")) r]))))]
     (with-open [o (io/writer repo-out-file)]
-      (binding [*out* o]
-        (pprint repo)))
+      (doseq [s (json/emit-repo repo)]
+        (.write o (str s))))
     (shutdown-agents)
     (System/exit 0)))
 

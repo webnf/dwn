@@ -217,7 +217,7 @@ in {
           {
             dependencies =
               (self.repoL.getDefault
-                result.repository result (throw "No found in repo ${group}/${artifact}")
+                result.repository result (throw "No found in repo ${dep.group}/${dep.artifact}")
               ).dependencies or [];
           }
           dep
