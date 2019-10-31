@@ -143,59 +143,64 @@ in {
         type = self.mvn.repoT;
       };
 
-      overrideLinkage = self.internalDefault (_: with config; throw "No default linkage for [ ${group} ${artifact} ${version} ]"); #(linkage: self.mvn.optionsFor (config // { inherit linkage; }));
+      resultLinkage = self.internalDefault (lself: lsuper:
+        let
+          resolvedVersionMap = self.mvn.updateResolvedVersions lsuper.resolvedVersionMap config;
+        in if self.pinL.has lsuper.providedVersionMap config
+        then {
+          inherit (lsuper) fixedVersionMap providedVersionMap exclusions path;
+          inherit resolvedVersionMap;
+        }
+        else
+          let
+            fixedVersionMap = self.mvn.mergeFixedVersions
+              lsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
+            providedVersionMap = self.pinL.set lsuper.providedVersionMap config config;
+            this = self.pinL.getDefault
+              lself.fixedVersionMap config
+              (self.pinL.getDefault
+                lself.resolvedVersionMap config
+                (throw (trace result.resolvedVersionMap "Cannot find ${config.group} ${config.artifact}")));
+            result = self.mvn.linkageFor config lself {
+              inherit resolvedVersionMap fixedVersionMap providedVersionMap;
+              inherit (lsuper) path;
+              exclusions = unique (lsuper.exclusions ++ config.exclusions);
+            };
+          in {
+            inherit (lsuper) exclusions;
+            inherit (result) resolvedVersionMap providedVersionMap fixedVersionMap;
+            path = [ this ] ++ result.path;
+          });
 
-      linkage = self.internalDefault {
+    };
+
+    linkageFor = cfg: lself: lsuper:
+      foldl'
+        (lsuper: d:
+          if self.mvn.dependencyFilter lsuper.providedVersionMap lsuper.exclusions d
+          then (self.mvn.hydrateDependency d {
+            inherit (cfg) repository;
+          }).resultLinkage lself lsuper
+          else lsuper)
+        lsuper
+        (reverseList cfg.dependencies);
+
+    linkage = cfg: fix
+      (lself: self.mvn.linkageFor cfg lself {
         path = [];
         exclusions = [];
         fixedVersionMap = {};
         providedVersionMap = {};
         resolvedVersionMap = {};
-      };
+      });
 
-      resultLinkage = self.internalDefault (let
-        resolvedVersionMap = self.mvn.updateResolvedVersions config.linkage.resolvedVersionMap config;
-        fixedVersionMap = self.mvn.mergeFixedVersions config.linkage.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
-        providedVersionMap = self.pinL.set config.linkage.providedVersionMap config config;
-      in
-        if self.pinL.has config.linkage.providedVersionMap config
-        then {
-          inherit (config.linkage) fixedVersionMap providedVersionMap exclusions path;
-          inherit resolvedVersionMap;
-        }
-        else
-          let
-            result = foldl'
-              (linkage: pd:
-                let
-                  d = self.mvn.hydrateDependency pd {
-                    inherit (config) repository;
-                    inherit linkage;
-                  };
-                in
-                  if self.mvn.dependencyFilter linkage.providedVersionMap linkage.exclusions d
-                  then d.resultLinkage // {
-                    path = [
-                      (self.pinL.getDefault
-                        result.fixedVersionMap d
-                        (self.pinL.getDefault
-                          result.resolvedVersionMap d
-                          (throw (trace result.resolvedVersionMap "Cannot find ${config.group} ${config.artifact}"))))
-                    ] ++ d.resultLinkage.path;
-                  }
-                  else linkage)
-              {
-                inherit resolvedVersionMap fixedVersionMap providedVersionMap;
-                inherit (config.linkage) path;
-                exclusions = unique (config.linkage.exclusions ++ config.exclusions);
-              }
-              (reverseList config.dependencies);
-          in {
-            inherit (config.linkage) exclusions;
-            inherit (result) resolvedVersionMap providedVersionMap fixedVersionMap path;
-          });
+    dependencyPath = cfg: (self.mvn.linkage cfg).path;
 
-    };
+    compilePath = cfg:
+      let lr = self.mvn.linkage cfg; in
+      (fix (lself: self.mvn.linkageFor cfg lself lr // {
+        fixedVersionMap = self.mvn.mergePins lr.fixedVersionMap lr.providedVersionMap;
+      })).path;
 
     dependencyFilter = providedVersionMap: exclusions: dep:
       ! self.pinL.has providedVersionMap dep
@@ -204,8 +209,8 @@ in {
           null exclusions);
 
     hydrateDependency = dep: mvn:
-      if dep ? overrideLinkage
-      then dep.overrideLinkage mvn.linkage
+      if dep ? resultLinkage
+      then dep
       else let
         result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
           mvn
@@ -214,25 +219,17 @@ in {
               (self.repoL.getDefault
                 result.repository result (throw "No found in repo ${group}/${artifact}")
               ).dependencies or [];
-            overrideLinkage = linkage:
-              if mvn.linkage == linkage then result
-              else self.mvn.hydrateDependency dep (mvn // { inherit linkage; });
           }
           dep
         ];
       in result;
 
-    hydrateDependency0 = config: dep:
-      if dep ? linkAsDependency
-      then dep
-      else let
-        result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
-          (self.selectAttrs ["repos" "repository" "exclusions" "providedVersions" "fixedVersions"] config)
-          dep
-        ];
-      in result;
-
     pinMap = coords: foldl' (s: e: self.pinL.set s e e) {} coords;
+    mergePins = pm1: pm2:
+      foldAttrs
+        (pm: g: as:
+          pm // { ${g} = pm.${g} or {} // as; })
+        pm1 pm2;
 
     mergeFixedVersions =
       self.mergeAttrsWith
