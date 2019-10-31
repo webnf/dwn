@@ -29,7 +29,12 @@ in {
       (map coordinateFor
         (dependencies ++ fixedVersions ++ providedVersions))
 
-      overlayRepository;
+      (self.mvn.mapRepo (group: artifact: extension: classifier: version: dsc: {
+        inherit group artifact extension classifier version;
+        dependencies = map self.coordinateFor dsc.dependencies;
+        fixedVersions = map self.coordinateFor dsc.fixedVersions;
+        providedVersions = map self.coordinateFor dsc.providedVersions;
+      }) overlayRepository);
 
   coordinateFor =
     { artifact, version

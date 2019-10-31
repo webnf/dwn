@@ -1,6 +1,8 @@
 { config, lib, pkgs, overrideConfig, ... }:
 
 with lib;
+with types;
+
 let
   inherit (pkgs) pathT pathsT urlT coordinateListT
     subPath closureRepoGenerator;
@@ -15,19 +17,18 @@ in
   options.dwn.mvn = (pkgs.mvn.optionsFor config.dwn.mvn) // {
     fixedDependencies = mkOption {
       default = [];
-      type = types.listOf pkgs.mvn.dependencyT;
+      type = listOf pkgs.mvn.dependencyT;
       description = ''
         Combination of dependencies and fixedVersions.
       '';
     };
     overlayRepository = mkOption {
-      default = {};
-      type = pkgs.mvn.repoT;
-      description = "Repository of non-maven artifacts";
+      internal = true;
+      type = unspecified; #pkgs.mvn.repoT;
     };
     repositoryFile = mkOption {
       default = warn "Please set and generate repository file ${config.dwn.name}" null;
-      type = types.nullOr types.path;
+      type = nullOr path;
       description = ''
         Path of closure file, generated with SHAs of dependency tree.
       '';
@@ -36,12 +37,12 @@ in
       default = closureRepoGenerator {
         inherit (config.dwn.mvn) repositoryFile repos dependencies fixedVersions overlayRepository providedVersions;
       };
-      type = types.either types.package types.path;
+      type = either package path;
     };
     repositoryFormat = mkOption {
       internal = true;
       default = "repo-edn";
-      type = types.str;
+      type = str;
     };
   };
 
@@ -49,6 +50,7 @@ in
     dwn = {
       name = mkDefault (config.dwn.mvn.group + "__" + config.dwn.mvn.artifact + "__" + config.dwn.mvn.version);
       mvn = {
+        overlayRepository = pkgs.mvn.overlayFor config.dwn.mvn {};
         dependencies = config.dwn.mvn.fixedDependencies;
         fixedVersions = config.dwn.mvn.fixedDependencies;
         repository = lib.mkIf (! isNull config.dwn.mvn.repositoryFile)

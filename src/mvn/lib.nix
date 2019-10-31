@@ -171,6 +171,21 @@ in {
     #   then res.value
     #   else warn "Linking ${config.group}:${config.artifact}:${config.version} failed: ${toString res.value}" lsuper;
 
+    overlayFor = config: osuper:
+      if self.repoL.has osuper config
+      then if config == self.repoL.get osuper config
+           then osuper
+           else throw "Conflicting overlay entries ${self.mvn.nameFor config}"
+      else let
+        scanDeps = config.dependencies ++ config.fixedVersions ++ config.providedVersions;
+      in foldl'
+        (osuper: dep: self.mvn.overlayFor dep osuper)
+        (self.repoL.set osuper config config)
+        (filter
+          (d: d ? overlayRepository)
+          scanDeps);
+
+
     linkageFor = config: lself: lsuper:
       if self.mvn.versionOlder
         config
