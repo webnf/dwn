@@ -146,13 +146,13 @@ in {
       resultLinkage = self.internalDefault (lself: lsuper:
         let
           resolvedVersionMap = self.mvn.updateResolvedVersions lsuper.resolvedVersionMap config;
-        in if self.pinL.has lsuper.providedVersionMap config
-        then {
-          inherit (lsuper) fixedVersionMap providedVersionMap exclusions path;
-          inherit resolvedVersionMap;
-        }
-        else
-          let
+        in
+          if self.pinL.has lsuper.providedVersionMap config
+          then {
+            inherit (lsuper) fixedVersionMap providedVersionMap exclusions path;
+            inherit resolvedVersionMap;
+          }
+          else let
             fixedVersionMap = self.mvn.mergeFixedVersions
               lsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
             providedVersionMap = self.pinL.set lsuper.providedVersionMap config config;
@@ -161,11 +161,7 @@ in {
               (self.pinL.getDefault
                 lself.resolvedVersionMap config
                 (throw (trace result.resolvedVersionMap "Cannot find ${config.group} ${config.artifact}")));
-            result = self.mvn.linkageFor config lself {
-              inherit resolvedVersionMap fixedVersionMap providedVersionMap;
-              inherit (lsuper) path;
-              exclusions = unique (lsuper.exclusions ++ config.exclusions);
-            };
+            result = self.mvn.linkageFor config lself lsuper;
           in {
             inherit (lsuper) exclusions;
             inherit (result) resolvedVersionMap providedVersionMap fixedVersionMap;
@@ -174,16 +170,39 @@ in {
 
     };
 
-    linkageFor = cfg: lself: lsuper:
-      foldl'
-        (lsuper: d:
-          if self.mvn.dependencyFilter lsuper.providedVersionMap lsuper.exclusions d
-          then (self.mvn.hydrateDependency d {
-            inherit (cfg) repository;
-          }).resultLinkage lself lsuper
-          else lsuper)
-        lsuper
-        (reverseList cfg.dependencies);
+    linkageFor = config: lself: lsuper:
+      if self.mvn.versionOlder
+        config
+        (self.pinL.getDefault lsuper.providedVersionMap config config)
+      then lsuper
+      else if self.mvn.excluded lsuper config
+      then lsuper
+      else let
+        resolvedVersionMap = self.pinL.set lsuper.resolvedVersionMap config config;
+        fixedVersionMap = self.mvn.mergeFixedVersions
+          lsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
+        providedVersionMap = self.pinL.set lsuper.providedVersionMap config config;
+        currentResolved = self.pinL.get lsuper.resolvedVersionMap config;
+      in if self.pinL.has lsuper.providedVersionMap config
+         then lsuper // {
+           inherit resolvedVersionMap;
+         }
+         else if self.pinL.has lsuper.resolvedVersionMap config
+                 && self.mvn.versionOlder config currentResolved
+         then lsuper
+         else foldl'
+           (lsuper: dep:
+             let hd = self.mvn.hydrateDependency dep {
+                   inherit (config) repository;
+                 };
+                 res = self.mvn.linkageFor hd lself lsuper;
+             in res // {
+               path = [ (self.pinL.get lself.resolvedVersionMap dep) ] ++ res.path;
+             })
+           (lsuper // {
+             inherit resolvedVersionMap fixedVersionMap providedVersionMap;
+           })
+           (reverseList config.dependencies);
 
     linkage = cfg: fix
       (lself: self.mvn.linkageFor cfg lself {
@@ -202,14 +221,16 @@ in {
         fixedVersionMap = self.mvn.mergePins lr.fixedVersionMap lr.providedVersionMap;
       })).path;
 
-    dependencyFilter = providedVersionMap: exclusions: dep:
-      ! self.pinL.has providedVersionMap dep
-      && isNull
+    excluded = { exclusions, ... }: { group, artifact, ... }:
+      ! isNull
         (findFirst (e: dep.group == e.group && dep.artifact == e.artifact)
           null exclusions);
 
+    versionOlder = cfg1: cfg2:
+      self.lib.versionOlder cfg1.version cfg2.version;
+
     hydrateDependency = dep: mvn:
-      if dep ? resultLinkage
+      if dep ? extension && dep ? ${dep.extension}
       then dep
       else let
         result = self.mergeByType (submodule { options = self.mvn.optionsFor result; }) [
@@ -225,6 +246,7 @@ in {
       in result;
 
     pinMap = coords: foldl' (s: e: self.pinL.set s e e) {} coords;
+
     mergePins = pm1: pm2:
       foldAttrs
         (pm: g: as:
@@ -238,14 +260,6 @@ in {
             if v1 == v2
             then v1
             else throw "Incompatible fixed versions for ${group} ${artifact}"));
-
-    updateResolvedVersions = rvMap: mcfg:
-      if ! self.pinL.has rvMap mcfg
-         || versionOlder
-           (self.pinL.get rvMap mcfg).version
-           mcfg.version
-      then self.pinL.set rvMap mcfg mcfg
-      else rvMap;
 
     dependencyClasspath = dependencies:
       concatLists (map
