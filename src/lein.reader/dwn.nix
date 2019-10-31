@@ -3,9 +3,9 @@
   mvn = {
     group = "webnf.dwn";
     artifact = "lein.reader";
-    version = "0.0.2";
+    version = "0.0.3";
     dependencies = [
-      ["leiningen" "leiningen" "2.8.2"]
+      ["leiningen" "leiningen" "2.9.1"]
     ];
     repositoryFile = ./repo.json;
   };

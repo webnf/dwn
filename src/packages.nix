@@ -20,7 +20,12 @@ with lib;
   clojurescript = build ./clojurescript/dwn.nix;
   deps = {
     # expander = build ./deps.expander/dwn.nix;
-    aether = build ./deps.aether/dwn.nix;
+    aether = build ./deps.aether/dwn-bootstrap.nix;
   };
+
+  aether = build ./deps.aether/dwn.nix;
+
+  updaterFor = { pkg }:
+    (self.buildWith [ ./clojure/module.nix { _module.check = false; } ] lib.id pkg).dwn.mvn.repositoryUpdater;
 
 }

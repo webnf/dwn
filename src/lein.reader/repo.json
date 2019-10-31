@@ -112,20 +112,20 @@
   "leiningen":{
    "jar":{
     "":{
-     "2.8.2":{
+     "2.9.1":{
       "dependencies":[
        ["commons-io", "2.6"],
        ["commons-lang", "2.6"],
-       ["leiningen-core", "2.8.2"],
-       ["nrepl", "0.5.2"],
+       ["leiningen-core", "2.9.1"],
+       ["nrepl", "0.6.0"],
        ["scout", "0.1.1"],
        ["org.clojure", "data.xml", "0.0.8"],
        ["stencil", "0.5.0", {"exclusions":[["org.clojure", "core.cache"]]}],
-       ["timofreiberg", "bultitude", "0.3.0"],
        ["net.cgrand", "parsley", "0.9.3", {"exclusions":[["org.clojure", "clojure"]]}],
-       ["net.cgrand", "sjacket", "0.1.1", {"exclusions":[["org.clojure", "clojure"]]}]
+       ["net.cgrand", "sjacket", "0.1.1", {"exclusions":[["org.clojure", "clojure"]]}],
+       ["timofreiberg", "bultitude", "0.3.0", {"exclusions":[["org.clojure", "clojure"]]}]
       ],
-      "sha1":"cef0f122894b3c68f9deaef9442e5d0bc126e4d3"
+      "sha1":"b17a525dcccca1bd75eed041ab62afc217f25554"
      }
     }
    }
@@ -135,20 +135,18 @@
   "leiningen-core":{
    "jar":{
     "":{
-     "2.8.2":{
+     "2.9.1":{
       "dependencies":[
        ["com.hypirion", "io", "0.3.1"],
-       ["org.clojure", "clojure", "1.8.0"],
+       ["org.clojure", "clojure", "1.10.0"],
        ["org.clojure", "tools.macro", "0.1.5"],
        ["org.flatland", "classlojure", "0.7.1"],
        ["org.slf4j", "slf4j-nop", "1.7.25"],
-       ["org.tcrawley", "dynapath", "1.0.0"],
        ["robert", "hooke", "1.3.0"],
-       ["com.cemerick", "pomegranate", "1.1.0", {"exclusions":[["org.codehaus.plexus", "plexus-utils"]]}],
-       ["org.apache.maven.wagon", "wagon-http", "2.12", {"exclusions":[["org.apache.httpcomponents", "httpcore"], ["org.apache.maven.wagon", "wagon-provider-api"]]}],
-       ["timofreiberg", "bultitude", "0.3.0", {"exclusions":[["org.tcrawley", "dynapath"]]}]
+       ["com.cemerick", "pomegranate", "1.1.0", {"exclusions":[["org.slf4j", "jcl-over-slf4j"]]}],
+       ["timofreiberg", "bultitude", "0.3.0", {"exclusions":[["org.clojure", "clojure"]]}]
       ],
-      "sha1":"d358f6dd793de1a59c035c8f2c4925aa3bd5f5ea"
+      "sha1":"18cdf2ea9730cbe5d0657ad9ab22e357fe4151ab"
      }
     }
    }
@@ -203,26 +201,11 @@
   }
  },
  "nrepl":{
-  "bencode":{
-   "jar":{
-    "":{
-     "1.0.0":{
-      "dependencies":[
-       ["org.clojure", "clojure", "1.8.0"]
-      ],
-      "sha1":"f1031454d55f70bfb8567e14d79fa9361501ff00"
-     }
-    }
-   }
-  },
   "nrepl":{
    "jar":{
     "":{
-     "0.5.2":{
-      "dependencies":[
-       ["nrepl", "bencode", "1.0.0"]
-      ],
-      "sha1":"22c241ebca354a54cedc1490be78ab61ffd18be9"
+     "0.6.0":{
+      "sha1":"365ab4540d3b2447ff1ec08e63ae1f00489de601"
      }
     }
    }
@@ -251,14 +234,6 @@
       ],
       "sha1":"e4ca30a6a3a075053a61c6fc850d2432dc012ba7"
      },
-     "4.5.2":{
-      "dependencies":[
-       ["commons-codec", "1.9"],
-       ["commons-logging", "1.2"],
-       ["org.apache.httpcomponents", "httpcore", "4.4.4"]
-      ],
-      "sha1":"733db77aa8d9b2d68015189df76ab06304406e50"
-     },
      "4.5.3":{
       "dependencies":[
        ["commons-codec", "1.9"],
@@ -275,9 +250,6 @@
     "":{
      "4.2.5":{
       "sha1":"472f0f5f8dba5d1962cb9d7739feed739a31c30d"
-     },
-     "4.4.4":{
-      "sha1":"b31526a230871fbe285fbcbe2813f9c0839ae9b0"
      },
      "4.4.6":{
       "sha1":"e3fd8ced1f52c7574af952e2e6da0df8df08eb82"
@@ -505,16 +477,6 @@
   "wagon-http":{
    "jar":{
     "":{
-     "2.12":{
-      "dependencies":[
-       ["org.apache.httpcomponents", "httpcore", "4.4.4"],
-       ["org.apache.maven.wagon", "wagon-http-shared", "2.12"],
-       ["org.apache.maven.wagon", "wagon-provider-api", "2.12"],
-       ["org.codehaus.plexus", "plexus-utils", "3.0.24"],
-       ["org.apache.httpcomponents", "httpclient", "4.5.2", {"exclusions":[["commons-logging"]]}]
-      ],
-      "sha1":"7f5b21f49e87d57a872d4bf2ec4c537210432d21"
-     },
      "3.0.0":{
       "dependencies":[
        ["org.apache.httpcomponents", "httpcore", "4.4.6"],
@@ -531,15 +493,6 @@
   "wagon-http-shared":{
    "jar":{
     "":{
-     "2.12":{
-      "dependencies":[
-       ["commons-io", "2.5"],
-       ["org.apache.maven.wagon", "wagon-provider-api", "2.12"],
-       ["org.jsoup", "jsoup", "1.7.2"],
-       ["org.slf4j", "slf4j-api", "1.7.22"]
-      ],
-      "sha1":"9a029c54bacfbcda343afb9f1702dd25cd6c2c73"
-     },
      "3.0.0":{
       "dependencies":[
        ["commons-io", "2.5"],
@@ -563,12 +516,6 @@
       ],
       "sha1":"12bcd211158c0c09b027d06b70371861398fedea"
      },
-     "2.12":{
-      "dependencies":[
-       ["org.codehaus.plexus", "plexus-utils", "3.0.24"]
-      ],
-      "sha1":"a19b458a40eac754198b2b3bf99a601feee1a37c"
-     },
      "3.0.0":{
       "dependencies":[
        ["org.codehaus.plexus", "plexus-utils", "3.0.24"]
@@ -583,6 +530,20 @@
   "clojure":{
    "jar":{
     "":{
+     "1.10.0":{
+      "dependencies":[
+       ["org.clojure", "core.specs.alpha", "0.2.44"],
+       ["org.clojure", "spec.alpha", "0.2.176"]
+      ],
+      "sha1":"0383381021e03691dff101a9b12accb79e9a4e10"
+     },
+     "1.10.1":{
+      "dependencies":[
+       ["org.clojure", "core.specs.alpha", "0.2.44"],
+       ["org.clojure", "spec.alpha", "0.2.176"]
+      ],
+      "sha1":"a1e6b92ce9b1bfc5d181867a45da8a38a6077662"
+     },
      "1.3.0":{
       "sha1":"04830e76a9e8c029acb257a70c5cf30592e5a301"
      },
@@ -594,9 +555,6 @@
      },
      "1.6.0":{
       "sha1":"1d95fb21562fa9d6df138a568ba5cab3e1dd3c98"
-     },
-     "1.8.0":{
-      "sha1":"313066c972b6b00f390674bf0e9f732c07f205a4"
      },
      "1.9.0":{
       "dependencies":[
@@ -632,7 +590,6 @@
       "sha1":"2637e33f693f51267f04e63f2acfb5d182e7bf56"
      },
      "0.2.44":{
-      "resolved-coordinate":["org.clojure", "core.specs.alpha", "jar", "", "0.2.44"],
       "sha1":"6027ceb1d1ae70a6a3fb1a8da2144632fa688604"
      }
     }
@@ -669,7 +626,6 @@
       "sha1":"54057fc4330a7b439127effafa92d1bfeefc23f5"
      },
      "0.2.176":{
-      "resolved-coordinate":["org.clojure", "spec.alpha", "jar", "", "0.2.176"],
       "sha1":"cd2d5b03d2ff95a958cb075201b89d28a7dea626"
      }
     }

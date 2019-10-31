@@ -3,11 +3,11 @@
   "cider-nrepl":{
    "jar":{
     "":{
-     "0.22.3":{
+     "0.22.4":{
       "dependencies":[
        ["nrepl", "0.6.0", {"exclusions":[["org.clojure", "clojure"]]}]
       ],
-      "sha1":"baee9bfad3f0429bee9498d8718208ec3d1cae77"
+      "sha1":"8b25662ca64357544481c2aa70a0a2701fff0276"
      }
     }
    }
@@ -58,6 +58,13 @@
   "clojure":{
    "jar":{
     "":{
+     "1.10.1":{
+      "dependencies":[
+       ["org.clojure", "core.specs.alpha", "0.2.44"],
+       ["org.clojure", "spec.alpha", "0.2.176"]
+      ],
+      "sha1":"a1e6b92ce9b1bfc5d181867a45da8a38a6077662"
+     },
      "1.4.0":{
       "sha1":"867288bc07a6514e2e0b471c5be0bccd6c3a51f9"
      },
@@ -93,6 +100,12 @@
        ["org.clojure", "clojure", "1.4.0"]
       ],
       "sha1":"991bebc6e3633b85091ae929d62c116a2584aee7"
+     },
+     "0.5.0":{
+      "dependencies":[
+       ["org.clojure", "clojure", "1.4.0"]
+      ],
+      "sha1":"c5d77b088590a5e6680a70acf132669fa1d7e623"
      }
     }
    }

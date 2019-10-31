@@ -1,4 +1,15 @@
 {
+ "aopalliance":{
+  "aopalliance":{
+   "jar":{
+    "":{
+     "1.0":{
+      "sha1":"0235ba8b489512805ac13a8f9ea77a1ca5ebe3e8"
+     }
+    }
+   }
+  }
+ },
  "ch.qos.logback":{
   "logback-classic":{
    "jar":{
@@ -23,6 +34,84 @@
    }
   }
  },
+ "classworlds":{
+  "classworlds":{
+   "jar":{
+    "":{
+     "1.1-alpha-2":{
+      "sha1":"05adf2e681c57d7f48038b602f3ca2254ee82d47"
+     }
+    }
+   }
+  }
+ },
+ "com.google.code.findbugs":{
+  "jsr305":{
+   "jar":{
+    "":{
+     "3.0.2":{
+      "sha1":"25ea2e8b0c338a877313bd4672d3fe056ea78f0d"
+     }
+    }
+   }
+  }
+ },
+ "com.google.errorprone":{
+  "error_prone_annotations":{
+   "jar":{
+    "":{
+     "2.1.3":{
+      "sha1":"39b109f2cd352b2d71b52a3b5a1a9850e1dc304b"
+     }
+    }
+   }
+  }
+ },
+ "com.google.guava":{
+  "guava":{
+   "jar":{
+    "":{
+     "25.1-android":{
+      "dependencies":[
+       ["com.google.code.findbugs", "jsr305", "3.0.2"],
+       ["com.google.errorprone", "error_prone_annotations", "2.1.3"],
+       ["com.google.j2objc", "j2objc-annotations", "1.1"],
+       ["org.checkerframework", "checker-compat-qual", "2.0.0"],
+       ["org.codehaus.mojo", "animal-sniffer-annotations", "1.14"]
+      ],
+      "sha1":"bdaab946ca5ad20253502d873ba0c3313d141036"
+     }
+    }
+   }
+  }
+ },
+ "com.google.inject":{
+  "guice":{
+   "jar":{
+    "no_aop":{
+     "4.2.1":{
+      "dependencies":[
+       ["aopalliance", "1.0"],
+       ["javax.inject", "1"],
+       ["com.google.guava", "guava", "25.1-android"]
+      ],
+      "sha1":"41e5ab52ec65e60b6c0ced947becf7ba96402645"
+     }
+    }
+   }
+  }
+ },
+ "com.google.j2objc":{
+  "j2objc-annotations":{
+   "jar":{
+    "":{
+     "1.1":{
+      "sha1":"ed28ded51a8b1c6b112568def5f4b455e6809019"
+     }
+    }
+   }
+  }
+ },
  "com.jcraft":{
   "jsch":{
    "jar":{
@@ -30,8 +119,8 @@
      "0.1.49":{
       "sha1":"5c46cae7d01e845379beac44512e25eb11017159"
      },
-     "0.1.54":{
-      "sha1":"da3584329a263616e277e15462b387addd1b208d"
+     "0.1.55":{
+      "sha1":"bbd40e5aa7aa3cfad5db34965456cee738a42a50"
      }
     }
    }
@@ -133,6 +222,9 @@
     "":{
      "1.10":{
       "sha1":"4b95f4897fa13f2cd904aee711aeafc0c5295cd8"
+     },
+     "1.11":{
+      "sha1":"3acb4705652e16236558f0f4f2192cc33c3bd189"
      }
     }
    }
@@ -142,6 +234,9 @@
   "commons-io":{
    "jar":{
     "":{
+     "2.5":{
+      "sha1":"2852e6e05fbb95076fc091f6d1780f1f8fe35e0f"
+     },
      "2.6":{
       "sha1":"815893df5f31da2ece4040fe0a12fd44b577afaf"
      }
@@ -155,6 +250,33 @@
     "":{
      "1.2":{
       "sha1":"4bfc12adfe4842bf07b657f0369c4cb522955686"
+     }
+    }
+   }
+  }
+ },
+ "javax.annotation":{
+  "jsr250-api":{
+   "jar":{
+    "":{
+     "1.0":{
+      "sha1":"5025422767732a1ab45d93abfea846513d742dcf"
+     }
+    }
+   }
+  }
+ },
+ "javax.enterprise":{
+  "cdi-api":{
+   "jar":{
+    "":{
+     "1.0":{
+      "dependencies":[
+       ["javax.inject", "1"],
+       ["javax.annotation", "jsr250-api", "1.0"],
+       ["org.jboss.interceptor", "jboss-interceptor-api", "1.1"]
+      ],
+      "sha1":"44c453f60909dfc223552ace63e05c694215156b"
      }
     }
    }
@@ -227,6 +349,14 @@
        ["org.apache.httpcomponents", "httpcore", "4.4.10"]
       ],
       "sha1":"1afe5621985efe90a92d0fbc9be86271efbe796f"
+     },
+     "4.5.9":{
+      "dependencies":[
+       ["commons-codec", "1.11"],
+       ["commons-logging", "1.2"],
+       ["org.apache.httpcomponents", "httpcore", "4.4.11"]
+      ],
+      "sha1":"a25c1be5ce99d0ce99aa43eb982868c796dd0775"
      }
     }
    }
@@ -236,6 +366,9 @@
     "":{
      "4.4.10":{
       "sha1":"acc54d9b28bdffe4bbde89ed2e4a1e86b5285e2b"
+     },
+     "4.4.11":{
+      "sha1":"de748cf874e4e193b42eceea9fe5574fabb9d4df"
      }
     }
    }
@@ -245,12 +378,12 @@
   "maven-artifact":{
    "jar":{
     "":{
-     "3.6.0":{
+     "3.6.2":{
       "dependencies":[
        ["org.apache.commons", "commons-lang3", "3.8.1"],
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"]
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"]
       ],
-      "sha1":"d4c0da647de59c9ccc304a112fe1f1474d49e8eb"
+      "sha1":"5a2ff5874b0eb1c0cf5915f1eeb4926cde1c756f"
      }
     }
    }
@@ -258,8 +391,41 @@
   "maven-builder-support":{
    "jar":{
     "":{
-     "3.6.0":{
-      "sha1":"91247204af8e1b256f3d644f736a8acad76794e5"
+     "3.6.2":{
+      "sha1":"5166ed3282e9c6a7c16f6fe9c701ea36a9119fbb"
+     }
+    }
+   }
+  },
+  "maven-core":{
+   "jar":{
+    "":{
+     "3.6.2":{
+      "dependencies":[
+       ["javax.inject", "1"],
+       ["org.apache.commons", "commons-lang3", "3.8.1"],
+       ["org.apache.maven", "maven-artifact", "3.6.2"],
+       ["org.apache.maven", "maven-builder-support", "3.6.2"],
+       ["org.apache.maven", "maven-model", "3.6.2"],
+       ["org.apache.maven", "maven-model-builder", "3.6.2"],
+       ["org.apache.maven", "maven-plugin-api", "3.6.2"],
+       ["org.apache.maven", "maven-repository-metadata", "3.6.2"],
+       ["org.apache.maven", "maven-resolver-provider", "3.6.2"],
+       ["org.apache.maven", "maven-settings", "3.6.2"],
+       ["org.apache.maven", "maven-settings-builder", "3.6.2"],
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-impl", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-spi", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-util", "1.4.1"],
+       ["org.apache.maven.shared", "maven-shared-utils", "3.2.1"],
+       ["org.codehaus.plexus", "plexus-classworlds", "2.6.0"],
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"],
+       ["org.eclipse.sisu", "org.eclipse.sisu.inject", "0.3.3"],
+       ["org.eclipse.sisu", "org.eclipse.sisu.plexus", "0.3.3"],
+       ["org.codehaus.plexus", "plexus-component-annotations", "2.0.0", {"exclusions":[["junit"]]}],
+       ["com.google.inject", "guice", "jar", "no_aop", "4.2.1"]
+      ],
+      "sha1":"5cd1d2cfc80544481c1d4c13d10b6fc6010c4297"
      }
     }
    }
@@ -267,11 +433,11 @@
   "maven-model":{
    "jar":{
     "":{
-     "3.6.0":{
+     "3.6.2":{
       "dependencies":[
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"]
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"]
       ],
-      "sha1":"06d73e6218a10cfe82cf0325b582cbed732cc751"
+      "sha1":"ed527aff758e46c23a19b49a51f9ded64f3e1695"
      }
     }
    }
@@ -279,16 +445,33 @@
   "maven-model-builder":{
    "jar":{
     "":{
-     "3.6.0":{
+     "3.6.2":{
       "dependencies":[
-       ["org.apache.maven", "maven-artifact", "3.6.0"],
-       ["org.apache.maven", "maven-builder-support", "3.6.0"],
-       ["org.apache.maven", "maven-model", "3.6.0"],
+       ["javax.inject", "1"],
+       ["org.apache.maven", "maven-artifact", "3.6.2"],
+       ["org.apache.maven", "maven-builder-support", "3.6.2"],
+       ["org.apache.maven", "maven-model", "3.6.2"],
        ["org.codehaus.plexus", "plexus-interpolation", "1.25"],
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"],
-       ["org.codehaus.plexus", "plexus-component-annotations", "1.7.1", {"exclusions":[["junit"]]}]
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"],
+       ["org.eclipse.sisu", "org.eclipse.sisu.inject", "0.3.3"]
       ],
-      "sha1":"c9a8b1367163af0ed8887e8422f361b66e67a6d5"
+      "sha1":"0aa1c77dc6f9f7bec938bd4c82f91da21073fb78"
+     }
+    }
+   }
+  },
+  "maven-plugin-api":{
+   "jar":{
+    "":{
+     "3.6.2":{
+      "dependencies":[
+       ["org.apache.maven", "maven-model", "3.6.2"],
+       ["org.codehaus.plexus", "plexus-classworlds", "2.6.0"],
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"],
+       ["org.eclipse.sisu", "org.eclipse.sisu.plexus", "0.3.3"],
+       ["org.apache.maven", "maven-artifact", "3.6.2", {"exclusions":[["org.apache.maven.wagon", "wagon-provider-api"]]}]
+      ],
+      "sha1":"6d027d72c5160d899aa9f2b39f9a7d6dae4e4a68"
      }
     }
    }
@@ -296,11 +479,11 @@
   "maven-repository-metadata":{
    "jar":{
     "":{
-     "3.6.0":{
+     "3.6.2":{
       "dependencies":[
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"]
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"]
       ],
-      "sha1":"ab6576d2d7d02c20d8dadb2fdf8571991a47bd0a"
+      "sha1":"f06ee013dc9b691decead68ac4664f3a06bb8890"
      }
     }
    }
@@ -308,20 +491,49 @@
   "maven-resolver-provider":{
    "jar":{
     "":{
-     "3.6.0":{
+     "3.6.2":{
       "dependencies":[
        ["javax.inject", "1"],
-       ["org.apache.maven", "maven-model", "3.6.0"],
-       ["org.apache.maven", "maven-model-builder", "3.6.0"],
-       ["org.apache.maven", "maven-repository-metadata", "3.6.0"],
-       ["org.apache.maven.resolver", "maven-resolver-api", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-impl", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-spi", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-util", "1.3.1"],
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"],
+       ["org.apache.maven", "maven-model", "3.6.2"],
+       ["org.apache.maven", "maven-model-builder", "3.6.2"],
+       ["org.apache.maven", "maven-repository-metadata", "3.6.2"],
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-impl", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-spi", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-util", "1.4.1"],
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"],
        ["org.slf4j", "slf4j-api", "1.7.25"]
       ],
-      "sha1":"feacf8ad983e794952562febef0a4962eec1c22e"
+      "sha1":"620b1e8f78ecd60898aabd5bb02bcb04fad2ebad"
+     }
+    }
+   }
+  },
+  "maven-settings":{
+   "jar":{
+    "":{
+     "3.6.2":{
+      "dependencies":[
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"]
+      ],
+      "sha1":"803c8430bb698e6e08e54e392de5ae56af78803b"
+     }
+    }
+   }
+  },
+  "maven-settings-builder":{
+   "jar":{
+    "":{
+     "3.6.2":{
+      "dependencies":[
+       ["javax.inject", "1"],
+       ["org.apache.maven", "maven-builder-support", "3.6.2"],
+       ["org.apache.maven", "maven-settings", "3.6.2"],
+       ["org.codehaus.plexus", "plexus-interpolation", "1.25"],
+       ["org.codehaus.plexus", "plexus-utils", "3.2.1"],
+       ["org.sonatype.plexus", "plexus-sec-dispatcher", "1.4"]
+      ],
+      "sha1":"25e9a925d96fa0f8927b2ed5d3b9c1c9bb56a04f"
      }
     }
    }
@@ -331,8 +543,8 @@
   "maven-resolver-api":{
    "jar":{
     "":{
-     "1.3.1":{
-      "sha1":"4a8cb0bf19651f6869353609065bb893bb033ef6"
+     "1.4.1":{
+      "sha1":"ceee6b7ea1bc252afa585fa32f76c2cda206bdcd"
      }
     }
    }
@@ -340,14 +552,14 @@
   "maven-resolver-connector-basic":{
    "jar":{
     "":{
-     "1.3.1":{
+     "1.4.1":{
       "dependencies":[
-       ["org.apache.maven.resolver", "maven-resolver-api", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-spi", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-util", "1.3.1"],
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-spi", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-util", "1.4.1"],
        ["org.slf4j", "slf4j-api", "1.7.25"]
       ],
-      "sha1":"14d9e85289ff81eda7ccdbab4a34e0bde780c574"
+      "sha1":"c213352d609d576641aed35172157d46cd2003d4"
      }
     }
    }
@@ -355,14 +567,14 @@
   "maven-resolver-impl":{
    "jar":{
     "":{
-     "1.3.1":{
+     "1.4.1":{
       "dependencies":[
-       ["org.apache.maven.resolver", "maven-resolver-api", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-spi", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-util", "1.3.1"],
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-spi", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-util", "1.4.1"],
        ["org.slf4j", "slf4j-api", "1.7.25"]
       ],
-      "sha1":"200e0386412e9317f9be5e3c00a18eda673e6f6d"
+      "sha1":"1658cfa27978c5949c3a92086514a22ca85394e4"
      }
     }
    }
@@ -370,11 +582,11 @@
   "maven-resolver-spi":{
    "jar":{
     "":{
-     "1.3.1":{
+     "1.4.1":{
       "dependencies":[
-       ["org.apache.maven.resolver", "maven-resolver-api", "1.3.1"]
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"]
       ],
-      "sha1":"7780f1f8ce061c3c8131d5cd91ad04e52c887091"
+      "sha1":"905a024ff050e804a8a4df53eeee63cc7d153438"
      }
     }
    }
@@ -382,13 +594,30 @@
   "maven-resolver-transport-file":{
    "jar":{
     "":{
-     "1.3.1":{
+     "1.4.1":{
       "dependencies":[
-       ["org.apache.maven.resolver", "maven-resolver-api", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-spi", "1.3.1"],
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-spi", "1.4.1"],
        ["org.slf4j", "slf4j-api", "1.7.25"]
       ],
-      "sha1":"1ee7e3cd2a54d66b5574a86a5bffdb806769ea57"
+      "sha1":"bec96261bdc40ed9ed0639192c8814365f8027bb"
+     }
+    }
+   }
+  },
+  "maven-resolver-transport-http":{
+   "jar":{
+    "":{
+     "1.4.1":{
+      "dependencies":[
+       ["org.apache.httpcomponents", "httpcore", "4.4.10"],
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-spi", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-util", "1.4.1"],
+       ["org.slf4j", "slf4j-api", "1.7.25"],
+       ["org.apache.httpcomponents", "httpclient", "4.5.6", {"exclusions":[["commons-logging"]]}]
+      ],
+      "sha1":"ed57463141e69ea49b03769a3ad55125c651098c"
      }
     }
    }
@@ -396,15 +625,15 @@
   "maven-resolver-transport-wagon":{
    "jar":{
     "":{
-     "1.3.1":{
+     "1.4.1":{
       "dependencies":[
-       ["org.apache.maven.resolver", "maven-resolver-api", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-spi", "1.3.1"],
-       ["org.apache.maven.resolver", "maven-resolver-util", "1.3.1"],
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-spi", "1.4.1"],
+       ["org.apache.maven.resolver", "maven-resolver-util", "1.4.1"],
        ["org.apache.maven.wagon", "wagon-provider-api", "3.0.0"],
        ["org.slf4j", "slf4j-api", "1.7.25"]
       ],
-      "sha1":"141a2aff478f7e89998cc9903b17d2a72572d41e"
+      "sha1":"f3268f4ee92227ab98b7be0ac5122daa2ed97e35"
      }
     }
    }
@@ -412,11 +641,25 @@
   "maven-resolver-util":{
    "jar":{
     "":{
-     "1.3.1":{
+     "1.4.1":{
       "dependencies":[
-       ["org.apache.maven.resolver", "maven-resolver-api", "1.3.1"]
+       ["org.apache.maven.resolver", "maven-resolver-api", "1.4.1"]
       ],
-      "sha1":"caf7691a5a0373e948bbb00b23b52ef4cbceee71"
+      "sha1":"3f6d4f4bc3e24b46a776b47ccfeaed9d2ed01549"
+     }
+    }
+   }
+  }
+ },
+ "org.apache.maven.shared":{
+  "maven-shared-utils":{
+   "jar":{
+    "":{
+     "3.2.1":{
+      "dependencies":[
+       ["commons-io", "2.5"]
+      ],
+      "sha1":"08dd4dfb1d2d8b6969f6462790f82670bcd35ce2"
      }
     }
    }
@@ -426,15 +669,15 @@
   "wagon-http":{
    "jar":{
     "":{
-     "3.2.0":{
+     "3.3.3":{
       "dependencies":[
-       ["org.apache.httpcomponents", "httpcore", "4.4.10"],
-       ["org.apache.maven.wagon", "wagon-http-shared", "3.2.0"],
-       ["org.apache.maven.wagon", "wagon-provider-api", "3.2.0"],
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"],
-       ["org.apache.httpcomponents", "httpclient", "4.5.6", {"exclusions":[["commons-logging"]]}]
+       ["org.apache.httpcomponents", "httpcore", "4.4.11"],
+       ["org.apache.maven.wagon", "wagon-http-shared", "3.3.3"],
+       ["org.apache.maven.wagon", "wagon-provider-api", "3.3.3"],
+       ["org.codehaus.plexus", "plexus-utils", "3.2.0"],
+       ["org.apache.httpcomponents", "httpclient", "4.5.9", {"exclusions":[["commons-logging"]]}]
       ],
-      "sha1":"34f2839340f32fe0491ba564fe331894b9255de1"
+      "sha1":"ef0c7c4c8c3aa8a0f801f1e809e104df9e825838"
      }
     }
    }
@@ -442,16 +685,16 @@
   "wagon-http-shared":{
    "jar":{
     "":{
-     "3.2.0":{
+     "3.3.3":{
       "dependencies":[
        ["commons-io", "2.6"],
-       ["org.apache.httpcomponents", "httpcore", "4.4.10"],
-       ["org.apache.maven.wagon", "wagon-provider-api", "3.2.0"],
-       ["org.jsoup", "jsoup", "1.11.2"],
+       ["org.apache.httpcomponents", "httpcore", "4.4.11"],
+       ["org.apache.maven.wagon", "wagon-provider-api", "3.3.3"],
+       ["org.jsoup", "jsoup", "1.12.1"],
        ["org.slf4j", "slf4j-api", "1.7.25"],
-       ["org.apache.httpcomponents", "httpclient", "4.5.6", {"exclusions":[["commons-logging"]]}]
+       ["org.apache.httpcomponents", "httpclient", "4.5.9", {"exclusions":[["commons-logging"]]}]
       ],
-      "sha1":"0769c5b9e4c13c12ce4aa0d175f69b5d1650a71e"
+      "sha1":"1cc0030cd38132e4229974f6461230dd1406212b"
      }
     }
    }
@@ -465,11 +708,11 @@
       ],
       "sha1":"f160b044ff0a4095170dc4dac75d69065b7c0a8d"
      },
-     "3.2.0":{
+     "3.3.3":{
       "dependencies":[
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"]
+       ["org.codehaus.plexus", "plexus-utils", "3.2.0"]
       ],
-      "sha1":"4acc94a855a0809c790faa5b560e50153b532776"
+      "sha1":"4b3b80a58fe499e5b810d635334b1143887b982e"
      }
     }
    }
@@ -477,17 +720,17 @@
   "wagon-ssh":{
    "jar":{
     "":{
-     "3.2.0":{
+     "3.3.3":{
       "dependencies":[
-       ["com.jcraft", "jsch", "0.1.54"],
+       ["com.jcraft", "jsch", "0.1.55"],
        ["com.jcraft", "jsch.agentproxy.connector-factory", "0.0.9"],
        ["com.jcraft", "jsch.agentproxy.jsch", "0.0.9"],
-       ["org.apache.maven.wagon", "wagon-provider-api", "3.2.0"],
-       ["org.apache.maven.wagon", "wagon-ssh-common", "3.2.0"],
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"],
-       ["org.codehaus.plexus", "plexus-interactivity-api", "1.0-alpha-6", {"exclusions":[["plexus", "plexus-utils"], ["org.codehaus.plexus", "plexus-container-default"], ["classworlds"]]}]
+       ["org.apache.maven.wagon", "wagon-provider-api", "3.3.3"],
+       ["org.apache.maven.wagon", "wagon-ssh-common", "3.3.3"],
+       ["org.codehaus.plexus", "plexus-utils", "3.2.0"],
+       ["org.codehaus.plexus", "plexus-interactivity-api", "1.0", {"exclusions":[["plexus", "plexus-utils"], ["org.codehaus.plexus", "plexus-container-default"], ["classworlds"]]}]
       ],
-      "sha1":"9463b889a8d14c60dae9c9c5e4065e911323410f"
+      "sha1":"44633427e78f96831b12a3dc8390b28176025d79"
      }
     }
    }
@@ -495,24 +738,47 @@
   "wagon-ssh-common":{
    "jar":{
     "":{
-     "3.2.0":{
+     "3.3.3":{
       "dependencies":[
-       ["org.apache.maven.wagon", "wagon-provider-api", "3.2.0"],
-       ["org.codehaus.plexus", "plexus-utils", "3.1.0"],
-       ["org.codehaus.plexus", "plexus-interactivity-api", "1.0-alpha-6", {"exclusions":[["org.codehaus.plexus", "plexus-component-api"]]}]
+       ["org.apache.maven.wagon", "wagon-provider-api", "3.3.3"],
+       ["org.codehaus.plexus", "plexus-utils", "3.2.0"],
+       ["org.codehaus.plexus", "plexus-interactivity-api", "1.0", {"exclusions":[["org.codehaus.plexus", "plexus-component-api"]]}]
       ],
-      "sha1":"7cf78217e53f315db7d9842aa9198121230b7d87"
+      "sha1":"ec639fce2a27b87c756e98e798a9b8d8add03ee6"
+     }
+    }
+   }
+  }
+ },
+ "org.checkerframework":{
+  "checker-compat-qual":{
+   "jar":{
+    "":{
+     "2.0.0":{
+      "sha1":"fc89b03860d11d6213d0154a62bcd1c2f69b9efa"
      }
     }
    }
   }
  },
  "org.clojure":{
+  "clojure":{
+   "jar":{
+    "":{
+     "1.10.1":{
+      "dependencies":[
+       ["org.clojure", "core.specs.alpha", "0.2.44"],
+       ["org.clojure", "spec.alpha", "0.2.176"]
+      ],
+      "sha1":"a1e6b92ce9b1bfc5d181867a45da8a38a6077662"
+     }
+    }
+   }
+  },
   "core.specs.alpha":{
    "jar":{
     "":{
      "0.2.44":{
-      "resolved-coordinate":["org.clojure", "core.specs.alpha", "jar", "", "0.2.44"],
       "sha1":"6027ceb1d1ae70a6a3fb1a8da2144632fa688604"
      }
     }
@@ -522,8 +788,18 @@
    "jar":{
     "":{
      "0.2.176":{
-      "resolved-coordinate":["org.clojure", "spec.alpha", "jar", "", "0.2.176"],
       "sha1":"cd2d5b03d2ff95a958cb075201b89d28a7dea626"
+     }
+    }
+   }
+  }
+ },
+ "org.codehaus.mojo":{
+  "animal-sniffer-annotations":{
+   "jar":{
+    "":{
+     "1.14":{
+      "sha1":"775b7e22fb10026eed3f86e8dc556dfafe35f2d5"
      }
     }
    }
@@ -533,11 +809,11 @@
   "plexus-classworlds":{
    "jar":{
     "":{
-     "1.2-alpha-7":{
-      "dependencies":[
-       ["junit", "3.8.1"]
-      ],
-      "sha1":"ed03d1eeb9b2576747df0d2883d9006fa5e1febe"
+     "2.5.2":{
+      "sha1":"4abb111bfdace5b8167db4c0ef74644f3f88f142"
+     },
+     "2.6.0":{
+      "sha1":"8587e80fcb38e70b70fae8d5914b6376bfad6259"
      }
     }
    }
@@ -545,21 +821,25 @@
   "plexus-component-annotations":{
    "jar":{
     "":{
-     "1.7.1":{
-      "sha1":"862abca6deff0fff241a835a33d22559e9132069"
+     "1.5.5":{
+      "sha1":"c72f2660d0cbed24246ddb55d7fdc4f7374d2078"
+     },
+     "2.0.0":{
+      "sha1":"6897b9fa8b67c900b52996f845e2d179eea13441"
      }
     }
    }
   },
-  "plexus-component-api":{
+  "plexus-container-default":{
    "jar":{
     "":{
-     "1.0-alpha-16":{
+     "1.0-alpha-9-stable-1":{
       "dependencies":[
+       ["classworlds", "1.1-alpha-2"],
        ["junit", "3.8.1"],
-       ["org.codehaus.plexus", "plexus-classworlds", "1.2-alpha-7"]
+       ["org.codehaus.plexus", "plexus-utils", "1.0.4"]
       ],
-      "sha1":"5a2100a1c6a37804b1abfc70000b0ea33b83b7f9"
+      "sha1":"94aea3010e250a334d9dab7f591114cd6c767458"
      }
     }
    }
@@ -567,12 +847,12 @@
   "plexus-interactivity-api":{
    "jar":{
     "":{
-     "1.0-alpha-6":{
+     "1.0":{
       "dependencies":[
-       ["org.codehaus.plexus", "plexus-component-api", "1.0-alpha-16"],
-       ["org.codehaus.plexus", "plexus-utils", "1.4"]
+       ["org.codehaus.plexus", "plexus-container-default", "1.0-alpha-9-stable-1"],
+       ["org.codehaus.plexus", "plexus-utils", "3.0.22"]
       ],
-      "sha1":"c06f0eb818633033f09a87d14c4cfb6f39af9a37"
+      "sha1":"27a43c136b0779650904d577c35c5659ccabc445"
      }
     }
    }
@@ -589,14 +869,67 @@
   "plexus-utils":{
    "jar":{
     "":{
-     "1.4":{
-      "sha1":"9383ed6b6798c8909b2c842644757bbcb79cc8c3"
+     "1.0.4":{
+      "sha1":"60783e4623f2e44063cf2d43d9fbacb2816855c2"
+     },
+     "1.5.5":{
+      "sha1":"7bd031358c3d6d3a7aea2e4de03c0d34675c5d9d"
+     },
+     "3.0.17":{
+      "sha1":"7b86f7a4ceffc8eadbb1a84207134af776f7cb95"
+     },
+     "3.0.22":{
+      "sha1":"764f26e0ab13a87c48fe55f525dfb6a133b7a92f"
      },
      "3.0.24":{
       "sha1":"b4ac9780b37cb1b736eae9fbcef27609b7c911ef"
      },
-     "3.1.0":{
-      "sha1":"60eecb6f15abdb1c653ad80abaac6fe188b3feaa"
+     "3.2.0":{
+      "sha1":"d69e11d69dfce0c964587ab97b559187b3c27a6f"
+     },
+     "3.2.1":{
+      "sha1":"13b015768e0d04849d2794e4c47eb02d01a0de32"
+     },
+     "3.3.0":{
+      "sha1":"cf43b5391de623b36fe066a21127baef82c64022"
+     }
+    }
+   }
+  }
+ },
+ "org.eclipse.sisu":{
+  "org.eclipse.sisu.inject":{
+   "jar":{
+    "":{
+     "0.3.3":{
+      "sha1":"b163fc1e714db5f9b389ec11f11950b5913e454c"
+     }
+    }
+   }
+  },
+  "org.eclipse.sisu.plexus":{
+   "jar":{
+    "":{
+     "0.3.3":{
+      "dependencies":[
+       ["org.codehaus.plexus", "plexus-classworlds", "2.5.2"],
+       ["org.codehaus.plexus", "plexus-component-annotations", "1.5.5"],
+       ["org.codehaus.plexus", "plexus-utils", "3.0.17"],
+       ["org.eclipse.sisu", "org.eclipse.sisu.inject", "0.3.3"],
+       ["javax.enterprise", "cdi-api", "1.0", {"exclusions":[["javax.el", "el-api"], ["org.jboss.ejb3", "jboss-ejb3-api"], ["org.jboss.interceptor", "jboss-interceptor-api"]]}]
+      ],
+      "sha1":"2c892c1fe0cd2dabcc729e1cbff3524b4847b1fe"
+     }
+    }
+   }
+  }
+ },
+ "org.jboss.interceptor":{
+  "jboss-interceptor-api":{
+   "jar":{
+    "":{
+     "1.1":{
+      "sha1":"34bf7bf35cef7df00a6787aa1b5c572526d1bafb"
      }
     }
    }
@@ -606,8 +939,8 @@
   "jsoup":{
    "jar":{
     "":{
-     "1.11.2":{
-      "sha1":"e3eeb8a0b4ce1db246059a41e353cd7413dad226"
+     "1.12.1":{
+      "sha1":"55819a28fc834c2f2bcf4dcdb278524dc3cf088f"
      }
     }
    }
@@ -655,6 +988,30 @@
     "":{
      "1.7.25":{
       "sha1":"da76ca59f6a57ee3102f8f9bd9cee742973efa8a"
+     }
+    }
+   }
+  }
+ },
+ "org.sonatype.plexus":{
+  "plexus-cipher":{
+   "jar":{
+    "":{
+     "1.4":{
+      "sha1":"50ade46f23bb38cd984b4ec560c46223432aac38"
+     }
+    }
+   }
+  },
+  "plexus-sec-dispatcher":{
+   "jar":{
+    "":{
+     "1.4":{
+      "dependencies":[
+       ["org.codehaus.plexus", "plexus-utils", "1.5.5"],
+       ["org.sonatype.plexus", "plexus-cipher", "1.4"]
+      ],
+      "sha1":"43fde524e9b94c883727a9fddb8669181b890ea7"
      }
     }
    }

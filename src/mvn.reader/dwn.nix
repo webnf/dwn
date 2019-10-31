@@ -3,9 +3,9 @@
   mvn = {
     group = "webnf.dwn";
     artifact = "mvn.reader";
-    version = "0.0.2";
+    version = "0.0.3";
     dependencies = [
-      ["org.apache.maven" "maven-model" "3.6.1"]
+      ["org.apache.maven" "maven-model" "3.6.2"]
     ];
     repositoryFile = ./repo.json;
   };

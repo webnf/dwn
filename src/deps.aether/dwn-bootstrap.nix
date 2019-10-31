@@ -1,13 +1,12 @@
 { pkgs, lib, ... }:
 
 {
-  dev = true;
+  optimize = true;
   mvn = {
     group = "webnf.dwn.deps";
-    artifact = "aether";
+    artifact = "aether-bootstrap";
     version = "0.0.4";
     dependencies = [
-      # copy to dwn-bootstrap, after regenerating repository
       ["webnf.deps" "logback" "0.2.0-alpha4"]
       ["org.apache.maven" "maven-resolver-provider" "3.6.2"]
       ["org.apache.maven" "maven-core" "3.6.2"]
@@ -29,8 +28,7 @@
   };
   clj = {
     sourceDirectories = [ ./src ../nix.aether/src ];
+    main.prefetch.namespace = "webnf.dwn.deps.aether";
+    main.to-json.namespace = "webnf.dwn.deps.aether.json";
   };
-  nrepl.enable-cider = false;
-  nrepl.port = 4050;
-  plugins = [ ../nrepl/module.nix ];
 }

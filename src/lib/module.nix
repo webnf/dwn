@@ -4,7 +4,6 @@ let inherit (self) lib comp; in
 
   instantiateModule = moduleList: overrideConfig: module:
     (self.lib.evalModules {
-      check = false;
       modules = moduleList ++ [{
         config._module.args.pkgs = self;
         config._module.args.overrideConfig = overrideConfig;
