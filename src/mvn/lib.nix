@@ -151,18 +151,6 @@ in {
         default = {};
         type = self.mvn.repoT;
       };
-      passthru = self.internalDefault {
-        pin = { inherit (config) group artifact; };
-        coordinate = {
-          inherit (config) extension classifier version;
-          dependencies = map (d: d.config.passthru) config.dependencies;
-          fixedVersions = map (d: d.config.passthru) config.fixedVersions;
-          providedVersions = map (d: d.config.passthru) config.providedVersions;
-        };
-        qualifier = { inherit (config) scope exclusions; };
-        metadata = { inherit (config) sha1 repository; };
-        classpathEntry = config.${config.extension};
-      };
     };
 
     # linkageFor = config: lself: lsuper:
@@ -173,9 +161,11 @@ in {
 
     overlayFor = config: osuper:
       if self.repoL.has osuper config
-      then if config == self.repoL.get osuper config
-           then osuper
-           else throw "Conflicting overlay entries ${self.mvn.nameFor config}"
+      then osuper
+        ## FIXME
+        # if config == self.repoL.get osuper config
+        #    then osuper
+        #    else throw "Conflicting overlay entries ${self.mvn.nameFor config}"
       else let
         scanDeps = config.dependencies ++ config.fixedVersions ++ config.providedVersions;
       in foldl'

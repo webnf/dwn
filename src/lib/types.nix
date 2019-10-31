@@ -4,7 +4,7 @@ with self.lib; with types;
 {
 
   mergeByType = T: vals:
-    T.merge []
+    T.merge [ "<mergeByType>" ]
       (map (v:
         { file = "m"; value = v; }
       ) vals);
