@@ -89,8 +89,9 @@ in
       {
         dwn = config.dwn // {
           orig = config.dwn;
-          override = dwn: overrideConfig
-            (cfg: cfg // { dwn = cfg.dwn // dwn; });
+          override = dwn: (overrideConfig
+            (cfg: cfg // { dwn = cfg.dwn // dwn; })
+          ).result;
         };
       }
       config.passthru
