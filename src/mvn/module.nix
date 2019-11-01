@@ -57,10 +57,12 @@ in
                 mvn = cfg.dwn.mvn // mvn;
               };
             })).dwn.mvn;
+        overlay = true;
         overlayRepository = pkgs.mvn.overlayFor config.dwn.mvn {};
         dependencies = config.dwn.mvn.fixedDependencies;
         fixedVersions = config.dwn.mvn.fixedDependencies;
-        repository = lib.mkIf (! isNull config.dwn.mvn.repositoryFile)
+        repository = lib.mkIf (! isNull config.dwn.mvn.repositoryFile
+                               && pathExists config.dwn.mvn.repositoryFile)
           (lib.importJSON config.dwn.mvn.repositoryFile);
       };
       jvm.dependencyClasspath = pkgs.mvn.dependencyClasspath (pkgs.mvn.dependencyPath config.dwn.mvn);

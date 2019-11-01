@@ -5,14 +5,14 @@
 (defn map-emitter [indent value-emitter]
   (fn [m]
     (concat
-     ["{"]
+     [indent "{"]
      (apply concat
             (interpose
-             [","]
+             [indent ","]
              (map (fn [[k v]]
-                    (list* indent " \"" k "\":" (value-emitter v)))
+                    (list* "\"" k "\":" (value-emitter v)))
                   (sort m))))
-     [indent "}"])))
+     ["}"])))
 
 (defn flat-map-emitter [key-emitter value-emitter]
   (fn [m]
@@ -20,7 +20,7 @@
      ["{"]
      (apply concat
             (interpose
-             [", "]
+             [","]
              (map (fn [[k v]]
                     (concat
                      (key-emitter k)
@@ -32,32 +32,32 @@
   (let [emitters (sort key-emitters)]
     (fn [m]
       (concat
-       ["{"]
+       [indent "{"]
        (apply concat
               (interpose
-               [","]
+               [indent ","]
                (filter
                 some?
                 (map (fn [[k emitter]]
                        (when (contains? m k)
-                         (list* indent " \"" (name k) "\":" (emitter (get m k)))))
+                         (list* "\"" (name k) "\":" (emitter (get m k)))))
                      emitters))))
-       [indent "}"]))))
+       ["}"]))))
 
 (defn list-emitter [indent value-emitter]
   (fn [l]
     (concat
-     ["[" indent " "]
+     [indent "["]
      (apply concat
             (interpose
-             ["," indent " "]
+             [indent ","]
              (map value-emitter l))
             #_(interpose
                [","]
                (map (fn [el]
                       (list* indent (value-emitter el)))
                     l)))
-     [indent "]"])))
+     ["]"])))
 
 (defn flat-list-emitter [value-emitter]
   (fn [l]
@@ -65,7 +65,7 @@
      ["["]
      (apply concat
             (interpose
-             [", "]
+             [","]
              (map value-emitter l)))
      ["]"])))
 
@@ -90,7 +90,12 @@
                          "\n      "
                          (flat-list-emitter emit-generic))
                         sort)
-    :resolved-coordinate (flat-list-emitter emit-generic))
+    :group emit-generic
+    :artifact emit-generic
+    :extension emit-generic
+    :classifier emit-generic
+    :version emit-generic
+    :baseVersion emit-generic)
    (map-emitter "\n    ")
    (map-emitter "\n   ")
    (map-emitter "\n  ")

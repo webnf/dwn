@@ -17,8 +17,8 @@ with self.lib;
   };
 
   pinL = self.mapLens ({ group, artifact, ...}: [ group artifact ]);
-  repoL = self.mapLens ({ group, artifact, extension, classifier, version, ... }:
-    [ group artifact extension classifier version ]);
+  repoL = self.mapLens ({ group ? artifact, artifact, extension ? "jar", classifier ? "", version, ... }:
+    [ extension classifier group artifact version ]);
 
   subPath = path: drv: self.runCommand (drv.name + "-" + replaceStrings ["/"] ["_"] path) {
     inherit path;

@@ -117,17 +117,16 @@
 (defn maven-download-info [coord' {:as config}]
   (let [coord (coordinate-info coord')
         art (cons/artifact coord)
+        mdesc (let [vrr (cons/version-resolution art config)]
+                (cond-> (-> art coordinate coordinate-info)
+                  vrr (assoc :version (.getVersion vrr))))
         desc (cons/artifact-descriptor
-              (let [vrr (cons/version-resolution art config)]
-                (-> art coordinate coordinate-info
-                    (cond-> #__
-                      vrr (assoc :version (.getVersion vrr)))
-                    cons/artifact))
+              (cons/artifact mdesc)
               config)
         rart (.getArtifact desc)
-        res {:coord coord
-             :resolved-coordinate (coordinate-info (coordinate rart))
-             :resolved-base-version (.getBaseVersion rart)}]
+        res (assoc mdesc
+                   :coord coord
+                   :base-version (.getBaseVersion rart))]
     (if-let [layout (try (cons/repository-layout (.getRepository desc) config)
                          (catch Exception e
                            (println "ERROR" "no download info" (coordinate rart) (.getRepository desc))))]
@@ -149,17 +148,21 @@
 (defn download-info [coord' {:as config :keys [overlay]}]
   (let [{:keys [group artifact extension classifier version]
          :as coord} (coordinate-info coord')
-        res (if-let [{:strs [sha1 dirs jar dependencies nix-expr resolved-coordinate resolved-base-version]}
+        res (if-let [{:strs [sha1 dependencies base-version
+                             group artifact extension classifier version]
+                      :or {group group artifact artifact extension extension
+                           classifier classifier version version base-version version}}
                      (get-in overlay [group artifact extension classifier version])]
               {:sha1 sha1
-               :dirs dirs
-               :jar jar
                :coord coord
                :dependencies dependencies
-               :nix-expr nix-expr
                :overlay true
-               :resolved-coordinate (or resolved-coordinate coord)
-               :resolved-base-version (or resolved-base-version version)}
+               :group group
+               :artifact artifact
+               :extension extension
+               :classifier classifier
+               :version version
+               :base-version base-version}
               (maven-download-info coord config))]
     res))
 
@@ -172,7 +175,7 @@
    (lazy-seq
     (let [{:keys [coord dependencies]
            :as res} (m-dl-info art)
-          done' (into done (map dependency-coordinate dependencies))
+          done' (into done (map dependency-coordinate) dependencies)
           thunks (mapv #(future
                           (let [coord (dependency-coordinate %)]
                             (when-not (contains? done coord)
@@ -190,23 +193,30 @@
 
 (def coord-vec (juxt :group :artifact :extension :classifier :version))
 
+(defn output-entry [{:as coord :keys [group artifact extension classifier version]
+                     cg :group ca :artifact ce :extension
+                     cc :classifier cv :version}
+                    {:as info :keys
+                     [group artifact extension classifier version base-version sha1 dependencies]}]
+  (cond-> {}
+    (not= cg group) (assoc :group group)
+    (not= ca artifact) (assoc :artifact artifact)
+    (not= ce extension) (assoc :extension extension)
+    (not= cc classifier) (assoc :classifier classifier)
+    (not= cv version) (assoc :version version)
+    (not= cv base-version) (assoc :baseVersion base-version)
+    (not (str/blank? sha1)) (assoc :sha1 sha1)
+    (not (empty? dependencies)) (assoc :dependencies dependencies)))
+
 (defn repo-for [coordinates conf]
   (let [download-infos (expand-download-infos coordinates conf)]
-    (reduce (fn [res {:as dli :keys [resolved-coordinate resolved-base-version sha1 dirs jar dependencies nix-expr overlay]
-                      {:as coord :keys [group artifact extension classifier version]} :coord}]
+    (reduce (fn [res {:as dli :keys [overlay]
+                      {:as coord :keys [group artifact extension classifier version]}
+                      :coord}]
               (if overlay
                 res
-                (if (str/blank? nix-expr)
-                  (assoc-in res [group artifact extension classifier version]
-                            (cond-> {}
-                              (not= resolved-coordinate coord)  (assoc :resolved-coordinate (coord-vec resolved-coordinate))
-                              (not= resolved-base-version (:version coord)) (assoc :resolved-base-version resolved-base-version)
-                              (not (str/blank? sha1)) (assoc :sha1 sha1)
-                              (not (empty? dirs)) (assoc :dirs dirs)
-                              (not (str/blank? jar)) (assoc :jar jar)
-                              (not (empty? dependencies)) (assoc :dependencies dependencies)))
-                  (do (println "WARNING: deprecated use of :nix-expr")
-                      res))))
+                (assoc-in res [extension classifier group artifact version]
+                          (output-entry coord dli))))
             {} download-infos)))
 
 (defn merge-aether-config [prev-config & {:as next-config}]
@@ -279,7 +289,14 @@
                                   ["org.clojure" "spec.alpha"]]}]]
                  cfg))))
 
-  (expand-download-info ["org.eclipse.aether" "aether-impl" "1.1.0"] cfg)
+  (println (apply str (json/emit-repo (repo-for [["net.cgrand" "utils" "0.1.0-20120924.101254-2"]
+                                                 ["net.cgrand" "utils" "0.1.0-SNAPSHOT"]
+                                                 ;["org.apache.maven" "maven-resolver-provider" "3.6.0"]
+                                                 ]
+                                                cfg)
+                                      )))
+
+  (expand-download-info ["net.cgrand" "utils" "0.1.0-20120924.101254-2"] cfg)
 
   (expand-download-info ["amazonica" "0.3.139"] cfg)
 

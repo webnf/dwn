@@ -11,7 +11,9 @@ with lib;
   dwn = build ./dwn.nix;
   nrepl = build ./nrepl/dwn.nix;
   lein.reader = build ./lein.reader/dwn.nix;
-  mvn.reader = build ./mvn.reader/dwn.nix;
+  mvn = (super.mvn or {}) // {
+    reader = build ./mvn.reader/dwn.nix;
+  };
 
   juds = build ./juds/dwn.nix;
   dwnTool = callPackage ./dwn-tool.nix { };

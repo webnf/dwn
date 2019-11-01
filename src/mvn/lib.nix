@@ -36,10 +36,14 @@ let
     } else throw "Invalid list length ${toString l}";
 in {
 
-  mvn = {
+  mvn = (super.mvn or {}) // {
+    nameFor = config:
+      "${config.group}__${config.artifact}__${config.version}${
+        (optionalString ((config.classifier or "") != "") "__${config.classifier}")
+      }.${config.extension}";
     optionsFor = config: let
       depT = listOf (self.mvn.projectDependencyT config);
-      error = self.errorDerivation "error__${config.group}__${config.artifact}__${config.version}";
+      error = self.errorDerivation "error__${self.mvn.nameFor config}";
     in {
       group = mkOption {
         type = str;
@@ -78,10 +82,11 @@ in {
       '';
       };
       dependencies = mkOption {
-        default = (self.repoL.getDefault
-          config.repository config
-          [(error "Not found in repo")]
-        ).dependencies or [];
+        # default = (self.repoL.getDefault
+        #   config.repository config
+        #   [(error "Not found in repo")]
+        # ).dependencies or [];
+        default = [];
         type = depT;
         description = ''
         Maven dependencies.
@@ -132,7 +137,7 @@ in {
             else
               (self.fetchurl ( {
                 name = "${group}__${artifact}__${version}.${extension}";
-                urls = self.mvn.mirrorsFor repos group artifact extension classifier baseVersion version;
+                urls = self.mvn.mirrorsFor config;
                 inherit sha1;
               }))
               # prevent nix-daemon from downloading maven artifacts from the nix cache
@@ -141,16 +146,17 @@ in {
         type = nullOr self.pathT;
       };
       sha1 = mkOption {
-        default =
-          if config.extension == "jar"
-          then (
-            self.repoL.getDefault
-              config.repository config
-              { sha1 = null; } # (throw "No sha1 for [ ${config.group} ${config.artifact} ${config.version} ]")
-          ).sha1 or null
-          else null;
+        default = null;
+          # if config.extension == "jar"
+          # then (
+          #   self.repoL.getDefault
+          #     config.repository config
+          #     { sha1 = null; } # (throw "No sha1 for [ ${config.group} ${config.artifact} ${config.version} ]")
+          # ).sha1 or null
+          # else null;
         type = nullOr str;
       };
+      overlay = (self.internalDefault false);
       repository = mkOption {
         default = {};
         type = self.mvn.repoT;
@@ -196,12 +202,23 @@ in {
           lsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
         providedVersionMap = self.pinL.set lsuper.providedVersionMap config config;
         currentResolved = self.pinL.get lsuper.resolvedVersionMap config;
+        shouldOverlay =
+          ! self.pinL.has lsuper.resolvedVersionMap config
+          || self.mvn.versionOlder currentResolved config
+          || (config.version == currentResolved.version
+              && # (if config.overlay && currentResolved.overlay ## && config != currentResolved
+                 #     && config.${config.extension} != currentResolved.${currentResolved.extension}
+                 #  then throw "Conflicting overlays ${self.mvn.nameFor config} ${self.mvn.nameFor currentResolved}"
+                 #  else config.overlay)
+                config.overlay);
+          
       in if self.pinL.has lsuper.providedVersionMap config
-         then lsuper // {
-           inherit resolvedVersionMap;
-         }
-         else if self.pinL.has lsuper.resolvedVersionMap config
-                 && self.mvn.versionOlder config currentResolved
+         then if shouldOverlay
+              then lsuper // {
+                inherit resolvedVersionMap;
+              }
+              else lsuper
+         else if ! shouldOverlay
          then lsuper
          else foldl'
            (lsuper: dep:
@@ -247,7 +264,11 @@ in {
           (submodule {
             options = self.mvn.optionsFor result;
           })
-          [ mvn dep ];
+          (if dep.overlay or false
+           then [ mvn dep ]
+           else [ mvn (mkDefault dep)
+                  (self.repoL.getDefault
+                    mvn.repository dep (warn "Not found in repo ${toJSON dep}" {})) ]);
       in result;
 
     pinMap = coords: foldl' (s: e: self.pinL.set s e e) {} coords;
@@ -289,20 +310,20 @@ in {
 
     mapRepo = f: repo:
       mapAttrs
-        (group: arts:
+        (extension: clss:
           mapAttrs
-            (artifact: exts:
+            (classifier: grps:
               mapAttrs
-                (extension: clss:
+                (group: arts:
                   mapAttrs
-                    (classifier: vrss:
+                    (artifact: vrss:
                       mapAttrs
                         (version: desc:
                           f group artifact extension classifier version desc)
                         vrss)
-                    clss)
-                exts)
-            arts)
+                    arts)
+                grps)
+            clss)
         repo;
 
     lstDependencyT = mkOptionType {
@@ -336,12 +357,14 @@ in {
         (d: self.mvn.hydrateDependency d { inherit (config) repository; })
         self.mvn.mapDependencyT;
 
-    mirrorsFor = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
+    # repos group artifact extension classifier baseVersion version
+    # mirrorsFor = mavenRepos: group: name: extension: classifier: version: resolvedVersion: let
+    mirrorsFor = { repos, group, artifact, extension, classifier, baseVersion ? version, version, ... }: let
       dotToSlash = replaceStrings [ "." ] [ "/" ];
       tag = if classifier == "" then "" else "-" + classifier;
-      mvnPath = baseUri: "${baseUri}/${dotToSlash group}/${name}/${version}/${name}-${resolvedVersion}${tag}.${extension}";
-    in # builtins.trace "DOWNLOADING '${group}' '${name}' '${extension}' '${classifier}' '${version}' '${resolvedVersion}'"
-      (map mvnPath mavenRepos);
+      mvnPath = baseUri:
+        "${baseUri}/${dotToSlash group}/${artifact}/${baseVersion}/${artifact}-${version}${tag}.${extension}";
+    in map mvnPath repos;
 
   };
 
