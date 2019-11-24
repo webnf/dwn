@@ -152,7 +152,7 @@
                              group artifact extension classifier version]
                       :or {group group artifact artifact extension extension
                            classifier classifier version version base-version version}}
-                     (get-in overlay [group artifact extension classifier version])]
+                     (get-in overlay [extension classifier group artifact version])]
               {:sha1 sha1
                :coord coord
                :dependencies dependencies
