@@ -12,4 +12,5 @@
   ./lib/edn.nix
   ./lib/shell-binder.nix
   ./lib/module.nix
+  ./lib/lib.nix
 ]
