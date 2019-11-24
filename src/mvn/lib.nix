@@ -2,6 +2,7 @@ self: super:
 
 with builtins;
 with self.lib;
+with self.mvn;
 with types;
 let
   fromList = lst:
@@ -188,6 +189,18 @@ in {
           (d: d ? overlayRepository)
           scanDeps);
 
+    linkagePass = lself:
+      foldl'
+        (lsuper: dep:
+          let res = self.mvn.linkageFor dep lself lsuper; in
+          res // {
+            path = [
+              (self.pinL.getDefault
+                lself.fixedVersionMap dep
+                (self.pinL.get
+                  lself.resolvedVersionMap dep))
+            ] ++ res.path;
+          });
 
     linkageFor = config: lself: lsuper:
       if self.mvn.versionOlder
@@ -197,50 +210,64 @@ in {
       else if self.mvn.excluded lsuper config
       then lsuper
       else let
-        resolvedVersionMap = self.pinL.set lsuper.resolvedVersionMap config config;
-        fixedVersionMap = self.mvn.mergeFixedVersions
-          lsuper.fixedVersionMap (self.mvn.pinMap config.fixedVersions);
-        providedVersionMap = self.pinL.set lsuper.providedVersionMap config config;
         currentResolved = self.pinL.get lsuper.resolvedVersionMap config;
         shouldOverlay =
-          ! self.pinL.has lsuper.resolvedVersionMap config
-          || self.mvn.versionOlder currentResolved config
-          || (config.version == currentResolved.version
-              && # (if config.overlay && currentResolved.overlay ## && config != currentResolved
-                 #     && config.${config.extension} != currentResolved.${currentResolved.extension}
-                 #  then throw "Conflicting overlays ${self.mvn.nameFor config} ${self.mvn.nameFor currentResolved}"
-                 #  else config.overlay)
-                config.overlay);
-          
+          ! self.pinL.has lsuper.fixedVersionMap config
+          && (! self.pinL.has lsuper.resolvedVersionMap config
+              || self.mvn.versionOlder currentResolved config
+              || (config.version == currentResolved.version
+                  && # (if config.overlay && currentResolved.overlay ## && config != currentResolved
+                  #     && config.${config.extension} != currentResolved.${currentResolved.extension}
+                  #  then throw "Conflicting overlays ${self.mvn.nameFor config} ${self.mvn.nameFor currentResolved}"
+                  #  else config.overlay)
+                  config.overlay));
+        rconfig = if shouldOverlay then config
+                  else self.pinL.getDefault
+                    lsuper.fixedVersionMap config
+                    (self.pinL.get
+                      lsuper.resolvedVersionMap config);
+
+        resolvedVersionMap = self.pinL.set lsuper.resolvedVersionMap config rconfig;
+        fixedVersionMap = self.mvn.mergeFixedVersions
+          lsuper.fixedVersionMap (self.mvn.pinMap rconfig.fixedVersions);
+        providedVersionMap = self.pinL.set lsuper.providedVersionMap config rconfig;
+
       in if self.pinL.has lsuper.providedVersionMap config
          then if shouldOverlay
               then lsuper // {
                 inherit resolvedVersionMap;
               }
               else lsuper
-         else if ! shouldOverlay
-         then lsuper
-         else foldl'
-           (lsuper: dep:
-             let res = self.mvn.linkageFor dep lself lsuper; in
-             res // {
-               path = [ (self.pinL.get lself.resolvedVersionMap dep) ] ++ res.path;
-             })
-           (lsuper // {
-             inherit resolvedVersionMap fixedVersionMap providedVersionMap;
-           })
-           (reverseList config.dependencies);
+         else
+           let
+             rl = reverseList rconfig.dependencies;
+             l1 = linkagePass
+               lself
+               (lsuper // { inherit resolvedVersionMap fixedVersionMap providedVersionMap; })
+               rl;
+             l2 = linkagePass
+               lself
+               (lsuper // {
+                 inherit providedVersionMap;
+                 inherit (l1) resolvedVersionMap fixedVersionMap;
+               })
+               rl;
+           in l2;
+
 
     linkage = cfg: fix
-      (lself: self.mvn.linkageFor cfg lself {
-        path = [];
-        exclusions = [];
-        fixedVersionMap = {};
-        providedVersionMap = {};
-        resolvedVersionMap = {};
-      });
+      (lself:
+        self.mvn.linkageFor cfg lself {
+          path = [];
+          exclusions = [];
+          fixedVersionMap = {};
+          providedVersionMap = {};
+          resolvedVersionMap = {};
+        }
+      );
 
-    dependencyPath = cfg: (self.mvn.linkage cfg).path;
+    dependencyPath = cfg:
+      (self.mvn.linkage cfg).path;
 
     compilePath = cfg:
       let lr = self.mvn.linkage cfg; in
@@ -254,7 +281,11 @@ in {
           null exclusions);
 
     versionOlder = cfg1: cfg2:
-      self.lib.versionOlder cfg1.version cfg2.version;
+      self.lib.versionOlder
+        cfg1.version
+        cfg2.version;
+        # (tryOr cfg1.version "" "Current resolved didn't evalue, replace")
+        # (tryOr cfg2.version "" "Replacement didn't evalue, ignore");
 
     hydrateDependency = dep: mvn:
       if dep ? override #extension && dep ? ${dep.extension}
