@@ -9,7 +9,10 @@ with self.lib;
     has = o: p:
       hasAttrByPath (pathFn p) o;
     get = o: p:
-      getAttrFromPath (pathFn p) o;
+      let pth = pathFn p; in
+      if hasAttrByPath pth o
+      then getAttrFromPath pth o
+      else throw "No attr by path ( ${escapeShellArgs pth} )";
     getDefault = o: p: d:
       if has o p then get o p else d;
     set = o: p: v:
