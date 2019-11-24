@@ -11,7 +11,6 @@ let version = "1.10.1"; in
       ["org.clojure" "core.specs.alpha" "jar" "" "0.2.44"]
     ];
     repositoryFile = ./repo.json;
-    repositoryFormat = "repo-json";
     jar = pkgs.buildClojure {
       inherit version;
       sha256 = "0769zr58cgi0fpg02dlr82qr2apc09dg05j2bg3dg9a8xac5n1dz";

@@ -39,11 +39,6 @@ in
       };
       type = either package path;
     };
-    repositoryFormat = mkOption {
-      internal = true;
-      default = "repo-edn";
-      type = str;
-    };
   };
 
   config = {
