@@ -189,7 +189,7 @@ in {
           (d: d ? overlayRepository)
           scanDeps);
 
-    linkagePass = lself:
+    linkagePass = lself: deps: lsuper:
       foldl'
         (lsuper: dep:
           let res = self.mvn.linkageFor dep lself lsuper; in
@@ -200,18 +200,13 @@ in {
                 (self.pinL.get
                   lself.resolvedVersionMap dep))
             ] ++ res.path;
-          });
+          })
+        lsuper deps;
 
     linkageFor = config: lself: lsuper:
-      if self.mvn.versionOlder
-        config
-        (self.pinL.getDefault lsuper.providedVersionMap config config)
-      then lsuper
-      else if self.mvn.excluded lsuper config
-      then lsuper
-      else let
+      let
         currentResolved = self.pinL.get lsuper.resolvedVersionMap config;
-        shouldOverlay =
+        wouldProvide =
           ! self.pinL.has lsuper.fixedVersionMap config
           && (! self.pinL.has lsuper.resolvedVersionMap config
               || self.mvn.versionOlder currentResolved config
@@ -221,7 +216,8 @@ in {
                   #  then throw "Conflicting overlays ${self.mvn.nameFor config} ${self.mvn.nameFor currentResolved}"
                   #  else config.overlay)
                   config.overlay));
-        rconfig = if shouldOverlay then config
+        hasProvided = self.pinL.has lsuper.providedVersionMap config;
+        rconfig = if wouldProvide then config
                   else self.pinL.getDefault
                     lsuper.fixedVersionMap config
                     (self.pinL.get
@@ -231,28 +227,28 @@ in {
         fixedVersionMap = self.mvn.mergeFixedVersions
           lsuper.fixedVersionMap (self.mvn.pinMap rconfig.fixedVersions);
         providedVersionMap = self.pinL.set lsuper.providedVersionMap config rconfig;
-
-      in if self.pinL.has lsuper.providedVersionMap config
-         then if shouldOverlay
-              then lsuper // {
-                inherit resolvedVersionMap;
-              }
-              else lsuper
-         else
-           let
-             rl = reverseList rconfig.dependencies;
-             l1 = linkagePass
-               lself
-               (lsuper // { inherit resolvedVersionMap fixedVersionMap providedVersionMap; })
-               rl;
-             l2 = linkagePass
-               lself
-               (lsuper // {
-                 inherit providedVersionMap;
-                 inherit (l1) resolvedVersionMap fixedVersionMap;
-               })
-               rl;
-           in l2;
+        rl = reverseList rconfig.dependencies;
+      in
+        if
+          self.mvn.versionOlder
+            config
+            (self.pinL.getDefault lsuper.providedVersionMap config config)
+          || self.mvn.excluded lsuper config
+          || (hasProvided && ! wouldProvide)
+        then lsuper
+        else if hasProvided
+        then lsuper // { inherit resolvedVersionMap; }
+        else
+          linkagePass
+            lself rl
+            (lsuper // {
+              inherit providedVersionMap;
+              inherit (
+                linkagePass
+                  lself rl
+                  (lsuper // { inherit resolvedVersionMap fixedVersionMap providedVersionMap; })
+              ) resolvedVersionMap fixedVersionMap;
+            });
 
 
     linkage = cfg: fix
