@@ -193,7 +193,9 @@ in {
       foldl
         (lsuper: dep:
           let res = self.mvn.linkageFor dep lsuper; in
-          res // {
+          if self.pinL.has lsuper.providedVersionMap dep
+          then res
+          else res // {
             path = [
               (self.pinL.getDefault
                 lsuper.fixedVersionMap dep
