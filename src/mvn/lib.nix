@@ -189,21 +189,21 @@ in {
           (d: d ? overlayRepository)
           scanDeps);
 
-    linkagePass = lself: deps: lsuper:
-      foldl'
+    linkagePass = deps: lsuper:
+      foldl
         (lsuper: dep:
-          let res = self.mvn.linkageFor dep lself lsuper; in
+          let res = self.mvn.linkageFor dep lsuper; in
           res // {
             path = [
               (self.pinL.getDefault
-                lself.fixedVersionMap dep
+                lsuper.fixedVersionMap dep
                 (self.pinL.get
-                  lself.resolvedVersionMap dep))
+                  lsuper.resolvedVersionMap dep))
             ] ++ res.path;
           })
         lsuper deps;
 
-    linkageFor = config: lself: lsuper:
+    linkageFor = config: lsuper:
       let
         currentResolved = self.pinL.get lsuper.resolvedVersionMap config;
         wouldProvide =
@@ -222,54 +222,50 @@ in {
                     lsuper.fixedVersionMap config
                     (self.pinL.get
                       lsuper.resolvedVersionMap config);
+        rdeps = reverseList rconfig.dependencies;
 
-        resolvedVersionMap = self.pinL.set lsuper.resolvedVersionMap config rconfig;
-        fixedVersionMap = self.mvn.mergeFixedVersions
-          lsuper.fixedVersionMap (self.mvn.pinMap rconfig.fixedVersions);
         providedVersionMap = self.pinL.set lsuper.providedVersionMap config rconfig;
-        rl = reverseList rconfig.dependencies;
+        inherit (
+          linkagePass rdeps
+            (lsuper // {
+              inherit providedVersionMap;
+              resolvedVersionMap = self.pinL.set lsuper.resolvedVersionMap config rconfig;
+              fixedVersionMap = self.mvn.mergeFixedVersions
+                lsuper.fixedVersionMap (self.mvn.pinMap rconfig.fixedVersions);
+
+            })
+        ) resolvedVersionMap fixedVersionMap;
       in
         if
-          self.mvn.versionOlder
-            config
-            (self.pinL.getDefault lsuper.providedVersionMap config config)
-          || self.mvn.excluded lsuper config
+          self.mvn.excluded lsuper config
           || (hasProvided && ! wouldProvide)
         then lsuper
         else if hasProvided
         then lsuper // { inherit resolvedVersionMap; }
         else
-          linkagePass
-            lself rl
+          linkagePass rdeps
             (lsuper // {
-              inherit providedVersionMap;
-              inherit (
-                linkagePass
-                  lself rl
-                  (lsuper // { inherit resolvedVersionMap fixedVersionMap providedVersionMap; })
-              ) resolvedVersionMap fixedVersionMap;
+              inherit providedVersionMap resolvedVersionMap fixedVersionMap;
             });
 
 
-    linkage = cfg: fix
-      (lself:
-        self.mvn.linkageFor cfg lself {
-          path = [];
-          exclusions = [];
-          fixedVersionMap = {};
-          providedVersionMap = {};
-          resolvedVersionMap = {};
-        }
-      );
+    linkage = cfg:
+      self.mvn.linkageFor cfg {
+        path = [];
+        exclusions = [];
+        fixedVersionMap = {};
+        providedVersionMap = {};
+        resolvedVersionMap = {};
+      };
 
     dependencyPath = cfg:
       (self.mvn.linkage cfg).path;
 
-    compilePath = cfg:
-      let lr = self.mvn.linkage cfg; in
-      (fix (lself: self.mvn.linkageFor cfg lself lr // {
-        fixedVersionMap = self.mvn.mergePins lr.fixedVersionMap lr.providedVersionMap;
-      })).path;
+    # compilePath = cfg:
+    #   let lr = linkage cfg; in
+    #   (linkageFor cfg lr // {
+    #     fixedVersionMap = mergePins lr.fixedVersionMap lr.providedVersionMap;
+    #   }).path;
 
     excluded = { exclusions, ... }: { group, artifact, ... }:
       ! isNull

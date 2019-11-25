@@ -61,7 +61,7 @@ in
           (lib.importJSON config.dwn.mvn.repositoryFile);
       };
       jvm.dependencyClasspath = pkgs.mvn.dependencyClasspath (pkgs.mvn.dependencyPath config.dwn.mvn);
-      jvm.compileClasspath = pkgs.mvn.dependencyClasspath (pkgs.mvn.compilePath config.dwn.mvn);
+      jvm.compileClasspath = pkgs.mvn.dependencyClasspath (pkgs.mvn.dependencyPath config.dwn.mvn);
       paths = [] ++ lib.optional
         config.dwn.dev
         (subPath "bin/regenerate-repo" config.dwn.mvn.repositoryUpdater);

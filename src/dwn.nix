@@ -1,7 +1,7 @@
 { pkgs, lib, ... }:
 
 {
-  dev = true;
+  dev = false;
   clj = {
     aot = [ "webnf.dwn.boot" ];
     sourceDirectories = [
